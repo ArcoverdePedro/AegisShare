@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Meu App Django - Home{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+            margin-top: 56px; /* Compensa a altura da navbar fixa */
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        /* Compensação para o conteúdo não ficar escondido atrás da navbar */
+        body {
+            padding-top: 56px;
+        }
+        /* Garante que o conteúdo das outras páginas também tenha margem */
+        .page-content {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar FIXA no topo -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-house-fill"></i> Meu App
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                           href="#">
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'about' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#">
+                            Sobre
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'products' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#">
+                            Produtos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 
+                           href="#">
+                            Contato
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">Meu Perfil</a></li>
+                                <li><a class="dropdown-item" href="#">Configurações</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="#" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item">Sair</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Entrar</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">Cadastrar</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% block page_content %}
+    
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light text-center py-4 mt-5">
+        <div class="container">
+            <p>&copy; {% now "Y" %} Meu App Django. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>
