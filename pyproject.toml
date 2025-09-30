@@ -1,0 +1,15 @@
+[project]
+name = "proj"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "django>=5.2.6",
+    "django-bootstrap5>=25.2",
+    "granian>=2.5.4",
+    "ipfshttpclient>=0.7.0",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.1.1",
+    "whitenoise>=6.11.0",
+]

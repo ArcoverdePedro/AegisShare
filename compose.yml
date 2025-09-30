@@ -1,0 +1,7 @@
+services:
+  aegis_share:
+    build: .
+    entrypoint: ["/bin/sh", "/app/commands.sh"]
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
