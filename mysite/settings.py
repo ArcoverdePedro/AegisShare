@@ -130,6 +130,11 @@ STORAGES = {
     },
 }
 
+# Redirect for login required
+LOGIN_URL = 'login'
+
+# Redirect after logout
+LOGOUT_REDIRECT_URL = 'home'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

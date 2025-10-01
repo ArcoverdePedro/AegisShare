@@ -11,22 +11,23 @@
     {% bootstrap_javascript %}
     
     <style>
+        body {
+            padding-top: 60px; /* Aumente se necessário */
+        }
+
+        .page-content {
+            margin-top: 0;
+            padding-top: 10px; /* Adicione um pequeno padding */
+        }
+
         .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
             color: white;
-            padding: 100px 0;
-            margin-top: 56px; /* Compensa a altura da navbar fixa */
+            padding: 80px 0 60px; /* Reduza o padding superior */
+            margin-top: 0; /* Remova a margem superior */
         }
         .navbar-brand {
             font-weight: bold;
-        }
-        /* Compensação para o conteúdo não ficar escondido atrás da navbar */
-        body {
-            padding-top: 56px;
-        }
-        /* Garante que o conteúdo das outras páginas também tenha margem */
-        .page-content {
-            margin-top: 10px;
         }
         /* Estilo para os ícones feather */
         .feather {
@@ -49,8 +50,9 @@
     <!-- Navbar FIXA no topo -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                {% icon "smile" %} Meu App
+            <a class="navbar-brand {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                href="{% url "home" %}">
+                {% icon "home" style="width: 18px; height: 18px;" %} Home
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -60,27 +62,21 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
-                           href="#">
-                            {% icon "home" %} Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link {% if 'about' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#">
-                            {% icon "info" %} Sobre
+                            {% icon "info" style="width: 18px; height: 18px;" %} Sobre
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'products' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#">
-                            {% icon "package" %} Produtos
+                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 
                            href="#">
-                            {% icon "mail" %} Contato
+                            {% icon "mail" style="width: 18px; height: 18px;" %} Contato
                         </a>
                     </li>
                 </ul>
@@ -89,7 +85,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                {% icon "user" %} {{ user.username }}
+                                {% icon "user"  %} {{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
@@ -104,7 +100,7 @@
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <form method="post" action="#" class="d-inline">
+                                    <form method="post" action="{% url "logout" %}" class="d-inline">
                                         {% csrf_token %}
                                         <button type="submit" class="dropdown-item">
                                             {% icon "log-out" %} Sair
@@ -115,13 +111,13 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                {% icon "log-in" %} Entrar
+                            <a class="nav-link" href="{% url "login" %}">
+                                {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                {% icon "user-plus" %} Cadastrar
+                            <a class="nav-link" href="{% url "cadastro" %}">
+                                {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                             </a>
                         </li>
                     {% endif %}
@@ -137,7 +133,7 @@
     <!-- Footer -->
     <footer class="bg-dark text-light text-center py-4 mt-5">
         <div class="container">
-            <p>&copy; {% now "Y" %} Meu App Django. Todos os direitos reservados.</p>
+            <p>&#x1F12F; Aegis Share, Projeto de Pedro Abílio Pereira Arcoverde. {% now "Y" %}</p>
         </div>
     </footer>
 
