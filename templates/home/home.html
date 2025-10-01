@@ -1,4 +1,6 @@
 {% extends 'navbar/navbar.html' %}
+{% load django_bootstrap5 %}
+{% load icon %}
 
 {% block title %}Sobre Nós - Meu App{% endblock %}
 
@@ -15,17 +17,17 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4 text-center">
-                    <i class="bi bi-lightning-fill text-primary" style="font-size: 3rem;"></i>
+                    {% icon "zap" class="text-primary" style="width: 48px; height: 48px;" %}
                     <h3 class="mt-3">Rápido</h3>
                     <p>Desempenho excepcional em todas as operações.</p>
                 </div>
                 <div class="col-md-4 text-center">
-                    <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+                    {% icon "shield" class="text-success" style="width: 48px; height: 48px;" %}
                     <h3 class="mt-3">Seguro</h3>
                     <p>Proteção de dados e privacidade garantidas.</p>
                 </div>
                 <div class="col-md-4 text-center">
-                    <i class="bi bi-people-fill text-warning" style="font-size: 3rem;"></i>
+                    {% icon "users" class="text-warning" style="width: 48px; height: 48px;" %}
                     <h3 class="mt-3">Fácil</h3>
                     <p>Interface intuitiva e amigável para usuários.</p>
                 </div>
