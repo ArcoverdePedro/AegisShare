@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "argon2-cffi>=25.1.0",
     "django>=5.2.6",
     "django-bootstrap5>=25.2",
     "django-feather>=0.3.0",
