@@ -27,8 +27,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
+IS_DOCKER = os.getenv('DOCKER_ENV', 'False').lower() == 'true'
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = True if not IS_DOCKER else False
 
 ALLOWED_HOSTS = ['*']
 
@@ -136,12 +138,18 @@ LOGIN_URL = 'login'
 # Redirect after logout
 LOGOUT_REDIRECT_URL = 'home'
 
+SECURE_SSL_REDIRECT = True if IS_DOCKER else False
+
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SECURE = True
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "pt-br"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 

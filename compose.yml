@@ -2,6 +2,8 @@ services:
   aegis_share:
     build: .
     entrypoint: ["/bin/sh", "/app/commands.sh"]
+    environment:
+      - DOCKER_ENV=true
     ports:
       - "8001:8001"
     restart: unless-stopped

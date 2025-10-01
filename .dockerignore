@@ -1,4 +1,3 @@
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -6,6 +5,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+**/.pytest_cache
+**/.coverage
 
 # C extensions
 *.so
@@ -60,8 +61,8 @@ cover/
 # Django specific
 *.log
 local_settings.py
-staticfiles/  
-media/      
+staticfiles/
+media/
 
 # Environment files
 .venv
@@ -113,6 +114,7 @@ docker-compose.yml
 docker-compose.*.yml
 compose.yml
 Dockerfile
+dockerfile
 .dockerignore
 
 # Git
@@ -123,7 +125,6 @@ Dockerfile
 # Jenkins
 jenkinsfile
 Jenkinsfile
-
 
 # Cache and local files
 *.swp
