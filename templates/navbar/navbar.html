@@ -12,23 +12,29 @@
     
     <style>
         body {
-            padding-top: 60px; /* Aumente se necessário */
+            padding-top: 46px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        .page-content {
+        .content-wrapper {
+            flex-grow: 1;
             margin-top: 0;
-            padding-top: 10px; /* Adicione um pequeno padding */
+            padding-top: 10px; 
         }
 
         .hero-section {
             background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
             color: white;
-            padding: 80px 0 60px; /* Reduza o padding superior */
-            margin-top: 0; /* Remova a margem superior */
+            padding: 80px 0 60px;
+            margin-top: 0;
         }
+
         .navbar-brand {
-            font-weight: bold;
+            font-weight: 900;
         }
+
         /* Estilo para os ícones feather */
         .feather {
             width: 18px;
@@ -36,11 +42,13 @@
             margin-right: 5px;
             vertical-align: -2px;
         }
+
         .navbar-brand .feather {
             width: 20px;
             height: 20px;
             margin-right: 8px;
         }
+
         .dropdown-toggle .feather {
             margin-right: 5px;
         }
@@ -51,31 +59,36 @@
     <!-- Navbar FIXA no topo -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
         <div class="container">
-            <a class="navbar-brand {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
-                href="{% url "home" %}">
-                {% icon "home" style="width: 18px; height: 18px;" %} Home
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    <!-- Home - Agora um nav-link padrão com active, em vez de navbar-brand -->
                     <li class="nav-item">
-                        <a class="nav-link {% if 'about' in request.resolver_match.url_name %}active{% endif %}" 
+                       <a class="nav-link {% if request.resolver_match.url_name == 'home' %}navbar-brand{% endif %}" 
+                            href="{% url "home" %}">
+                            {% icon "home" style="width: 18px; height: 18px;" %} Home
+                        </a>
+                    </li>
+
+                    <!-- Sobre - Lógica de correspondência exata aplicada -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}navbar-brand{% endif %}" 
                            href="#">
                             {% icon "info" style="width: 18px; height: 18px;" %} Sobre
                         </a>
                     </li>
+                    
+                    <!-- Produtos - Lógica de correspondência exata aplicada -->
                     <li class="nav-item">
-                        <a class="nav-link {% if 'products' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'products' %}navbar-brand{% endif %}" 
                            href="#">
                             {% icon "package" style="width: 18px; height: 18px;" %} Produtos
                         </a>
                     </li>
+                    
+                    <!-- Contato - Lógica de correspondência exata aplicada -->
                     <li class="nav-item">
-                        <a class="nav-link {% if 'contact' in request.resolver_match.url_name %}active{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}navbar-brand{% endif %}" 
                            href="#">
                             {% icon "mail" style="width: 18px; height: 18px;" %} Contato
                         </a>
@@ -85,17 +98,21 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <button class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                            <button class="nav-link dropdown-toggle" type="button" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 {% icon "user"  %} {{ user.username }}
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <!-- Meu Perfil - Lógica de correspondência exata aplicada -->
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}navbar-brand{% endif %}" 
+                                       href="#">
                                         {% icon "user" %} Meu Perfil
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="#">
+                                    <!-- Configurações - Lógica de correspondência exata aplicada -->
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'settings' %}navbar-brand{% endif %}" 
+                                       href="#">
                                         {% icon "settings" %} Configurações
                                     </a>
                                 </li>
@@ -112,12 +129,16 @@
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url "login" %}">
+                            <!-- Entrar - Lógica de correspondência exata aplicada -->
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}navbar-brand{% endif %}" 
+                               href="{% url "login" %}">
                                 {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url "cadastro" %}">
+                            <!-- Cadastrar - Lógica de correspondência exata aplicada -->
+                            <a class="nav-link {% if request.resolver_match.url_name == 'cadastro' %}navbar-brand{% endif %}" 
+                               href="{% url "cadastro" %}">
                                 {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                             </a>
                         </li>
@@ -127,9 +148,11 @@
         </div>
     </nav>
 
-    {% block page_content %}
+    <div class="content-wrapper">
+        {% block page_content %}
     
-    {% endblock %}
+        {% endblock %}
+    </div>
 
     <!-- Footer -->
     <footer class="bg-dark text-light text-center py-4 mt-5">
