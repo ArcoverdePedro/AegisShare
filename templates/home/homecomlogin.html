@@ -1,0 +1,69 @@
+{% extends 'navbar/navbar.html' %}
+{% load django_bootstrap5 %}
+{% load icon %}
+
+{% block title %}Inicio - Aegis Share{% endblock %}
+
+{% block page_content %}
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold">Bem-vindo, {{user.username}} ao Aegis Share</h1>
+            <p class="lead">oque deseja fazer?</p>
+            <a href="#" class="btn btn-light btn-lg mt-3">Saiba Mais</a>
+            <a href="#" class="btn btn-light btn-lg mt-3">Saiba Mais</a>
+        </div>
+    </section>
+
+    <!--
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    {% icon "zap" class="text-primary" style="width: 48px; height: 48px;" %}
+                    <h3 class="mt-3">Rápido</h3>
+                    <p>Ferramentas Modernas, UV, Granian e Assíncronia, para melhorar o desempenho.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    {% icon "shield" class="text-success" style="width: 48px; height: 48px;" %}
+                    <h3 class="mt-3">Seguro</h3>
+                    <p>Criptografia moderna, TLS/SSL e Cluster IPFS para um ambiente o mais seguro possível</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    {% icon "users" class="text-danger" style="width: 48px; height: 48px;" %}
+                    <h3 class="mt-3">Fácil</h3>
+                    <p>Interface feita com intenção de ser intuitiva e amigável para usuários leigos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    -->
+
+    <script>
+        // URL do WebSocket (ajuste para o seu domínio)
+        const socket = new WebSocket("ws://localhost:8001/ws/notifications/");
+
+        // Quando a conexão abrir
+        socket.onopen = function() {
+            console.log("Conectado ao WebSocket!");
+            // Se quiser mandar algo para o servidor
+            socket.send(JSON.stringify({ message: "Olá servidor!" }));
+        };
+
+        // Quando receber uma mensagem
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("Nova notificação:", data.message);
+        };
+
+        // Quando a conexão fechar
+        socket.onclose = function(event) {
+            console.log("Conexão fechada:", event);
+        };
+
+        // Se ocorrer erro
+        socket.onerror = function(error) {
+            console.error("Erro no WebSocket:", error);
+        };
+    </script>
+
+{% endblock %}

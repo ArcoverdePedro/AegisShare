@@ -6,8 +6,10 @@ from django.contrib import messages
 
 
 def home(request):
-    ...
-    return render(request, "home/home.html")
+    if request.user.is_authenticated:
+        return render(request, "home/homecomlogin.html")
+    else:
+        return render(request, "home/homesemlogin.html")
 
 
 @login_required

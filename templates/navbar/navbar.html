@@ -67,37 +67,43 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+
                     <!-- Home -->
                     <li class="nav-item">
-                       <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
                             href="{% url "home" %}">
                             {% icon "home" style="width: 18px; height: 18px;" %} Home
                         </a>
                     </li>
 
-                    <!-- Sobre -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" 
-                           href="#">
-                            {% icon "info" style="width: 18px; height: 18px;" %} Sobre
-                        </a>
-                    </li>
+                    {% if user.is_authenticated %}
                     
-                    <!-- Produtos -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
-                           href="#">
-                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
-                        </a>
-                    </li>
-                    
-                    <!-- Contato -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
-                           href="#">
-                            {% icon "mail" style="width: 18px; height: 18px;" %} Contato
-                        </a>
-                    </li>
+                    {% else %}
+                        
+                        <!-- Sobre -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" 
+                            href="#">
+                                {% icon "info" style="width: 18px; height: 18px;" %} Sobre
+                            </a>
+                        </li>
+                        
+                        <!-- Produtos -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
+                            href="#">
+                                {% icon "package" style="width: 18px; height: 18px;" %} Produtos
+                            </a>
+                        </li>
+                        
+                        <!-- Contato -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
+                            href="#">
+                                {% icon "mail" style="width: 18px; height: 18px;" %} Contato
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
@@ -160,7 +166,7 @@
     </footer>
 
     <!-- Modal de Confirmação de Logout -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal fade" id="logoutModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -171,11 +177,13 @@
                     <p>Tem certeza que deseja sair?</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
                     <form method="post" action="{% url 'logout' %}" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">Sair</button>
                     </form>
+                    
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 </div>
             </div>
         </div>
