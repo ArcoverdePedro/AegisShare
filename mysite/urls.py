@@ -20,5 +20,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path("projeto-aegis-share/", admin.site.urls),
-    path("", include('aegis_share.urls')),
+    path("", include("aegis_share.urls")),
 ]

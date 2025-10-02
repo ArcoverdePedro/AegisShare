@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Notificações</title>
+</head>
+<body>
+    <h1>Notificações em tempo real</h1>
+    <ul id="notificacoes"></ul>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:8001/ws/notifications/");
+
+        socket.onopen = () => {
+            console.log("Conectado ao WebSocket!");
+        };
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Nova notificação:", data.message);
+
+            // Mostra na tela
+            const li = document.createElement("li");
+            li.textContent = data.message;
+            document.getElementById("notificacoes").appendChild(li);
+        };
+
+        socket.onclose = (event) => {
+            console.log("Conexão fechada:", event);
+        };
+
+        socket.onerror = (error) => {
+            console.error("Erro no WebSocket:", error);
+        };
+    </script>
+</body>
+</html>
