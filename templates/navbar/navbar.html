@@ -64,7 +64,7 @@
                 <ul class="navbar-nav me-auto">
                     <!-- Home - Agora um nav-link padrão com active, em vez de navbar-brand -->
                     <li class="nav-item">
-                       <a class="nav-link {% if request.resolver_match.url_name == 'home' %}navbar-brand{% endif %}" 
+                       <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
                             href="{% url "home" %}">
                             {% icon "home" style="width: 18px; height: 18px;" %} Home
                         </a>
@@ -72,7 +72,7 @@
 
                     <!-- Sobre - Lógica de correspondência exata aplicada -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}navbar-brand{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" 
                            href="#">
                             {% icon "info" style="width: 18px; height: 18px;" %} Sobre
                         </a>
@@ -80,7 +80,7 @@
                     
                     <!-- Produtos - Lógica de correspondência exata aplicada -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'products' %}navbar-brand{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
                            href="#">
                             {% icon "package" style="width: 18px; height: 18px;" %} Produtos
                         </a>
@@ -88,7 +88,7 @@
                     
                     <!-- Contato - Lógica de correspondência exata aplicada -->
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}navbar-brand{% endif %}" 
+                        <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
                            href="#">
                             {% icon "mail" style="width: 18px; height: 18px;" %} Contato
                         </a>
@@ -104,14 +104,14 @@
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
                                     <!-- Meu Perfil - Lógica de correspondência exata aplicada -->
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}navbar-brand{% endif %}" 
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" 
                                        href="#">
                                         {% icon "user" %} Meu Perfil
                                     </a>
                                 </li>
                                 <li>
                                     <!-- Configurações - Lógica de correspondência exata aplicada -->
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'settings' %}navbar-brand{% endif %}" 
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" 
                                        href="#">
                                         {% icon "settings" %} Configurações
                                     </a>
@@ -130,14 +130,14 @@
                     {% else %}
                         <li class="nav-item">
                             <!-- Entrar - Lógica de correspondência exata aplicada -->
-                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}navbar-brand{% endif %}" 
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" 
                                href="{% url "login" %}">
                                 {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
                             </a>
                         </li>
                         <li class="nav-item">
                             <!-- Cadastrar - Lógica de correspondência exata aplicada -->
-                            <a class="nav-link {% if request.resolver_match.url_name == 'cadastro' %}navbar-brand{% endif %}" 
+                            <a class="nav-link {% if request.resolver_match.url_name == 'cadastro' %}active{% endif %}" 
                                href="{% url "cadastro" %}">
                                 {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                             </a>
