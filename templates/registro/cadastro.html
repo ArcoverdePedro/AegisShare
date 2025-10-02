@@ -1,10 +1,12 @@
 {% extends 'navbar/navbar.html' %}
+{% load crispy_forms_tags %}
 {% load django_bootstrap5 %}
 {% load icon %}
 
 {% block title %}Cadastro - Aegis Share{% endblock %}
 
 {% block page_content %}
+
 <div class="auth-container">
     <div class="container">
         <div class="row justify-content-center">
@@ -18,50 +20,16 @@
                     <form method="post">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
-                            <label for="id_username" class="form-label">
-                                {% icon "user" style="width: 20px; height: 20px;" %} Usuário
-                            </label>
-                            <input type="text" class="form-control" id="id_username" name="username" 
-                                   placeholder="Escolha um usuário" required
-                                   maxlength="150" autocomplete="username">
-                        </div>
+                        {{ form|crispy }} 
 
-                        <div class="mb-3">
-                            <label for="id_password1" class="form-label">
-                                {% icon "lock" style="width: 20px; height: 20px;" %} Senha
-                            </label>
-                            <input type="password" class="form-control" id="id_password1" name="password1" 
-                                   placeholder="Digite sua senha" required autocomplete="new-password">
-                            <div class="form-text">
-                                <ul class="small" style="color:red">
-                                    <li>A senha precisa de pelo menos 8 caracteres.</li>
-                                    <li>A senha não pode ser apenas numérica.</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="id_password2" class="form-label">
-                                {% icon "lock" style="width: 20px; height: 20px;" %} Confirmação de senha
-                            </label>
-                            <input type="password" class="form-control" id="id_password2" name="password2" 
-                                   placeholder="Confirme sua senha" required autocomplete="new-password">
-                        </div>
-
-                        <div class="d-grid mb-3">
+                        <div class="d-grid mb-3 mt-4">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 {% icon "plus" style="width: 20px; height: 20px;" %} Cadastrar
                             </button>
                         </div>
 
-                        <div class="text-center">
-                            <p class="mb-0">
-                                Já tem uma conta? 
-                                <a href="{% url 'login' %}" class="text-decoration-none">Faça login</a>
-                            </p>
-                        </div>
                     </form>
+
                 </div>
             </div>
         </div>

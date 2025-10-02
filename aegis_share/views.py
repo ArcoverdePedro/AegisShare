@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from .forms import CustomUserCreationForm
 
 
 def home(request):
@@ -35,16 +35,22 @@ def custom_login(request):
 
 def cadastro(request):
     if request.method == "POST":
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, "Cadastro realizado com sucesso!")
             return redirect("home")
         else:
-            for error in form.errors.values():
+            # Melhorando a exibição de erros do formulário
+            for field in form:
+                for error in field.errors:
+                    # Exibe o erro de forma mais detalhada para o usuário
+                    messages.error(request, f"Erro em {field.label}: {error}")
+            for error in form.non_field_errors():
                 messages.error(request, error)
+
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
 
     return render(request, "registro/cadastro.html", {"form": form})

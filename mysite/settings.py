@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "crispy_forms",
+    "crispy_bootstrap5",
     "django_bootstrap5",
     "django_feather",
     "aegis_share",
@@ -145,6 +147,9 @@ SECURE_SSL_REDIRECT = True if IS_DOCKER else False
 SESSION_COOKIE_SECURE = True if IS_DOCKER else False
 
 CSRF_COOKIE_SECURE = True if IS_DOCKER else False
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

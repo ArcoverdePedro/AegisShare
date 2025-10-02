@@ -355,6 +355,19 @@ wheels = [
 ]
 
 [[package]]
+name = "crispy-bootstrap5"
+version = "2025.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-crispy-forms" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/30/36cc4144b6dff91bb54490a3b474897b7469bcda9517bf9f54681ea91011/crispy_bootstrap5-2025.6.tar.gz", hash = "sha256:f1bde7cac074c650fc82f31777d4a4cfd0df2512c68bc4128f259c75d3daada4", size = 23950, upload-time = "2025-06-08T07:43:35.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d8/d4/8cf1ba773a91fc17bab1fd46b75bbdef780c4cccbbb8230e617980a0362c/crispy_bootstrap5-2025.6-py3-none-any.whl", hash = "sha256:a343aa128b4383f35f00295b94de2b10862f2a4f24eda21fa6ead45234c07050", size = 24794, upload-time = "2025-06-08T07:43:34.206Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -457,6 +470,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/40/97/7c905896f8014978e982f5cfe3c3a56131cf5042d8983f33b98b196ef119/django_bootstrap5-25.2.tar.gz", hash = "sha256:abcfcd543efc19aaab4456a12b566507f684cfda98effc5dd3ad5167ba05c7b3", size = 129765, upload-time = "2025-07-30T12:33:30.216Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/45/e4/becdbbb273a4176029df49999d78169600000747ed7b5118dab13fe49d99/django_bootstrap5-25.2-py3-none-any.whl", hash = "sha256:9418969fa5932729dc1addb1b70f13c9312a522b15033219ac3cbc5728eb8937", size = 26740, upload-time = "2025-07-30T12:33:28.581Z" },
+]
+
+[[package]]
+name = "django-crispy-forms"
+version = "2.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/a1/ffd7b0e160296121d88e3e173165370000ee4de7328f5c4f4b266638dcd9/django_crispy_forms-2.4.tar.gz", hash = "sha256:915e1ffdeb2987d78b33fabfeff8e5203c8776aa910a3a659a2c514ca125f3bd", size = 278932, upload-time = "2025-04-13T07:25:00.176Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1d/ec/a25f81e56a674e63cf6c3dd8e36b1b3fecc238fecd6098504adc0cc61402/django_crispy_forms-2.4-py3-none-any.whl", hash = "sha256:5a4b99876cfb1bdd3e47727731b6d4197c51c0da502befbfbec6a93010b02030", size = 31446, upload-time = "2025-04-13T07:24:58.516Z" },
 ]
 
 [[package]]
@@ -813,9 +838,11 @@ dependencies = [
     { name = "argon2-cffi" },
     { name = "channels" },
     { name = "channels-redis" },
+    { name = "crispy-bootstrap5" },
     { name = "daphne" },
     { name = "django" },
     { name = "django-bootstrap5" },
+    { name = "django-crispy-forms" },
     { name = "django-feather" },
     { name = "granian" },
     { name = "ipfshttpclient" },
@@ -835,9 +862,11 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "channels", specifier = ">=4.3.1" },
     { name = "channels-redis", specifier = ">=4.3.0" },
+    { name = "crispy-bootstrap5", specifier = ">=2025.6" },
     { name = "daphne", specifier = ">=4.2.1" },
     { name = "django", specifier = ">=5.2.6" },
     { name = "django-bootstrap5", specifier = ">=25.2" },
+    { name = "django-crispy-forms", specifier = ">=2.4" },
     { name = "django-feather", specifier = ">=0.3.0" },
     { name = "granian", specifier = ">=2.5.4" },
     { name = "ipfshttpclient", specifier = ">=0.7.0" },
