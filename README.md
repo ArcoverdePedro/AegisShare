@@ -53,22 +53,22 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 ### Usando uv
 
 1.  **Instale o uv.**
-2.  **Crie e ative um ambiente virtual (opcional, mas recomendado):**
+2.  **Sincronize as dependências:**
+    ```bash
+    uv sync
+    ```
+3.  **Ative o ambiente virtual:**
     ```bash
     uv venv
     source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
     ```
-3.  **Sincronize as dependências:**
-    ```bash
-    uv sync
-    ```
-
+    
 ### Usando Pip Tradicional
 
 1.  **Instale um ambiente virtual (opcional, mas recomendado):**
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # ou venv\Scripts\activate no Windows
+    python -m venv .venv
+    source .venv/bin/activate  # ou venv\Scripts\activate no Windows
     ```
 2.  **Instale as dependências a partir do `pyproject.toml`:**
     ```bash
