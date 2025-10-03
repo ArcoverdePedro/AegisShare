@@ -10,13 +10,13 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
   * **Django Channels:** Habilita a funcionalidade de WebSockets.
   * **Redis:** Necessário como *channel layer* para os WebSockets.
   * **Docker/Docker Compose:** Para orquestração e fácil inicialização do ambiente.
-  * **Granian:** Servidor ASGI para rodar o Django Channels.
+  * **Uvicorn:** Servidor ASGI para rodar o Django Channels.
 
 -----
 
 ## Requisitos para funcionamento
 
-Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Granian** após a instalação das dependências.
+Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Uvicorn** após a instalação das dependências.
 
 ### Opção 1: Com Docker Compose (Recomendado)
 
@@ -118,10 +118,10 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
     python manage.py migrate
     ```
 
-2.  **Iniciar o Servidor:** Use o **Granian** para servir o projeto com suporte a ASGI (WebSockets).
+2.  **Iniciar o Servidor:** Use o **Uvicorn** para servir o projeto com suporte a ASGI (WebSockets).
 
     ```bash
-    granian mysite.asgi:application --host 0.0.0.0 --port 8000 --interface asgi
+    uvicorn mysite.asgi:application --host 0.0.0.0 --port 8000
     ```
 
 3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.

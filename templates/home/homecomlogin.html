@@ -9,7 +9,7 @@
         <div class="container text-center">
             <h1 class="display-4 fw-bold">Bem-vindo ao Aegis Share, {{user.username}}</h1>
             <p class="lead">oque deseja fazer?</p>
-            <a href="#" class="btn btn-light btn-lg mt-3">Upload Arquivo</a>
+            <a href="#" class="btn btn-light btn-lg mt-3">Upload de Arquivo</a>
             <a href="#" class="btn btn-light btn-lg mt-3">Procurar um Arquivo</a>
         </div>
     </section>
@@ -40,7 +40,7 @@
 
     <script>
         // URL do WebSocket (ajuste para o seu domínio)
-        const socket = new WebSocket("ws://localhost:8001/ws/notifications/");
+        const socket = new WebSocket("ws://localhost:8000/ws/notifications/");
 
         // Quando a conexão abrir
         socket.onopen = function() {

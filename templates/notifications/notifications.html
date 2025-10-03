@@ -9,7 +9,7 @@
     <ul id="notificacoes"></ul>
 
     <script>
-        const socket = new WebSocket("ws://localhost:8001/ws/notifications/");
+        const socket = new WebSocket("ws://localhost:8000/ws/notifications/");
 
         socket.onopen = () => {
             console.log("Conectado ao WebSocket!");
