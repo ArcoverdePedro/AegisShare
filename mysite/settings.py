@@ -32,6 +32,12 @@ IS_DOCKER = os.getenv("DOCKER_ENV", "False").lower() == "true"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if not IS_DOCKER else False
 
+SECURE_SSL_REDIRECT = True if IS_DOCKER else False
+
+SESSION_COOKIE_SECURE = True if IS_DOCKER else False
+
+CSRF_COOKIE_SECURE = True if IS_DOCKER else False
+
 ALLOWED_HOSTS = ["*"]
 
 
@@ -141,12 +147,6 @@ LOGIN_URL = "login"
 
 # Redirect after logout
 LOGOUT_REDIRECT_URL = "home"
-
-SECURE_SSL_REDIRECT = True if IS_DOCKER else False
-
-SESSION_COOKIE_SECURE = True if IS_DOCKER else False
-
-CSRF_COOKIE_SECURE = True if IS_DOCKER else False
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
