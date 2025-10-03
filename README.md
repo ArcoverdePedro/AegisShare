@@ -108,10 +108,8 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
 2.  **Iniciar o Servidor:** Use o **Uvicorn** para servir o projeto com suporte a ASGI (WebSockets).
 
     ```bash
-    uvicorn project_name.asgi:application --host 0.0.0.0 --port 8000
+    uvicorn mysite.asgi:application --host 0.0.0.0 --port 8000
     ```
-
-    *(Substitua `project_name` pelo nome real da sua pasta de projeto Django.)*
 
 3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.
 
