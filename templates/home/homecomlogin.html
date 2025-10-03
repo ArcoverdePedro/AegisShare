@@ -7,10 +7,17 @@
 {% block page_content %}
     <section class="hero-section">
         <div class="container text-center">
-            <h1 class="display-4 fw-bold">Bem-vindo ao Aegis Share, {{user.username}}</h1>
+            <h1 class="display-4 fw-bold">Bem-vindo {{user.username}}</h1>
             <p class="lead">oque deseja fazer?</p>
-            <a href="#" class="btn btn-light btn-lg mt-3">Upload de Arquivo</a>
-            <a href="#" class="btn btn-light btn-lg mt-3">Procurar um Arquivo</a>
+            <a href="#" class="btn btn-light btn-lg mt-3">
+                {% icon "upload" style="width: 18px; height: 18px;" %}
+                Upload de Arquivo
+            </a>
+            
+            <a href="#" class="btn btn-light btn-lg mt-3">
+                {% icon "search" style="width: 18px; height: 18px;" %}
+                Procurar um Arquivo
+            </a>
         </div>
     </section>
 

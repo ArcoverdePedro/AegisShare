@@ -77,13 +77,35 @@
                     </li>
 
                     {% if user.is_authenticated %}
-                    
+                        <!-- Sobre -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'arquivos_users' %}active{% endif %}" 
+                            href="#">
+                                {% icon "info" style="width: 18px; height: 18px;" %} Meus Arquivos
+                            </a>
+                        </li>
+                        
+                        <!-- Produtos -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
+                            href="#">
+                                {% icon "package" style="width: 18px; height: 18px;" %} Produtos
+                            </a>
+                        </li>
+                        
+                        <!-- Contato -->
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
+                            href="#">
+                                {% icon "mail" style="width: 18px; height: 18px;" %} Contato
+                            </a>
+                        </li>
                     {% else %}
                         
                         <!-- Sobre -->
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" 
-                            href="#">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'sobre' %}active{% endif %}" 
+                            href="{% url 'sobre' %}">
                                 {% icon "info" style="width: 18px; height: 18px;" %} Sobre
                             </a>
                         </li>
@@ -110,7 +132,7 @@
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <button class="nav-link dropdown-toggle" type="button" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                {% icon "user"  %} {{ user.username }}
+                                {% icon "user" %} {{ user.username }}
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>

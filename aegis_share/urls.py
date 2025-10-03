@@ -8,5 +8,6 @@ urlpatterns = [
     path("login/", views.custom_login, name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("cadastro/", views.cadastro, name="cadastro"),
+    path("sobre/", views.sobre, name="sobre"),
     path("notifications/", views.notifications, name="notifications"),
 ]

@@ -12,11 +12,6 @@ def home(request):
         return render(request, "home/homesemlogin.html")
 
 
-@login_required
-def notifications(request):
-    return render(request, "notifications/notifications.html")
-
-
 def custom_login(request):
     if request.method == "POST":
         username = request.POST["username"]
@@ -54,3 +49,12 @@ def cadastro(request):
         form = CustomUserCreationForm()
 
     return render(request, "registro/cadastro.html", {"form": form})
+
+
+@login_required
+def notifications(request):
+    return render(request, "notifications/notifications.html")
+
+
+def sobre(request):
+    return render(request, "informacoes/sobre.html")

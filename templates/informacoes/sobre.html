@@ -1,0 +1,183 @@
+{% extends 'navbar/navbar.html' %}
+{% load django_bootstrap5 %}
+{% load icon %}
+
+    <style>
+        body {
+            padding-top: 56px; /* Ajuste o padding para o navbar fixo */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f8f9fa; /* Levemente cinza */
+        }
+
+        .content-wrapper {
+            flex-grow: 1;
+            margin-top: 0;
+            padding-top: 10px; 
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
+            color: white;
+            padding: 80px 0 60px;
+            margin-top: 0;
+            margin-bottom: 20px; /* Adicionado margem inferior */
+            border-radius: 0 0 15px 15px;
+        }
+        
+        /* Estilo para a seção hero da página Sobre */
+        .hero-sobre {
+            background: linear-gradient(90deg, #1f4068 0%, #162447 100%);
+            color: #f1f1f1;
+            padding: 60px 0;
+            margin-top: -10px;
+            margin-bottom: 30px;
+            border-radius: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 900;
+        }
+
+        /* Estilo para os ícones feather */
+        .feather {
+            width: 18px;
+            height: 18px;
+            margin-right: 5px;
+            vertical-align: -2px;
+        }
+
+        .navbar-brand .feather {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+
+        .dropdown-toggle .feather {
+            margin-right: 5px;
+        }
+        
+        .feature-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+            border-radius: 12px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .icon-box {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .icon-ipfs { background-color: #65C2CB; color: white; }
+        .icon-realtime { background-color: #DE5FE9; color: white; }
+        .icon-django { background-color: #092E20; color: white; }
+    </style>
+
+    {% block page_content %}
+        <!-- Conteúdo da Página "Sobre" -->
+        <div class="hero-sobre">
+            <div class="container text-center">
+                <h1 class="display-4 mb-3">{% icon "info" %} O que é o Aegis Share?</h1>
+                <p class="lead fw-light">Redefinindo o compartilhamento de arquivos com descentralização, segurança e transparência.</p>
+            </div>
+        </div>
+
+        <div class="container my-5">
+            <div class="row mb-5 justify-content-center">
+                <div class="col-lg-10">
+                    <h2 class="text-center mb-4 text-primary fw-bold">Nossa Missão: O Poder da Descentralização</h2>
+                    <p class="fs-5 text-center text-secondary">
+                        O Aegis Share é uma aplicação construída sobre o princípio de que seus dados devem ser resilientes e livres de um único ponto de falha. Diferente dos serviços de nuvem tradicionais, que centralizam o armazenamento em servidores únicos, nós utilizamos o IPFS (InterPlanetary File System) para distribuir seus arquivos globalmente.
+                    </p>
+                </div>
+            </div>
+
+            <hr class="my-5">
+            
+            <!-- Seção de Funcionalidades Principais -->
+            <h2 class="text-center mb-5 fw-bold">Como Funciona a Magia?</h2>
+            <div class="row g-4">
+                
+                <!-- Card 1: IPFS (Descentralização) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box icon-ipfs">
+                            {% icon "cloud-off" style="width: 30px; height: 30px;" class="text-info" %}
+                        </div>
+                        <h5 class="card-title fw-bold">IPFS: O Armazenamento Descentralizado</h5>
+                        <p class="card-text text-muted">Seu arquivo não é armazenado em "nosso" servidor, mas sim na vasta rede IPFS. Isso garante que ele se torne imutável (o endereço é o próprio conteúdo) e resiliente contra quedas de servidores centralizados.</p>
+                        <span class="badge bg-info text-dark">Tecnologia Base</span>
+                    </div>
+                </div>
+                
+                <!-- Card 2: WebSockets (Tempo Real) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box icon-realtime">
+                            {% icon "zap" style="width: 30px; height: 30px;" class="text-danger" %}
+                        </div>
+                        <h5 class="card-title fw-bold">WebSockets: Notificações em Tempo Real</h5>
+                        <p class="card-text text-muted">Utilizamos Django Channels com Redis para WebSockets, permitindo que você receba atualizações instantâneas. Saiba exatamente quando o seu arquivo foi enviado para a rede IPFS e está pronto para ser compartilhado, sem precisar atualizar a página.</p>
+                        <span class="badge bg-danger">Performance</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: Django (Robustez) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box icon-django">
+                            {% icon "server" style="width: 30px; height: 30px;" class="text-success" %}
+                        </div>
+                        <h5 class="card-title fw-bold">Django: Core Sólido e Seguro</h5>
+                        <p class="card-text text-muted">A interface e a lógica de autenticação e gerenciamento de usuários são construídas sobre o framework Django, garantindo um ambiente web seguro, escalável e com padrões de desenvolvimento de alta qualidade.</p>
+                        <span class="badge bg-success">Framework Web</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-5">
+
+            <!-- Seção de Resumo Técnico -->
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h3 class="fw-bold mb-3">Tech Stack Completo</h3>
+                    <p class="text-secondary">O Aegis Share é uma arquitetura moderna e completa, orquestrada para máxima eficiência:</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex align-items-center">
+                            {% icon "code" style="width: 20px; height: 20px;" %}
+                            <strong class="ms-2 me-2">Django & Uvicorn:</strong> Backend principal e servidor ASGI para WebSockets.
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            {% icon "globe" style="width: 20px; height: 20px;" %}
+                            <strong class="ms-2 me-2">IPFS:</strong> Protocolo para endereçamento de conteúdo e armazenamento P2P.
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            {% icon "message-square" style="width: 20px; height: 20px;" %}
+                            <strong class="ms-2 me-2">Django Channels & Redis:</strong> Camada de canais para notificações em tempo real.
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            {% icon "box" style="width: 20px; height: 20px;" %}
+                            <strong class="ms-2 me-2">Docker & Docker Compose:</strong> Orquestração fácil para desenvolvimento e *deploy*.
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <img src="https://placehold.co/400x300/1f4068/ffffff?text=Diagrama+Arquitetura" class="img-fluid rounded shadow-lg" alt="Diagrama de Arquitetura do Sistema">
+                    <small class="text-muted mt-2 d-block">Ilustração conceitual dos componentes do Aegis Share.</small>
+                </div>
+            </div>
+        </div>
+        <!-- Fim do Conteúdo da Página "Sobre" -->
+    {% endblock %}
+   
+    {% block scripts %}
+    {% endblock %}

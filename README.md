@@ -54,24 +54,22 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 
 ### Usando Poetry
 
-1.  **Instale o Poetry.**
-2.  **Instale as dependências:**
+1.  **Instale as dependências:**
     ```bash
     poetry install
     ```
-3.  **Ative o ambiente virtual:**
+2.  **Ative o ambiente virtual:**
     ```bash
     poetry shell
     ```
 
 ### Usando uv
 
-1.  **Instale o uv.**
-2.  **Sincronize as dependências:**
+1.  **Sincronize as dependências:**
     ```bash
     uv sync
     ```
-3.  **Ative o ambiente virtual:**
+2.  **Ative o ambiente virtual:**
     ```bash
     source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
     ```
