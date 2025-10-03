@@ -81,7 +81,7 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 1.  **Instale um ambiente virtual:**
     ```bash
     python -m venv .venv
-    source .venv/bin/activate  # ou venv\Scripts\activate no Windows
+    source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
     ```
 2.  **Instale as dependências a partir do `pyproject.toml`:**
     ```bash
