@@ -9,13 +9,14 @@ User = get_user_model()
 class CustomUserCreationForm(UserCreationForm):
     # O email field precisa ser definido aqui, mas sem a classe CSS
     email = forms.EmailField(
-        label='Email',
+        label="Email",
         max_length=300,
         required=True,
-        widget=forms.EmailInput(attrs={'placeholder': 'seu.email@exemplo.com',
-                                       'autocomplete': 'email'})
+        widget=forms.EmailInput(
+            attrs={"placeholder": "seu.email@exemplo.com", "autocomplete": "email"}
+        ),
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ("username", "email", "password1", "password2")
