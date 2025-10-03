@@ -34,7 +34,7 @@ Esta é a maneira mais fácil, pois o Docker Compose gerencia o Django, o Redis 
 
 #### Aviso de Segurança em Testes com Docker
 
-Se você estiver rodando o container **em um ambiente de teste ou CI/CD que não utilize HTTPS/SSL**, o Django vai falhar devido às configurações de segurança estritas.
+Se você estiver rodando o container **em um ambiente de teste ou CI/CD que não utilize HTTPS/SSL**, o Django provavelmente falhará devido às configurações de segurança estritas.
 
 Para desativar a segurança e ativar o modo `DEBUG`, você deve garantir que a variável **`IS_DOCKER` seja configurada como `False`** no seu ambiente. Isso garante que as seguintes opções de desenvolvimento sejam ativadas, conforme o seu `settings.py`:
 
