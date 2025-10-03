@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 IS_DOCKER = os.getenv("DOCKER_ENV", "False").lower() == "true"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True if not IS_DOCKER else False
+DEBUG = False if IS_DOCKER else True
 
 SECURE_SSL_REDIRECT = True if IS_DOCKER else False
 
