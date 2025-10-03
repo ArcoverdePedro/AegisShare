@@ -64,7 +64,7 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 
 ### Usando Pip Tradicional
 
-1.  **Instale um ambiente virtual (opcional, mas recomendado):**
+1.  **Instale um ambiente virtual:**
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # ou venv\Scripts\activate no Windows
