@@ -3,7 +3,7 @@
 
 Este é um projeto Django que implementa um sistema de compartilhamento de arquivos utilizando **IPFS (InterPlanetary File System)** para armazenamento descentralizado e **WebSockets** (através de Django Channels) para notificação em tempo real sobre o status dos arquivos.
 
-## 🚀 Tecnologias Principais
+## Tecnologias Principais
 
   * **Django:** Framework web principal.
   * **IPFS:** Usado para armazenamento e recuperação de arquivos.
@@ -14,7 +14,7 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
 
 -----
 
-## 🛠️ Como Fazer Funcionar
+## Requisitos para funcionamento
 
 Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Uvicorn** após a instalação das dependências.
 
@@ -34,7 +34,7 @@ Esta é a maneira mais fácil, pois o Docker Compose gerencia o Django, o Redis 
 
 -----
 
-## 📦 Instalação das Dependências (Para Opção 2)
+## Instalação das Dependências (Opção 2)
 
 O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenciador de pacotes preferido:
 
@@ -77,7 +77,7 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 
 -----
 
-## 🏃 Execução (Opção 2)
+## Execução (Opção 2)
 
 Se você escolheu a Opção 2, siga estes passos após instalar as dependências.
 
@@ -117,7 +117,7 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
 
 -----
 
-## ⚙️ Configurações
+## Configurações Específicas
 
 Certifique-se de que as seguintes variáveis de ambiente (ou configurações no `settings.py`) estejam corretas:
 
