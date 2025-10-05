@@ -6,6 +6,7 @@
 {% bootstrap_javascript %}
 
 
+
 {% block title %}Cadastro - Aegis Share{% endblock %}
 
 {% block page_content %}
@@ -38,4 +39,24 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
+
+{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+    $(document).ready(function(){
+        $('#id_cpf').mask('000.000.000-00', {
+            reverse: false,
+            translation: {
+                '0': {pattern: /\d/} 
+            }
+        });
+
+    });
+</script>
+
+{% endblock scripts %}

@@ -1,0 +1,59 @@
+{% load crispy_forms_tags %}
+{% load django_bootstrap5 %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração Inicial - Criar Administrador</title>
+    
+    {% bootstrap_css %}
+
+    <style>
+        body {
+            background-color: #f8f9fa; /* Cor de fundo clara */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            max-width: 500px; /* Limita a largura do card */
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card shadow-lg">
+    <div class="card-header bg-primary text-white text-center">
+        <h1 class="h4 mb-0">Bem-vindo(a)! Configuração Inicial</h1>
+    </div>
+    <div class="card-body p-4">
+        <p class="text-muted text-center">
+            Detectamos que este é o primeiro acesso ao Aegis Share. Por favor, crie a conta de Administrador.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {{ form|crispy }}
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Criar Superusuário
+                </button>
+            </div>
+        </form>
+    </div>
+    <div class="card-footer text-center text-muted">
+        Após a criação, você será redirecionado(a) para a Home.
+    </div>
+</div>
+
+{% bootstrap_javascript %}
+
+</body>
+</html>

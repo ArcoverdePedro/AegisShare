@@ -2,7 +2,41 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, FirstUserForm
+from django.urls import reverse
+from django.views import View
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class FirstSuperuserCreateView(View):
+    template_name = 'primeiro_cadastro.html'
+
+    def get(self, request):
+        if User.objects.filter(is_superuser=True).exists():
+            return redirect('home')
+
+        form = FirstUserForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        form = FirstUserForm(request.POST)
+
+        if User.objects.filter(is_superuser=True).exists():
+            return redirect('home')
+
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+
+            login(request, user)
+
+            return redirect('home')
+
+        return render(request, self.template_name, {'form': form})
 
 
 def home(request):

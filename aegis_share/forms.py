@@ -1,22 +1,94 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import get_user_model
-
-# Obtém o modelo de usuário ativo (geralmente o padrão do Django)
-User = get_user_model()
+from django.contrib.auth.models import User
+from .models import UsersInfos
 
 
-class CustomUserCreationForm(UserCreationForm):
-    # O email field precisa ser definido aqui, mas sem a classe CSS
+class FirstUserForm(UserCreationForm):
+    NIVEL_PERMISSAO_CHOICES = UsersInfos.NIVEL_PERMISSAO_CHOICES
+
     email = forms.EmailField(
         label="Email",
         max_length=300,
         required=True,
         widget=forms.EmailInput(
-            attrs={"placeholder": "seu.email@exemplo.com", "autocomplete": "email"}
+            attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}
         ),
+    )
+
+    nivel_permissao = forms.ChoiceField(
+        label="Nível de Permissão",
+        choices=NIVEL_PERMISSAO_CHOICES,
+        widget=forms.HiddenInput(),
+        initial='ADM'
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("username", "email", "password1", "password2")
+        fields = (
+            "username", "email",
+            "password1", "password2"
+        )
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        if commit:
+            user.save()
+            UsersInfos.objects.create(
+                user=user,
+                nivel_permissao=self.cleaned_data["nivel_permissao"]
+            )
+        return user
+
+
+class CustomUserCreationForm(UserCreationForm):
+    NIVEL_PERMISSAO_CHOICES = UsersInfos.NIVEL_PERMISSAO_CHOICES
+
+    email = forms.EmailField(
+        label="Email",
+        max_length=300,
+        required=True,
+        widget=forms.EmailInput(
+            attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}
+        ),
+    )
+
+    cpf = forms.CharField(
+        label="CPF",
+        max_length=14,
+        required=True,
+        widget=forms.TextInput(
+            attrs={"placeholder": "999.999.999-99"}
+        )
+    )
+
+    nivel_permissao = forms.ChoiceField(
+        label="Nível de Permissão",
+        choices=NIVEL_PERMISSAO_CHOICES,
+        initial='CLI'
+    )
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = (
+            "username", "email",
+            "cpf", "nivel_permissao",
+            "password1", "password2"
+        )
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        if commit:
+            user.save()
+            UsersInfos.objects.create(
+                user=user,
+                cpf=self.cleaned_data["cpf"],
+                nivel_permissao=self.cleaned_data["nivel_permissao"]
+            )
+        return user
+
+
+class FileInputIPFSForm(forms.Form):
+    ...

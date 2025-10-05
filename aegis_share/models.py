@@ -5,11 +5,25 @@ User = get_user_model()
 
 
 class UsersInfos(models.Model):
+    NIVEL_PERMISSAO_CHOICES = [
+        ('ADM', 'Administrador'),
+        ('FUNC', 'Funcionário'),
+        ('CLI', 'Cliente'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     foto_perfil = models.TextField(null=True, blank=True)
+    cpf = models.CharField(max_length=50)
+
+    nivel_permissao = models.CharField(
+        max_length=4,
+        choices=NIVEL_PERMISSAO_CHOICES,
+        default='CLI',
+        verbose_name='Nível de Permissão'
+    )
 
     def __str__(self):
-        return f"Usuario {self.user.username}"
+        return f"Usuario {self.user.username} ({self.get_nivel_permissao_display()})"
 
 
 class IPFSFile(models.Model):
