@@ -4,6 +4,14 @@ from django.db import models
 User = get_user_model()
 
 
+class UsersInfos(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    foto_perfil = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Usuario {self.user.username}"
+
+
 class IPFSFile(models.Model):
     cid = models.CharField(
         max_length=255,

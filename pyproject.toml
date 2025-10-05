@@ -14,6 +14,7 @@ dependencies = [
     "django-bootstrap5>=25.2",
     "django-crispy-forms>=2.4",
     "django-feather>=0.3.0",
+    "django-htmx>=1.26.0",
     "granian[reload]>=2.5.4",
     "ipfshttpclient>=0.7.0",
     "psycopg2-binary>=2.9.10",

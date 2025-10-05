@@ -72,6 +72,8 @@ venv.bak/
 ENV/
 env/
 env.bak/
+.ruff_cache
+.ruff_cache/
 
 # IDE and editor files
 .idea/
