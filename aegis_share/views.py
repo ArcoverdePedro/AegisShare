@@ -44,6 +44,7 @@ def home(request):
 
 
 def custom_login(request):
+    redirect_to = request.POST.get('next') or request.GET.get('next')
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
@@ -52,11 +53,14 @@ def custom_login(request):
         if user is not None:
             login(request, user)
             messages.success(request, "Login realizado com sucesso!")
-            return redirect("home")
+            if redirect_to:
+                return redirect(redirect_to)
+            else:
+                return redirect("home")
         else:
             messages.error(request, "Usuário ou senha inválidos.")
 
-    return render(request, "registro/login.html")
+    return render(request, "registro/login.html", {'redirect_to': redirect_to})
 
 
 @login_required
@@ -73,7 +77,7 @@ def cadastro(request):
     elif request.user.usersinfos.nivel_permissao == 'FUNC':
         FormUser = ClienteForm
 
-    FormUser()
+    form = FormUser()
 
     if request.method == "POST":
         form = FormUser(request.POST)
