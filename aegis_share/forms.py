@@ -26,6 +26,8 @@ class FirstUserForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
+        user.is_staff = True
+        user.is_superuser = True
         if commit:
             user.save()
             UsersInfos.objects.create(
@@ -35,7 +37,7 @@ class FirstUserForm(UserCreationForm):
         return user
 
 
-class CustomUserCreationForm(UserCreationForm):
+class FormUserADM(UserCreationForm):
     NIVEL_PERMISSAO_CHOICES = UsersInfos.NIVEL_PERMISSAO_CHOICES
 
     email = forms.EmailField(

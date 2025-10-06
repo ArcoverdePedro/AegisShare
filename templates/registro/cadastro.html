@@ -5,6 +5,11 @@
 {% bootstrap_css %}
 {% bootstrap_javascript %}
 
+<style>
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+</style>
 
 
 {% block title %}Cadastro - Aegis Share{% endblock %}
@@ -34,6 +39,16 @@
 
                     </form>
 
+                     <div id="message-container">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert {{ message.tags }}" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -58,5 +73,22 @@
 
     });
 </script>
+
+<script>
+
+    const messageContainer = document.getElementById('message-container');
+    const tempoParaDesaparecer = 2500;
+
+    if (messageContainer) {
+        setTimeout(() => {
+            messageContainer.classList.add('fade-out'); 
+        }, tempoParaDesaparecer);
+        
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+        }, tempoParaDesaparecer + 500);
+    }
+</script>
+
 
 {% endblock scripts %}

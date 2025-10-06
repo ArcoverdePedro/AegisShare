@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import CustomUserCreationForm, FirstUserForm, ClienteForm
+from .forms import FormUserADM, FirstUserForm, ClienteForm
 from django.urls import reverse
 from django.views import View
 from .models import UsersInfos
@@ -28,13 +28,9 @@ class FirstSuperuserCreateView(View):
             return redirect('home')
 
         if form.is_valid():
-            user = form.save(commit=False)
-            user.is_staff = True
-            user.is_superuser = True
-            user.save()
+            user = form.save()
 
             login(request, user)
-
             return redirect('home')
 
         return render(request, self.template_name, {'form': form})
@@ -66,19 +62,25 @@ def custom_login(request):
 @login_required
 def cadastro(request):
 
+    user_permission = request.user.usersinfos.nivel_permissao
+
+    if user_permission not in ('ADM', 'FUNC'):
+        messages.error(request, "Sem permissão para cadastrar usuários.")
+        return redirect('home')
+
     if request.user.usersinfos.nivel_permissao == 'ADM':
-        form = CustomUserCreationForm()
+        FormUser = FormUserADM
     elif request.user.usersinfos.nivel_permissao == 'FUNC':
-        form = ClienteForm()
+        FormUser = ClienteForm
+
+    FormUser()
 
     if request.method == "POST":
-        if request.user.usersinfos.nivel_permissao == 'ADM':
-            form = CustomUserCreationForm(request.POST)
-        elif request.user.usersinfos.nivel_permissao == 'FUNC':
-            form = ClienteForm(request.POST)
+        form = FormUser(request.POST)
 
         if form.is_valid():
-            messages.success(request, "Cadastro realizado com sucesso!")
+            user = form.save()
+            messages.success(request, f"Usuário '{user.username}' Cadastrado!")
             return redirect("cadastro")
         else:
             for field in form:
