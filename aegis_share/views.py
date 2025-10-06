@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import CustomUserCreationForm, FirstUserForm
+from .forms import CustomUserCreationForm, FirstUserForm, ClienteForm
 from django.urls import reverse
 from django.views import View
+from .models import UsersInfos
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -62,25 +63,29 @@ def custom_login(request):
     return render(request, "registro/login.html")
 
 
+@login_required
 def cadastro(request):
+
+    if request.user.usersinfos.nivel_permissao == 'ADM':
+        form = CustomUserCreationForm()
+    elif request.user.usersinfos.nivel_permissao == 'FUNC':
+        form = ClienteForm()
+
     if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+        if request.user.usersinfos.nivel_permissao == 'ADM':
+            form = CustomUserCreationForm(request.POST)
+        elif request.user.usersinfos.nivel_permissao == 'FUNC':
+            form = ClienteForm(request.POST)
+
         if form.is_valid():
-            user = form.save()
-            login(request, user)
             messages.success(request, "Cadastro realizado com sucesso!")
-            return redirect("home")
+            return redirect("cadastro")
         else:
-            # Melhorando a exibição de erros do formulário
             for field in form:
                 for error in field.errors:
-                    # Exibe o erro de forma mais detalhada para o usuário
                     messages.error(request, f"Erro em {field.label}: {error}")
             for error in form.non_field_errors():
                 messages.error(request, error)
-
-    else:
-        form = CustomUserCreationForm()
 
     return render(request, "registro/cadastro.html", {"form": form})
 

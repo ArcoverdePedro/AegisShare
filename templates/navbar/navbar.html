@@ -147,6 +147,12 @@
                                         {% icon "settings" %} Configurações
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'cadastro' %}active{% endif %}" 
+                                    href="{% url "cadastro" %}">
+                                        {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#logoutModal">
@@ -160,12 +166,6 @@
                             <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" 
                                href="{% url "login" %}">
                                 {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'cadastro' %}active{% endif %}" 
-                               href="{% url "cadastro" %}">
-                                {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                             </a>
                         </li>
                     {% endif %}
