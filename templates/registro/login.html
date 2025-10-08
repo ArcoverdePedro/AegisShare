@@ -47,7 +47,7 @@
                             <div id="message-container">
                                 {% if messages %}
                                     {% for message in messages %}
-                                        <div class="alert {{ message.tags }}" role="alert">
+                                        <div class="alert alert-{{ message.tags }}" role="alert">
                                             {{ message }}
                                         </div>
                                     {% endfor %}

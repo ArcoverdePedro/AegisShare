@@ -111,4 +111,4 @@ def arquivos(request):
 
 @login_required
 def meus_arquivos(request):
-    return render(request, "")
+    return render(request, "arquivos/arquivos_clientes.html")

@@ -79,8 +79,8 @@
                         {% if user.nivel_permissao == 'CLI' %}
 
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'arquivos_users' %}active{% endif %}" 
-                                    href="https://google.com" target="_blank">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'meus_arquivos' %}active{% endif %}" 
+                                    href="{% url "meus_arquivos" %}">
                                     {% icon "info" style="width: 18px; height: 18px;" %} Meus Arquivos
                                 </a>
                             </li>
