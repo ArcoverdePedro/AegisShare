@@ -6,4 +6,4 @@ uv run manage.py migrate
 
 uv run manage.py collectstatic --noinput --clear
 
-uv run granian mysite.asgi:application --host 0.0.0.0 --port 8000 --interface asgi --workers 5 
+uv run granian mysite.asgi:application --host 0.0.0.0 --port 8000 --interface asgi --workers 5 --runtime-threads 2

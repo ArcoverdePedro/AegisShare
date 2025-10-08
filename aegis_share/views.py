@@ -3,37 +3,37 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import FormUserADM, FirstUserForm, ClienteForm
-from django.urls import reverse
 from django.views import View
-#from .models import
+
+# from .models import
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
 class FirstSuperuserCreateView(View):
-    template_name = 'primeiro_cadastro.html'
+    template_name = "primeiro_cadastro.html"
 
     def get(self, request):
         if User.objects.filter(is_superuser=True).exists():
-            return redirect('home')
+            return redirect("home")
 
         form = FirstUserForm()
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {"form": form})
 
     def post(self, request):
         form = FirstUserForm(request.POST)
 
         if User.objects.filter(is_superuser=True).exists():
-            return redirect('home')
+            return redirect("home")
 
         if form.is_valid():
             user = form.save()
 
             login(request, user)
-            return redirect('home')
+            return redirect("home")
 
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {"form": form})
 
 
 def home(request):
@@ -44,7 +44,7 @@ def home(request):
 
 
 def custom_login(request):
-    redirect_to = request.POST.get('next') or request.GET.get('next')
+    redirect_to = request.POST.get("next") or request.GET.get("next")
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
@@ -60,21 +60,20 @@ def custom_login(request):
         else:
             messages.error(request, "Usuário ou senha inválidos.")
 
-    return render(request, "registro/login.html", {'redirect_to': redirect_to})
+    return render(request, "registro/login.html", {"redirect_to": redirect_to})
 
 
 @login_required
 def cadastro(request):
+    user_permission = request.user.nivel_permissao
 
-    user_permission = request.user.usersinfos.nivel_permissao
-
-    if user_permission not in ('ADM', 'FUNC'):
+    if user_permission not in ("ADM", "FUNC"):
         messages.error(request, "Sem permissão para cadastrar usuários.")
-        return redirect('home')
+        return redirect("home")
 
-    if request.user.usersinfos.nivel_permissao == 'ADM':
+    if request.user.nivel_permissao == "ADM":
         FormUser = FormUserADM
-    elif request.user.usersinfos.nivel_permissao == 'FUNC':
+    elif request.user.nivel_permissao == "FUNC":
         FormUser = ClienteForm
 
     form = FormUser()
@@ -111,5 +110,5 @@ def arquivos(request):
 
 
 @login_required
-def arquivos_user(request):
+def meus_arquivos(request):
     return render(request, "")

@@ -76,22 +76,22 @@
                     </li>
 
                     {% if user.is_authenticated %}
-                        {% if user.usersinfos.nivel_permissao == 'CLI' %}
+                        {% if user.nivel_permissao == 'CLI' %}
 
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'arquivos_users' %}active{% endif %}" 
-                                    {% url "arquivos_user" %}>
+                                    href="https://google.com" target="_blank">
+                                    {% icon "info" style="width: 18px; height: 18px;" %} Meus Arquivos
                                 </a>
-                                {% icon "info" style="width: 18px; height: 18px;" %} Meus Arquivos
                             </li>
 
                         {% else %}
 
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'arquivos_users' %}active{% endif %}" 
-                                    {% url "arquivos" %}>
+                                    href="{% url "arquivos" %}">
+                                    {% icon "info" style="width: 18px; height: 18px;" %} Arquivos
                                 </a>
-                                {% icon "info" style="width: 18px; height: 18px;" %} Arquivos
                             </li>
 
                         {% endif %}

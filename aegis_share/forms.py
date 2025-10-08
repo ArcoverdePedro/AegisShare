@@ -10,7 +10,9 @@ class FirstUserForm(UserCreationForm):
         label="Email",
         max_length=300,
         required=True,
-        widget=forms.EmailInput(attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}),
+        widget=forms.EmailInput(
+            attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}
+        ),
     )
 
     class Meta(UserCreationForm.Meta):
@@ -35,7 +37,9 @@ class FormUserADM(UserCreationForm):
         label="Email",
         max_length=300,
         required=True,
-        widget=forms.EmailInput(attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}),
+        widget=forms.EmailInput(
+            attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}
+        ),
     )
 
     cpf = forms.CharField(
@@ -53,7 +57,14 @@ class FormUserADM(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("username", "email", "cpf", "nivel_permissao", "password1", "password2")
+        fields = (
+            "username",
+            "email",
+            "cpf",
+            "nivel_permissao",
+            "password1",
+            "password2",
+        )
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -72,7 +83,9 @@ class ClienteForm(UserCreationForm):
         label="Email",
         max_length=300,
         required=True,
-        widget=forms.EmailInput(attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}),
+        widget=forms.EmailInput(
+            attrs={"placeholder": "email@exemplo.com", "autocomplete": "email"}
+        ),
     )
 
     cpf = forms.CharField(
