@@ -5,7 +5,7 @@ from django.contrib import messages
 from .forms import FormUserADM, FirstUserForm, ClienteForm
 from django.urls import reverse
 from django.views import View
-from .models import UsersInfos
+#from .models import
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -103,3 +103,13 @@ def notifications(request):
 
 def sobre(request):
     return render(request, "informacoes/sobre.html")
+
+
+@login_required
+def arquivos(request):
+    return render(request, "")
+
+
+@login_required
+def arquivos_user(request):
+    return render(request, "")

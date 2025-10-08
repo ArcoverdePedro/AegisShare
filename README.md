@@ -10,13 +10,13 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
   * **Django Channels:** Habilita a funcionalidade de WebSockets.
   * **Redis:** Necessário como *channel layer* para os WebSockets.
   * **Docker/Docker Compose:** Para orquestração e fácil inicialização do ambiente.
-  * **Uvicorn:** Servidor ASGI para rodar o Django Channels.
+  * **Granian:** Servidor ASGI para rodar o Django Channels.
 
 -----
 
 ## Requisitos para funcionamento
 
-Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Uvicorn** após a instalação das dependências.
+Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Granian** após a instalação das dependências.
 
 ### Opção 1: Com Docker Compose (Recomendado)
 
@@ -27,7 +27,7 @@ Esta é a maneira mais fácil, pois o Docker Compose gerencia o Django, o Redis 
 2.  **Construir e Iniciar:** Na raiz do projeto, execute o seguinte comando:
 
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
 
 3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.
@@ -101,13 +101,6 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
     docker run -d --name ipfs_host -p 5001:5001 ipfs/go-ipfs
     ```
 
-2.  **Redis:** Uma instância do Redis (o *channel layer* dos WebSockets) deve estar rodando.
-
-    ```bash
-    # Exemplo rodando Redis via Docker
-    docker run -d --name redis_host -p 6379:6379 redis
-    ```
-
 #### Configuração e Execução do Django
 
 1.  **Migrações:**
@@ -116,10 +109,10 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
     python manage.py migrate
     ```
 
-2.  **Iniciar o Servidor:** Use o **Uvicorn** para servir o projeto com suporte a ASGI (WebSockets).
+2.  **Iniciar o Servidor:** Use o **Granian** para servir o projeto com suporte a ASGI (WebSockets).
 
     ```bash
-    uvicorn mysite.asgi:application --host 0.0.0.0 --port 8000
+    Granian mysite.asgi:application --host 0.0.0.0 --port 8000 --interface asgi
     ```
 
 3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.

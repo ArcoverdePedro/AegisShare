@@ -1,11 +1,11 @@
 {% extends 'navbar/navbar.html' %}
 {% load django_bootstrap5 %}
 {% load icon %}
-<head>
+
 {% block title %}Sobre - Aegis Share{% endblock %}
 {% bootstrap_css %}
 {% bootstrap_javascript %}
-</head>
+
 
 
 <style>
@@ -89,11 +89,10 @@
 </style>
 
 {% block page_content %}
-    <!-- Conteúdo da Página "Sobre" -->
     <div class="hero-sobre">
         <div class="container text-center">
             <h1 class="display-4 mb-3">{% icon "info" style="width: 20px; height: 20px;" %} Projeto Acadêmico {% icon "info" style="width: 20px; height: 20px;" %}</h1>
-            <p class="lead fw-light">Estudo de caso e implementação de um sistema de compartilhamento de arquivos com base em IPFS e arquitetura Assíncrona.</p>
+            <p class="lead fw-light">Implementação de um sistema de compartilhamento de arquivos com base em IPFS e arquitetura Assíncrona.</p>
         </div>
     </div>
 
@@ -109,51 +108,49 @@
 
         <hr class="my-5">
         
-        <!-- Seção de Funcionalidades Principais -->
-        <h2 class="text-center mb-5 fw-bold">Escopo Técnico da Implementação</h2>
-        <div class="row g-4">
-            
-            <!-- Card 1: IPFS (Descentralização) -->
-            <div class="col-md-4">
-                <div class="card p-4 feature-card shadow-sm border-0">
-                    <div class="icon-box text-center icon-ipfs">
-                        {% icon "lock" class="text-info" style="width: 30px; height: 30px;" %}
-                    </div>
-                    <h5 class="card-title text-center fw-bold">Segurança</h5>
-                    <p class="card-text text-muted">A integração com o InterPlanetary File System (IPFS) é um dos pilares do projeto. Em vez de salvar arquivos em um servidor central, eles recebem um hash (CID) e são distribuídos pela rede IPFS, o que garante sua imutabilidade. Senhas são protegidas com o algoritmo Argon2, padrão moderno de criptografia.</p>
+            <h2 class="text-center mb-5 fw-bold">Escopo Técnico da Implementação</h2>
+            <div class="row g-4">
+                
+                <!-- Card 1: IPFS (Descentralização) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box text-center icon-ipfs">
+                            {% icon "lock" class="text-info" style="width: 30px; height: 30px;" %}
+                        </div>
+                        <h5 class="card-title text-center fw-bold">Segurança</h5>
+                        <p class="card-text text-muted">A integração com o InterPlanetary File System (IPFS) é um dos pilares do projeto. Em vez de salvar arquivos em um servidor central, eles recebem um hash (CID) e são distribuídos pela rede IPFS, o que garante sua imutabilidade. Senhas são protegidas com o algoritmo Argon2, padrão moderno de criptografia.</p>
 
-                    <span class="badge bg-info text-dark">Arquitetura Segura</span>
-                </div>
-            </div>
-            
-            <!-- Card 2: WebSockets (Tempo Real) -->
-            <div class="col-md-4">
-                <div class="card p-4 feature-card shadow-sm border-0">
-                    <div class="icon-box text-center icon-realtime">
-                        {% icon "zap" class="text-danger" style="width: 30px; height: 30px;" %}
+                        <span class="badge bg-info text-dark">Arquitetura Segura</span>
                     </div>
-                    <h5 class="card-title text-center fw-bold">Velocidade e Assíncrona</h5>
-                    <p class="card-text text-muted">Django Channels, Redis e a biblioteca htmx foram incorporados ao projeto com foco em garantir alta responsividade na interface. Essas tecnologias são operadas em conjunto para proporcionar atualizações em tempo real e respostas imediatas no front-end, oferecendo uma experiência de uso mais fluida e interativa.</p>
-                    <span class="badge bg-danger">Arquitetura Veloz</span>
                 </div>
-            </div>
+                
+                <!-- Card 2: WebSockets (Tempo Real) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box text-center icon-realtime">
+                            {% icon "zap" class="text-danger" style="width: 30px; height: 30px;" %}
+                        </div>
+                        <h5 class="card-title text-center fw-bold">Velocidade e Assíncrona</h5>
+                        <p class="card-text text-muted">Django Channels, Redis e a biblioteca htmx foram incorporados ao projeto com foco em garantir alta responsividade na interface. Essas tecnologias são operadas em conjunto para proporcionar atualizações em tempo real e respostas imediatas no front-end, oferecendo uma experiência de uso mais fluida e interativa.</p>
+                        <span class="badge bg-danger">Arquitetura Veloz</span>
+                    </div>
+                </div>
 
-            <!-- Card 3: Django (Robustez) -->
-            <div class="col-md-4">
-                <div class="card p-4 feature-card shadow-sm border-0">
-                    <div class="icon-box text-center icon-django">
-                        {% icon "server" class="text-success" style="width: 30px; height: 30px;" %}
+                <!-- Card 3: Django (Robustez) -->
+                <div class="col-md-4">
+                    <div class="card p-4 feature-card shadow-sm border-0">
+                        <div class="icon-box text-center icon-django">
+                            {% icon "server" class="text-success" style="width: 30px; height: 30px;" %}
+                        </div>
+                        <h5 class="card-title text-center fw-bold">Estrutura</h5>
+                        <p class="card-text text-muted">Servido via Granian, o Django estrutura o projeto com a arquitetura MVC de forma clara e robusta. Facilitando tanto a experiência do usuário quanto o trabalho dos Devs, ao centralizar o gerenciamento de usuários, modelagem de dados e rotas de acesso, atuando como elo eficiente entre a interface e o subsistema IPFS.</p>
+                        <span class="badge bg-success">Arquitetura Bem estruturada</span>
                     </div>
-                    <h5 class="card-title text-center fw-bold">Estrutura</h5>
-                    <p class="card-text text-muted">Servido via Granian, o Django estrutura o projeto com a arquitetura MVC de forma clara e robusta. Facilitando tanto a experiência do usuário quanto o trabalho dos Devs, ao centralizar o gerenciamento de usuários, modelagem de dados e rotas de acesso, atuando como elo eficiente entre a interface e o subsistema IPFS.</p>
-                    <span class="badge bg-success">Arquitetura Bem estruturada</span>
                 </div>
             </div>
-        </div>
 
         <hr class="my-5">
 
-        <!-- Seção de Resumo Técnico -->
         <div class="row align-items-center">
             <div class="col-lg-6 mb-4 mb-lg-0">
                 <h3 class="fw-bold mb-3">Design Arquitetural e Ferramentas</h3>

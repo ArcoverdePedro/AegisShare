@@ -19,12 +19,13 @@
             
             <a href="#" class="btn btn-light btn-lg mt-3">
                 {% icon "search" style="width: 18px; height: 18px;" %}
-                Procurar um Arquivo
+                Procurar um Arquivo {{user.id}}
             </a>
         </div>
     </section>
 
-    {% if messages %}
+{% if messages %}
+    {% for message in messages %}
         <div class="modal fade" id="djangoMessagesModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="djangoMessagesModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered">
                 <div class="modal-content">
@@ -34,33 +35,29 @@
                     </div>
                     <div class="modal-body text-center">
                         <div id="messagesContainer">
-                            {% for message in messages %}
-                                <p class="text-secondary small mb-1">{{ message }}</p>
-                            {% endfor %}
+                            <p class="text-secondary small mb-1">{{ message }}</p>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-{{ message.tags }} w-100" data-bs-dismiss="modal">
                             OK
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const modalElement = document.getElementById('djangoMessagesModal');
-
-                // Verifica se o modal existe na página
-                if (modalElement) {
-                    // Aciona o modal usando a classe nativa do Bootstrap
-                    const djangoMessagesModal = new bootstrap.Modal(modalElement);
-                    djangoMessagesModal.show();
-                }
-            });
-        </script>
-    {% endif %}
+    {% endfor %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalElement = document.getElementById('djangoMessagesModal');
+            if (modalElement) {
+                const djangoMessagesModal = new bootstrap.Modal(modalElement);
+                djangoMessagesModal.show();
+            }
+        });
+    </script>
+{% endif %}
 
     <script>
         // URL do WebSocket (ajuste para o seu domínio)

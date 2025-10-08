@@ -25,6 +25,16 @@
                         <h3 class="fw-bold">CADASTRAR</h3>
                         <p class="text-muted">Crie uma conta</p>
                     </div>
+                    
+                    <div id="message-container">
+                       {% if messages %}
+                           {% for message in messages %}
+                               <div class="alert alert-{{ message.tags }}" role="alert">
+                                   {{ message }}
+                               </div>
+                           {% endfor %}
+                       {% endif %}
+                   </div>
 
                     <form method="post">
                         {% csrf_token %}
@@ -39,15 +49,6 @@
 
                     </form>
 
-                     <div id="message-container">
-                        {% if messages %}
-                            {% for message in messages %}
-                                <div class="alert {{ message.tags }}" role="alert">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
 
                 </div>
             </div>

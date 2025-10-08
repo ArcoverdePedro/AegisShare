@@ -4,6 +4,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ENV UV_NO_CACHE=1 \
     UV_CONCURRENT_INSTALLS=4 \
+    UV_NO_DEV=1 \
     UV_CACHE_DIR=/dev/null \
     PYTHONPYCACHEPREFIX=/dev/null \
     PYTHONHASHSEED=random \

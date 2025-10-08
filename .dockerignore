@@ -134,6 +134,11 @@ Jenkinsfile
 *~
 .DS_Store
 Thumbs.db
+*.md
+README
+readme
+LICENSE
+license
 
 # Scrapy
 .scrapy
