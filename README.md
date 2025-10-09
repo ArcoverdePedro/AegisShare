@@ -16,7 +16,7 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
 
 ## Requisitos para funcionamento
 
-Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **Redis local/Docker** junto com **Granian** após a instalação das dependências.
+Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **IPFS no Docker** junto com **Granian** após a instalação das dependências.
 
 ### Opção 1: Com Docker Compose (Recomendado)
 
