@@ -61,7 +61,7 @@ class IPFSFile(models.Model):
         if self.dono_arquivo == user:
             return True
 
-        return self.usuarios_permitidos.filter(pk=user.pk).exists()
+        return self.usuarios_permitidos.filter(id=user.id).exists()
 
     def __str__(self):
         return self.nome_arquivo

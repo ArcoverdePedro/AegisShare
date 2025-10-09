@@ -10,5 +10,6 @@ urlpatterns = [
     path("cadastro/", views.cadastro, name="cadastro"),
     path("sobre/", views.sobre, name="sobre"),
     path("arquivos/", views.arquivos, name="arquivos"),
+    path("upload/", views.upload, name="upload"),
     path("notifications/", views.notifications, name="notifications"),
 ]

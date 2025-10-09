@@ -28,10 +28,14 @@
                     
                     <div id="message-container">
                        {% if messages %}
-                           {% for message in messages %}
-                               <div class="alert alert-{{ message.tags }}" role="alert">
-                                   {{ message }}
-                               </div>
+                            {% for message in messages %}
+                                {% if message.tags != "danger" %}
+                            
+                                    <div class="alert alert-{{ message.tags }}" role="alert">
+                                        {{ message }}
+                                    </div>
+                            
+                                {% endif %}
                            {% endfor %}
                        {% endif %}
                    </div>
@@ -89,6 +93,19 @@
             messageContainer.style.display = 'none';
         }, tempoParaDesaparecer + 500);
     }
+</script>
+
+<script>
+    if (window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+
+    window.onload = function() {
+        const forms = document.getElementsByTagName('form');
+        for (let form of forms) {
+            form.reset();
+        }
+    };
 </script>
 
 

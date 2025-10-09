@@ -43,6 +43,10 @@ def home(request):
         return render(request, "home/homesemlogin.html")
 
 
+def sobre(request):
+    return render(request, "informacoes/sobre.html")
+
+
 def custom_login(request):
     redirect_to = request.POST.get("next") or request.GET.get("next")
     if request.method == "POST":
@@ -59,21 +63,21 @@ def custom_login(request):
                 return redirect("home")
         else:
             messages.error(request, "Usuário ou senha inválidos.")
+            return redirect("login")
 
     return render(request, "registro/login.html", {"redirect_to": redirect_to})
 
 
 @login_required
 def cadastro(request):
-    user_permission = request.user.nivel_permissao
 
-    if user_permission not in ("ADM", "FUNC"):
-        messages.error(request, "Sem permissão para cadastrar usuários.")
+    if request.user.nivel_permissao == "CLI":
+        messages.error(request, "Sem permissão para essa página.")
         return redirect("home")
 
     if request.user.nivel_permissao == "ADM":
         FormUser = FormUserADM
-    elif request.user.nivel_permissao == "FUNC":
+    else:
         FormUser = ClienteForm
 
     form = FormUser()
@@ -89,9 +93,10 @@ def cadastro(request):
             for field in form:
                 for error in field.errors:
                     messages.error(request, f"Erro em {field.label}: {error}")
+
             for error in form.non_field_errors():
                 messages.error(request, error)
-
+            
     return render(request, "registro/cadastro.html", {"form": form})
 
 
@@ -100,13 +105,21 @@ def notifications(request):
     return render(request, "notifications/notifications.html")
 
 
-def sobre(request):
-    return render(request, "informacoes/sobre.html")
+@login_required
+def arquivos(request):
+    if request.user.nivel_permissao == "CLI":
+        ...
+        return render(request, "arquivos/meus_arquivos.html")
+    else:
+        ...
+        return render(request, "arquivos/arquivos_clientes.html")
 
 
 @login_required
-def arquivos(request):
-    if request.user.nivel_permissao in ('CLI', 'FUNC'):
-        return render(request, "arquivos/arquivos_clientes.html")
-    else:
-        return render(request, "arquivos/meus_arquivos.html")
+def upload(request):
+    
+    if request.user.nivel_permissao == "CLI":
+        messages.error(request, "Sem permissão para essa página.")
+        return redirect("home")
+    
+    return render(request, "arquivos/upload.html")

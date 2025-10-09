@@ -11,15 +11,15 @@
     <section class="hero-section">
         <div class="container text-center">
             <h1 class="display-4 fw-bold">Bem-vindo {{user.username}}</h1>
-            {% if user.nivel_permissao == 'FUNC' or user.nivel_permissao == 'ADM' %}
-            <p class="lead">oque deseja fazer?</p>
-            <a href="#" class="btn btn-light btn-lg mt-3">
-                {% icon "upload" style="width: 18px; height: 18px;" %}
-                Upload de Arquivo
-            </a>
+            {% if user.nivel_permissao != 'CLI' %}
+                <p class="lead">oque deseja fazer?</p>
+                <a href="{% url "upload" %}" class="btn btn-hero-light btn-lg mt-3">
+                    {% icon "upload" style="width: 18px; height: 18px;" %}
+                    Upload de Arquivo
+                </a>
             {% endif %}
             
-            <a href="#" class="btn btn-light btn-lg mt-3">
+            <a href="{% url "arquivos" %}" class="btn btn-hero-light btn-lg mt-3">
                 {% icon "search" style="width: 18px; height: 18px;" %}
                 Procurar um Arquivo {{user.id}}
             </a>
@@ -28,11 +28,12 @@
 
 {% if messages %}
     {% for message in messages %}
+        {% if message.tags != "success" %}
         <div class="modal fade" id="djangoMessagesModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="djangoMessagesModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-sm modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="djangoMessagesModalLabel">Notificação</h5>
+                        <h5 class="modal-title text-center" id="djangoMessagesModalLabel">ATENÇÃO</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                     </div>
                     <div class="modal-body text-center">
@@ -41,13 +42,14 @@
                         </div>
                     </div>
                     <div class="modal-footer justify-content-center">
-                        <button type="button" class="btn btn-{{ message.tags }} w-100" data-bs-dismiss="modal">
+                        <button type="button" class="btn btn-hero-{{ message.tags }} w-100" data-bs-dismiss="modal">
                             OK
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+        {% endif %}
     {% endfor %}
     
     <script>

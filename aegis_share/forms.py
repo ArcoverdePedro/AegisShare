@@ -71,6 +71,9 @@ class FormUserADM(UserCreationForm):
         user.email = self.cleaned_data["email"]
         user.cpf = self.cleaned_data["cpf"]
         user.nivel_permissao = self.cleaned_data["nivel_permissao"]
+        if self.cleaned_data["nivel_permissao"] == "ADM":
+            user.is_staff = True
+            user.is_superuser = True
         if commit:
             user.save()
         return user
