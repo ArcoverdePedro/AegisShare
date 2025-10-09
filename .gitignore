@@ -72,6 +72,7 @@ env/
 env.bak/
 .ruff_cache
 .ruff_cache/
+*.sqlite3
 
 # IDE and editor files
 .idea/
@@ -122,3 +123,4 @@ Thumbs.db
 # Flask (caso tenha algum componente)
 instance/
 .webassets-cache
+

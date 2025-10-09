@@ -73,7 +73,7 @@ class FileAccess(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
-    date_shared = models.DateTimeField(auto_now_add=True)
+    data_compartilhado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = (("arquivo", "user"),)
