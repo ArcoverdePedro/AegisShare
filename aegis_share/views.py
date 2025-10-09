@@ -106,9 +106,7 @@ def sobre(request):
 
 @login_required
 def arquivos(request):
-    return render(request, "")
-
-
-@login_required
-def meus_arquivos(request):
-    return render(request, "arquivos/arquivos_clientes.html")
+    if request.user.nivel_permissao in ('CLI', 'FUNC'):
+        return render(request, "arquivos/arquivos_clientes.html")
+    else:
+        return render(request, "arquivos/meus_arquivos.html")
