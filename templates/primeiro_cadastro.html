@@ -19,16 +19,45 @@
             min-height: 100vh;
             margin: 0;
         }
+        
         .card {
             max-width: 500px; /* Limita a largura do card */
             width: 100%;
         }
+
+        .aegis-primary {
+            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
+            color: white;
+            margin-top: 0;
+        }
+
+        .btn-aegis-primary {
+            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-aegis-primary:hover {
+            filter: brightness(0.85);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .aegis-warning {
+            background: linear-gradient(135deg, #ffc107ff 0%, #fd7e14ff 100%);
+            color: black;
+            margin-top: 0;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="card shadow-lg">
-    <div class="card-header bg-primary text-white text-center">
+    <div class="card-header aegis-primary text-white text-center">
         <h1 class="h4 mb-0">Bem-vindo(a)! Configuração Inicial</h1>
     </div>
     <div class="card-body p-4">
@@ -42,13 +71,13 @@
             {{ form|crispy }}
 
             <div class="d-grid gap-2 mt-4">
-                <button type="submit" class="btn btn-primary btn-lg">
+                <button type="submit" class="btn btn-aegis-primary btn-lg">
                     Criar Superusuário
                 </button>
             </div>
         </form>
     </div>
-    <div class="card-footer text-center text-muted">
+    <div class="card-footer aegis-warning text-center text-muted">
         Após a criação, você será redirecionado(a) para a Home.
     </div>
 </div>
