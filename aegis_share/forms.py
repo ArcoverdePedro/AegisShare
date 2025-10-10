@@ -15,12 +15,20 @@ class FirstUserForm(UserCreationForm):
         ),
     )
 
+    cpf = forms.CharField(
+        label="CPF",
+        max_length=14,
+        required=True,
+        widget=forms.TextInput(attrs={"placeholder": "999.999.999-99"}),
+    )
+
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("username", "email", "password1", "password2")
+        fields = ("username", "email", "cpf" , "password1", "password2")
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
         user.email = self.cleaned_data["email"]
         user.is_staff = True
         user.is_superuser = True
