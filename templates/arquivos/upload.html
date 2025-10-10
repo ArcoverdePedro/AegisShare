@@ -1,31 +1,46 @@
-{% extends 'navbar/navbar.html' %}
-{% load crispy_forms_tags %}
-{% load django_bootstrap5 %}
-{% load icon %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Modal Bulma + Hyperscript</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
+  <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+</head>
+<body class="has-background-light p-6">
 
-<style>
-.fade-out {
-    opacity: 0;
-    transition: opacity 0.5s ease-out;
-</style>
+  <!-- Botão que abre o modal -->
+  <button
+    class="button is-primary"
+    _="on click add .is-active to #meu_modal">
+    Abrir Modal
+  </button>
 
+  <!-- Modal Bulma -->
+  <div id="meu_modal" class="modal">
+    <div class="modal-background"
+         _="on click remove .is-active from #meu_modal"></div>
 
-{% block title %}Upload - Aegis Share{% endblock %}
+    <div class="modal-card">
+      <header class="modal-card-head">
+        <p class="modal-card-title">Título do Modal</p>
+        <button class="delete"
+                aria-label="close"
+                _="on click remove .is-active from #meu_modal"></button>
+      </header>
 
-{% block page_content %}
+      <section class="modal-card-body">
+        <p>Este é um modal Bulma controlado com Hyperscript!</p>
+      </section>
 
-<div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="toast-header">
-        <img src="..." class="rounded me-2" alt="...">
-        <strong class="me-auto">Bootstrap</strong>
-        <small class="text-body-secondary">11 mins ago</small>
-        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      <footer class="modal-card-foot">
+        <button class="button"
+                _="on click remove .is-active from #meu_modal">
+          Cancelar
+        </button>
+        <button class="button is-success">Confirmar</button>
+      </footer>
     </div>
-    <div class="toast-body">
-        Hello, world! This is a toast message.
-    </div>
-</div>
+  </div>
 
-{% endblock %}
+</body>
+</html>

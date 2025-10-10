@@ -12,7 +12,7 @@
         <div class="container text-center">
             <h1 class="display-4 fw-bold">Bem-vindo {{user.username}}</h1>
             {% if user.nivel_permissao != 'CLI' %}
-                <p class="lead">oque deseja fazer?</p>
+                <p class="lead">o que deseja fazer?</p>
                 <a href="{% url "upload" %}" class="btn btn-aegis-light btn-lg mt-3">
                     {% icon "upload" style="width: 18px; height: 18px;" %}
                     Upload de Arquivo
