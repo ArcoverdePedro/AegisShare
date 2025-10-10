@@ -14,6 +14,7 @@
             <div class="row justify-content-center">
                 <div class="col-md-6 col-lg-4">
                     <div class="auth-card p-4">
+
                         <div class="text-center mb-4">
                             <h3 class="fw-bold">ENTRAR</h3>
                             <p class="text-muted">Acesse sua conta</p>
@@ -41,7 +42,7 @@
                             <div id="message-container">
                                 {% if messages %}
                                     {% for message in messages %}
-                                        <div class="alert alert-{{ message.tags }}" role="alert">
+                                        <div class="fade show alert alert-{{ message.tags }} auto-dismiss" role="alert">
                                             {{ message }}
                                         </div>
                                     {% endfor %}
@@ -55,6 +56,7 @@
                             </div>
 
                         </form>
+
                     </div>
                 </div>
             </div>
@@ -63,18 +65,4 @@
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        const messageContainer = document.getElementById('message-container');
-        const tempoParaDesaparecer = 2500;
-
-        if (messageContainer) {
-            setTimeout(() => {
-                messageContainer.classList.add('fade-out'); 
-            }, tempoParaDesaparecer);
-            
-            setTimeout(() => {
-                messageContainer.style.display = 'none';
-            }, tempoParaDesaparecer + 500);
-        }
-    </script>
 {% endblock scripts %}

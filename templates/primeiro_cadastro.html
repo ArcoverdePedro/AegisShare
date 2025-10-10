@@ -61,8 +61,11 @@
         <h1 class="h4 mb-0">Bem-vindo(a)! Configuração Inicial</h1>
     </div>
     <div class="card-body p-4">
+        <p class="text-center">
+            Detectamos que este é o Primeiro acesso ao Aegis Share. Crie a Primeira conta de Administrador.
+        </p>
         <p class="text-muted text-center">
-            Detectamos que este é o primeiro acesso ao Aegis Share. Por favor, crie a conta de Administrador.
+            Cada Administrador deve ter sua propria conta
         </p>
 
         <form method="post">
@@ -77,12 +80,28 @@
             </div>
         </form>
     </div>
-    <div class="card-footer aegis-warning text-center text-muted">
+    <div class="card-footer aegis-warning text-center">
         Após a criação, você será redirecionado(a) para a Home.
     </div>
 </div>
 
 {% bootstrap_javascript %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+<script>
+    $(document).ready(function(){
+        $('.cpf').mask('000.000.000-00', {
+            reverse: false,
+            translation: {
+                '0': {pattern: /\d/} 
+            }
+        });
+
+    });
+</script>
 
 </body>
 </html>

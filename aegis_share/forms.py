@@ -19,7 +19,9 @@ class FirstUserForm(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(
+            attrs={"class":"cpf", "placeholder": "999.999.999-99"}
+        ),
     )
 
     class Meta(UserCreationForm.Meta):
@@ -29,7 +31,7 @@ class FirstUserForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.email = self.cleaned_data["email"]
+        user.cpf = self.cleaned_data["cpf"]
         user.is_staff = True
         user.is_superuser = True
         user.nivel_permissao = "ADM"
@@ -54,7 +56,7 @@ class FormUserADM(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(attrs={"class":"cpf", "placeholder": "999.999.999-99"}),
     )
 
     nivel_permissao = forms.ChoiceField(
@@ -103,7 +105,7 @@ class ClienteForm(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(attrs={"class":"cpf", "placeholder": "999.999.999-99"}),
     )
 
     class Meta(UserCreationForm.Meta):

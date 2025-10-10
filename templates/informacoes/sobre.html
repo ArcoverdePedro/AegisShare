@@ -7,89 +7,8 @@
 {% bootstrap_javascript %}
 
 
-
-<style>
-    body {
-        padding-top: 56px; /* Ajuste o padding para o navbar fixo */
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        background-color: #f8f9fa; /* Levemente cinza */
-    }
-
-    .content-wrapper {
-        flex-grow: 1;
-        margin-top: 0;
-        padding-top: 10px; 
-    }
-
-    .hero-section {
-        background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-        color: white;
-        padding: 80px 0 60px;
-        margin-top: 0;
-        margin-bottom: 20px; /* Adicionado margem inferior */
-        border-radius: 0 0 15px 15px;
-    }
-    
-    /* Estilo para a seção hero da página Sobre */
-    .hero-sobre {
-        background: linear-gradient(90deg, #1f4068 0%, #162447 100%);
-        color: #f1f1f1;
-        padding: 60px 0;
-        margin-top: -10px;
-        margin-bottom: 30px;
-        border-radius: 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .navbar-brand {
-        font-weight: 900;
-    }
-
-    /* Estilo para os ícones feather */
-    .feather {
-        width: 18px;
-        height: 18px;
-        margin-right: 5px;
-        vertical-align: -2px;
-    }
-
-    .navbar-brand .feather {
-        width: 20px;
-        height: 20px;
-        margin-right: 8px;
-    }
-
-    .dropdown-toggle .feather {
-        margin-right: 5px;
-    }
-    
-    .feature-card {
-        transition: transform 0.3s, box-shadow 0.3s;
-        height: 100%;
-        border-radius: 12px;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-    }
-
-    .icon-box {
-        display: inline-block;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-    }
-
-    .icon-ipfs { background-color: #65C2CB; color: white; }
-    .icon-realtime { background-color: #DE5FE9; color: white; }
-    .icon-django { background-color: #092E20; color: white; }
-</style>
-
 {% block page_content %}
-    <div class="hero-sobre">
+    <div class="justify-content-center">
         <div class="container text-center">
             <h1 class="display-4 mb-3">{% icon "info" style="width: 20px; height: 20px;" %} Projeto Acadêmico {% icon "info" style="width: 20px; height: 20px;" %}</h1>
             <p class="lead fw-light">Implementação de um sistema de compartilhamento de arquivos com base em IPFS e arquitetura Assíncrona.</p>
@@ -99,7 +18,7 @@
     <div class="container my-5">
         <div class="row mb-5 justify-content-center">
             <div class="col-lg-10">
-                <h2 class="text-center mb-4 text-primary fw-bold">O Objetivo do Projeto</h2>
+                <h2 class="text-center mb-4 aegis-primary fw-bold">O Objetivo do Projeto</h2>
                 <p class="fs-5 text-center text-secondary">
                     O Aegis Share foi desenvolvido como um projeto acadêmico para explorar e validar a viabilidade de integrar protocolos de rede descentralizados (como o IPFS) com a arquitetura de um framework web tradicional e robusto como o Django. O foco principal é a resolução de desafios técnicos em torno da segurança e da imutabilidade de arquivos.
                 </p>
@@ -115,12 +34,12 @@
                 <div class="col-md-4">
                     <div class="card p-4 feature-card shadow-sm border-0">
                         <div class="icon-box text-center icon-ipfs">
-                            {% icon "lock" class="text-info" style="width: 30px; height: 30px;" %}
+                            {% icon "lock" class="text-primary" style="width: 30px; height: 30px;" %}
                         </div>
                         <h5 class="card-title text-center fw-bold">Segurança</h5>
                         <p class="card-text text-muted">A integração com o InterPlanetary File System (IPFS) é um dos pilares do projeto. Em vez de salvar arquivos em um servidor central, eles recebem um hash (CID) e são distribuídos pela rede IPFS, o que garante sua imutabilidade. Senhas são protegidas com o algoritmo Argon2, padrão moderno de criptografia.</p>
 
-                        <span class="badge aegis-info text-dark">Arquitetura Segura</span>
+                        <span class="badge aegis-primary">Arquitetura Segura</span>
                     </div>
                 </div>
                 
@@ -144,7 +63,7 @@
                         </div>
                         <h5 class="card-title text-center fw-bold">Estrutura</h5>
                         <p class="card-text text-muted">Servido via Granian, o Django estrutura o projeto com a arquitetura MVC de forma clara e robusta. Facilitando tanto a experiência do usuário quanto o trabalho dos Devs, ao centralizar o gerenciamento de usuários, modelagem de dados e rotas de acesso, atuando como elo eficiente entre a interface e o subsistema IPFS.</p>
-                        <span class="badge aegis-success">Arquitetura Bem estruturada</span>
+                        <span class="badge aegis-success">Arquitetura de estruturada consolidada</span>
                     </div>
                 </div>
             </div>
@@ -181,7 +100,4 @@
         </div>
     </div>
     <!-- Fim do Conteúdo da Página "Sobre" -->
-{% endblock %}
-   
-{% block scripts %}
 {% endblock %}

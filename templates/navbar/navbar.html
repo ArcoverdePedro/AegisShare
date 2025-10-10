@@ -267,10 +267,32 @@
             margin-right: 5px;
         }
 
-        /* Transição para Desaparecimento */
-        .fade-out {
-            opacity: 0;
-            transition: opacity 0.5s ease-out;
+        /* Classe genérica para auto-dismiss */
+        .auto-dismiss {
+            animation: autoDismiss 1s ease-in-out 2s forwards;
+            transform-origin: top;
+        }
+
+        @keyframes autoDismiss {
+            0% {
+                opacity: 1;
+                transform: scaleY(1);
+                max-height: 200px;
+                margin-bottom: 1rem;
+            }
+            70% {
+                opacity: 0;
+                transform: scaleY(0);
+            }
+            100% {
+                opacity: 0;
+                max-height: 0;
+                margin-bottom: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                transform: scaleY(0);
+                overflow: hidden;
+            }
         }
 
     </style>
@@ -288,7 +310,6 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
 
-                    <!-- Home -->
                     <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
                             href="{% url "home" %}">
@@ -307,7 +328,6 @@
                         </li>
                         
                         
-                        <!-- Produtos -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
                             href="#">
@@ -327,7 +347,6 @@
                         {% endif %}
                     {% else %}
                         
-                        <!-- Sobre -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'sobre' %}active{% endif %}" 
                             href="{% url 'sobre' %}">
@@ -335,7 +354,6 @@
                             </a>
                         </li>
                         
-                        <!-- Produtos -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
                             href="#">
@@ -343,7 +361,6 @@
                             </a>
                         </li>
                         
-                        <!-- Contato -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
                             href="#">
@@ -407,7 +424,6 @@
         {% endblock %}
     </div>
 
-    <!-- Footer -->
     <footer class="bg-dark text-light text-center py-0.5 mt-5">
         <div class="container">
             <p>&#x1F12F; <a href="https://github.com/ArcoverdePedro/AegisShare.git" style="color:white">Aegis Share</a>, Projeto de <a href="https://github.com/ArcoverdePedro" style="color:white">Pedro Abílio Pereira Arcoverde.</a> {% now "Y" %}</p>
@@ -439,5 +455,43 @@
 
     {% block scripts %}
     {% endblock %}
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <script>
+        $(document).ready(function(){
+            $('.cpf').mask('000.000.000-00', {
+                reverse: false,
+                translation: {
+                    '0': {pattern: /\d/} 
+                }
+            });
+            $('.telefone').mask('99999-9999', {
+                reverse: false,
+                translation: {
+                    '0': {pattern: /\d/} 
+                }
+            });
+
+        });
+    </script>
+
+    <script>
+        // Previne reenvio de formulário ao atualizar a página
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Reseta formulários quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.getElementsByTagName('form');
+            for (let form of forms) {
+                form.reset();
+            }
+        });
+    </script>
+
 </body>
 </html>

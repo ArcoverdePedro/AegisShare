@@ -5,12 +5,6 @@
 {% bootstrap_css %}
 {% bootstrap_javascript %}
 
-<style>
-.fade-out {
-    opacity: 0;
-    transition: opacity 0.5s ease-out;
-</style>
-
 
 {% block title %}Cadastro - Aegis Share{% endblock %}
 
@@ -31,7 +25,7 @@
                             {% for message in messages %}
                                 {% if message.tags != "danger" %}
                             
-                                    <div class="alert alert-{{ message.tags }}" role="alert">
+                                    <div class="auto-dismiss alert alert-{{ message.tags }}" role="alert">
                                         {{ message }}
                                     </div>
                             
@@ -61,52 +55,3 @@
 </div>
 
 {% endblock %}
-
-{% block scripts %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
-<script>
-    $(document).ready(function(){
-        $('#id_cpf').mask('000.000.000-00', {
-            reverse: false,
-            translation: {
-                '0': {pattern: /\d/} 
-            }
-        });
-
-    });
-</script>
-
-<script>
-
-    const messageContainer = document.getElementById('message-container');
-    const tempoParaDesaparecer = 2500;
-
-    if (messageContainer) {
-        setTimeout(() => {
-            messageContainer.classList.add('fade-out'); 
-        }, tempoParaDesaparecer);
-        
-        setTimeout(() => {
-            messageContainer.style.display = 'none';
-        }, tempoParaDesaparecer + 500);
-    }
-</script>
-
-<script>
-    if (window.history.replaceState) {
-        window.history.replaceState(null, null, window.location.href);
-    }
-
-    window.onload = function() {
-        const forms = document.getElementsByTagName('form');
-        for (let form of forms) {
-            form.reset();
-        }
-    };
-</script>
-
-
-{% endblock scripts %}
