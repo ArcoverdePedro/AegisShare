@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 {% load static %}
-{% load django_bootstrap5 %}
+{% load bulma_tags %}
+{% load hyperscript %}
 {% load icon %}
 <html lang="pt-br">
 <head>
@@ -9,8 +10,6 @@
     <title>{% block title %}Meu App Django - Home{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}"> 
     
-    {% bootstrap_css %}
-    {% bootstrap_javascript %}
     
     <style>
 
@@ -355,157 +354,130 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
         <div class="container">
+            <div class="navbar-brand">
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-
-                    <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
-                            href="{% url "home" %}">
-                            {% icon "home" style="width: 18px; height: 18px;" %} Home
-                        </a>
-                    </li>
+            <div id="navbarMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" 
+                       href="{% url 'home' %}">
+                        {% icon "home" style="width: 18px; height: 18px;" %} Home
+                    </a>
 
                     {% if user.is_authenticated %}
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" 
+                           href="{% url 'arquivos' %}">
+                            {% icon "info" style="width: 18px; height: 18px;" %} {% if user.nivel_permissao == 'CLI' %}Meus{% endif %} Arquivos
+                        </a>
                         
-
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'arquivos' %}active{% endif %}" 
-                                href="{% url "arquivos" %}">
-                                {% icon "info" style="width: 18px; height: 18px;" %} {% if user.nivel_permissao == 'CLI' %}Meus{% endif %} Arquivos
-                            </a>
-                        </li>
-                        
-                        
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
-                            href="#">
-                                {% icon "package" style="width: 18px; height: 18px;" %} Produtos
-                            </a>
-                        </li>
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'products' %}is-active{% endif %}" 
+                           href="#">
+                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
+                        </a>
                         
                         {% if user.nivel_permissao != "CLI" %}
-                            
-                            <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
-                                href="#">
+                            <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
+                               href="#">
                                 {% icon "mail" style="width: 18px; height: 18px;" %} Chat
-                                </a>
-                            </li>
-                            
+                            </a>
                         {% endif %}
                     {% else %}
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'sobre' %}is-active{% endif %}" 
+                           href="{% url 'sobre' %}">
+                            {% icon "info" style="width: 18px; height: 18px;" %} Sobre
+                        </a>
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'sobre' %}active{% endif %}" 
-                            href="{% url 'sobre' %}">
-                                {% icon "info" style="width: 18px; height: 18px;" %} Sobre
-                            </a>
-                        </li>
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'products' %}is-active{% endif %}" 
+                           href="#">
+                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
+                        </a>
                         
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'products' %}active{% endif %}" 
-                            href="#">
-                                {% icon "package" style="width: 18px; height: 18px;" %} Produtos
-                            </a>
-                        </li>
-                        
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" 
-                            href="#">
-                                {% icon "mail" style="width: 18px; height: 18px;" %} Contato
-                            </a>
-                        </li>
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
+                           href="#">
+                            {% icon "mail" style="width: 18px; height: 18px;" %} Contato
+                        </a>
                     {% endif %}
-                </ul>
+                </div>
                 
-                <ul class="navbar-nav">
+                <div class="navbar-end">
                     {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <button class="nav-link dropdown-toggle" type="button" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
                                 {% icon "user" %} {{ user.username }}
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" 
-                                       href="#">
-                                        {% icon "user" %} Meu Perfil
-                                    </a>
-                                </li>
+                            </a>
+                            
+                            <div class="navbar-dropdown is-right">
+                                <a class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" 
+                                   href="#">
+                                    {% icon "user" %} Meu Perfil
+                                </a>
+                                
                                 {% if user.nivel_permissao != "CLI" %}
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}" 
+                                    <a class="navbar-item {% if request.resolver_match.url_name == 'settings' %}is-active{% endif %}" 
                                        href="#">
                                         {% icon "settings" %} Configurações
                                     </a>
-                                </li>
-                                    <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'cadastro' %}active{% endif %}" 
-                                        href="{% url "cadastro" %}">
-                                            {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
-                                        </a>
-                                    </li>
+                                    
+                                    <a class="navbar-item {% if request.resolver_match.url_name == 'cadastro' %}is-active{% endif %}" 
+                                       href="{% url 'cadastro' %}">
+                                        {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
+                                    </a>
                                 {% endif %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#logoutModal">
-                                        {% icon "log-out" %} Sair
-                                    </button>
-                                </li>
-                            </ul>
-                        </li>
+                                
+                                <hr class="navbar-divider">
+                                
+                                <a class="navbar-item" id="logoutTrigger">
+                                    {% icon "log-out" %} Sair
+                                </a>
+                            </div>
+                        </div>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" 
-                               href="{% url "login" %}">
-                                {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
-                            </a>
-                        </li>
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}" 
+                           href="{% url 'login' %}">
+                            {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
+                        </a>
                     {% endif %}
-                </ul>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="content-wrapper">
+    <div class="content-wrapper" style="padding-top: 52px;">
         {% block page_content %}
-    
         {% endblock %}
     </div>
 
-    <footer class="bg-dark text-light text-center py-0.5 mt-5">
+    <footer class="footer has-background-dark has-text-light has-text-centered" style="padding: 1rem 1.5rem;">
         <div class="container">
-            <p>&#x1F12F; <a href="https://github.com/ArcoverdePedro/AegisShare.git" style="color:white">Aegis Share</a>, Projeto de <a href="https://github.com/ArcoverdePedro" style="color:white">Pedro Abílio Pereira Arcoverde.</a> {% now "Y" %}</p>
+            <p>&#x1F12F; <a href="https://github.com/ArcoverdePedro/AegisShare.git" class="has-text-white">Aegis Share</a>, Projeto de <a href="https://github.com/ArcoverdePedro" class="has-text-white">Pedro Abílio Pereira Arcoverde.</a> {% now "Y" %}</p>
         </div>
     </footer>
 
-    <div class="modal fade" id="logoutModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutModalLabel">Confirmar Saída</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Tem certeza que deseja sair?</p>
-                </div>
-                <div class="modal-footer">
-
-                    <form method="post" action="{% url 'logout' %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-aegis-danger">Sair</button>
-                    </form>
-                    
-                    <button type="button" class="btn btn-aegis-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-            </div>
+    <!-- Modal de Logout -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-background"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title">Confirmar Saída</p>
+                <button class="delete" aria-label="close" id="closeModal"></button>
+            </header>
+            <section class="modal-card-body">
+                <p>Tem certeza que deseja sair?</p>
+            </section>
+            <footer class="modal-card-foot">
+                <form method="post" action="{% url 'logout' %}" class="is-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="button is-danger">Sair</button>
+                </form>
+                <button class="button" id="cancelModal">Cancelar</button>
+            </footer>
         </div>
     </div>
 
@@ -513,10 +485,55 @@
     {% endblock %}
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
     <script>
+        // Burger menu toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            
+            $navbarBurgers.forEach( el => {
+                el.addEventListener('click', () => {
+                    const target = el.dataset.target;
+                    const $target = document.getElementById(target);
+                    el.classList.toggle('is-active');
+                    $target.classList.toggle('is-active');
+                });
+            });
+        });
+
+        // Modal toggle
+        const modal = document.getElementById('logoutModal');
+        const logoutTrigger = document.getElementById('logoutTrigger');
+        const closeModal = document.getElementById('closeModal');
+        const cancelModal = document.getElementById('cancelModal');
+        const modalBackground = modal.querySelector('.modal-background');
+
+        if (logoutTrigger) {
+            logoutTrigger.addEventListener('click', () => {
+                modal.classList.add('is-active');
+            });
+        }
+
+        if (closeModal) {
+            closeModal.addEventListener('click', () => {
+                modal.classList.remove('is-active');
+            });
+        }
+
+        if (cancelModal) {
+            cancelModal.addEventListener('click', () => {
+                modal.classList.remove('is-active');
+            });
+        }
+
+        if (modalBackground) {
+            modalBackground.addEventListener('click', () => {
+                modal.classList.remove('is-active');
+            });
+        }
+
+        // Máscaras jQuery
         $(document).ready(function(){
             $('.cpf').mask('000.000.000-00', {
                 reverse: false,
@@ -530,11 +547,8 @@
                     '0': {pattern: /\d/} 
                 }
             });
-
         });
-    </script>
 
-    <script>
         // Previne reenvio de formulário ao atualizar a página
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
