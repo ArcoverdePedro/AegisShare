@@ -355,6 +355,19 @@ wheels = [
 ]
 
 [[package]]
+name = "crispy-bulma"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-crispy-forms" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/21/072e37f692f2cacb9807153b64ab214f67847644a3097a4dbd6bec699b59/crispy_bulma-0.12.0.tar.gz", hash = "sha256:15edbab15a313635b990fe64752297a37d752b2f3b6aa2c6b9060da54a33dda2", size = 34946, upload-time = "2025-05-11T14:09:47.964Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cc/6e/54efc125f9eaf58f4a1cd2e3dd5f04e65e4c6984bf2ee7e11db91a31021a/crispy_bulma-0.12.0-py3-none-any.whl", hash = "sha256:6fb2b01d3fac6ad7a9d062164fc769711f47149138f00dfbd2f9a4ce14907982", size = 22081, upload-time = "2025-05-11T14:09:46.371Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.2"
 source = { registry = "https://pypi.org/simple" }
@@ -497,19 +510,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-hyperscript"
-version = "1.5.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "hyperscript-dump" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/af/cf/bd1a2804f474b16ea6a22b8fc92109f71eb7f4bef5e12758c366ed7866a5/django_hyperscript-1.5.2.tar.gz", hash = "sha256:31a3a11119ac23e6485bbca064b6e8a9e4e680e490b82e6010b561a4caf81959", size = 6045, upload-time = "2025-04-02T05:37:29.25Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/47/96bdcf968fd40148c0a7eb13e73070e8fbb7af4746f7d72fc569bf1b055d/django_hyperscript-1.5.2-py3-none-any.whl", hash = "sha256:2bd8a8d0b418b0edc691b65e945660ead30beb7169a2ca2b9ba19f23817e4e6f", size = 6792, upload-time = "2025-04-02T05:37:28.369Z" },
-]
-
-[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -638,15 +638,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/51/1947bd81d75af87e3bb9e34593a4cf118115a8feb451ce7a69044ef1412e/hyperlink-21.0.0.tar.gz", hash = "sha256:427af957daa58bc909471c6c40f74c5450fa123dd093fc53efd2e91d2705a56b", size = 140743, upload-time = "2021-01-08T05:51:20.972Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6e/aa/8caf6a0a3e62863cbb9dab27135660acba46903b703e224f14f447e57934/hyperlink-21.0.0-py2.py3-none-any.whl", hash = "sha256:e6b14c37ecb73e89c77d78cdb4c2cc8f3fb59a885c5b3f819ff4ed80f25af1b4", size = 74638, upload-time = "2021-01-08T05:51:22.906Z" },
-]
-
-[[package]]
-name = "hyperscript-dump"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f3/e8/a3c34dcd79ac3ba8871780de31da869a1009dd4ebd2d2540830665e435cb/hyperscript_dump-1.0.4.tar.gz", hash = "sha256:f3cf99279e73c351cefce2396736e46625811f3a9c366b1537090414460b8e24", size = 4212, upload-time = "2025-04-02T01:12:01.84Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/7d/d61f467773741c3ad92d33c40182abbca6d8f3a76d8d68590b2e42ccdefd/hyperscript_dump-1.0.4-py3-none-any.whl", hash = "sha256:dd55d7158d4d56391aaac6cfdc417278f21a1cc01259b6c816d44ed8bae7a5af", size = 4514, upload-time = "2025-04-02T01:12:00.654Z" },
 ]
 
 [[package]]
@@ -820,13 +811,13 @@ dependencies = [
     { name = "argon2-cffi" },
     { name = "channels" },
     { name = "channels-redis" },
+    { name = "crispy-bulma" },
     { name = "daphne" },
     { name = "django" },
     { name = "django-bulma" },
     { name = "django-crispy-forms" },
     { name = "django-feather" },
     { name = "django-htmx" },
-    { name = "django-hyperscript" },
     { name = "granian", extra = ["reload"] },
     { name = "ipfshttpclient" },
     { name = "psycopg2-binary" },
@@ -844,13 +835,13 @@ requires-dist = [
     { name = "argon2-cffi", specifier = ">=25.1.0" },
     { name = "channels", specifier = ">=4.3.1" },
     { name = "channels-redis", specifier = ">=4.3.0" },
+    { name = "crispy-bulma", specifier = ">=0.12.0" },
     { name = "daphne", specifier = ">=4.2.1" },
     { name = "django", specifier = ">=5.2.6" },
     { name = "django-bulma", specifier = ">=0.10.0" },
     { name = "django-crispy-forms", specifier = ">=2.4" },
     { name = "django-feather", specifier = ">=0.3.0" },
     { name = "django-htmx", specifier = ">=1.26.0" },
-    { name = "django-hyperscript", specifier = ">=1.5.2" },
     { name = "granian", extras = ["reload"], specifier = ">=2.5.4" },
     { name = "ipfshttpclient", specifier = ">=0.7.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },

@@ -1,113 +1,84 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
-{% load hyperscript %}
 {% load bulma_tags %}
 
 {% block title %}Inicio - Aegis Share{% endblock %}
 
 {% block page_content %}
-    <section class="aegis-section">
-        <div class="container text-center">
-            <h1 class="display-4 fw-bold">Bem-vindo {{user.username}}</h1>
-            {% if user.nivel_permissao != 'CLI' %}
-                <p class="lead">o que deseja fazer?</p>
-                <a href="{% url "upload" %}" class="btn btn-aegis-light btn-lg mt-3">
-                    {% icon "upload" style="width: 18px; height: 18px;" %}
-                    Upload de Arquivo
-                </a>
-            {% endif %}
-            
-            <a href="{% url "arquivos" %}" class="btn btn-aegis-light btn-lg mt-3">
-                {% icon "search" style="width: 18px; height: 18px;" %}
-                Procurar um Arquivo {{user.id}}
-            </a>
-        </div>
-    </section>
+<div class="columns is-centered mt-5">
+    <div class="column is-8-tablet is-6-desktop">
+        <section class="box has-background-link is-bold">
+            <div class="container has-text-centered">
+                <h1 class="title is-2 has-text-white has-text-weight-bold">Bem-vindo {{ user.username }}</h1>
 
+                {% if user.nivel_permissao != 'CLI' %}
+                    <p class="subtitle has-text-white is-5">O que deseja fazer?</p>
+                    <a href="{% url "upload" %}" class="button is-light is-large mt-4">
+                        <span class="icon">{% icon "upload" style="width: 18px; height: 18px;" %}</span>
+                        <span>Upload de Arquivo</span>
+                    </a>
+                {% endif %}
+
+                <a href="{% url "arquivos" %}" class="button is-light is-large mt-4">
+                    <span class="icon">{% icon "search" style="width: 18px; height: 18px;" %}</span>
+                    <span>Procurar um Arquivo</span>
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
 
 
 {% if messages %}
-    <div aria-live="polite" aria-atomic="true" class="toast-container position-fixed bottom-0 end-0 p-3">
-        {% for message in messages %}
-            {% if message.tags == "success" %}
-                <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="2000">
-                    <div class="d-flex">
-                        <div class="toast-body">
-                            {{ message }}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
+    {% for message in messages %}
+        {% if message.tags == "success" %}
+            <div class="notification is-success is-dismissible auto-dismiss" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
+                <button class="delete" onclick="this.parentElement.remove()"></button>
+                {{ message }}
+            </div>
+        {% else %}
+            <div class="modal is-active" id="djangoMessagesModal">
+                <div class="modal-background"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">ATENÇÃO</p>
+                        <button class="delete" aria-label="close" onclick="document.getElementById('djangoMessagesModal').classList.remove('is-active')"></button>
+                    </header>
+                    <section class="modal-card-body has-text-centered">
+                        <p class="has-text is-size-6">{{ message }}</p>
+                    </section>
+                    <footer class="modal-card-foot is-justify-content-center">
+                        <button class="button is-{{ message.tags }} is-fullwidth" onclick="document.getElementById('djangoMessagesModal').classList.remove('is-active')">
+                            OK
+                        </button>
+                    </footer>
                 </div>
-            {% else %}
-                <div class="modal fade" id="djangoMessagesModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="djangoMessagesModalLabel" aria-hidden="true">
-                    <div class="modal-dialog modal-sm modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title text-center" id="djangoMessagesModalLabel">ATENÇÃO</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <div id="messagesContainer">
-                                    <p class="text-secondary small mb-1">{{ message }}</p>
-                                </div>
-                            </div>
-                            <div class="modal-footer justify-content-center">
-                                <button type="button" class="btn btn-aegis-{{ message.tags }} w-100" data-bs-dismiss="modal">
-                                    OK
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
-    </div>
-    
-    <!--Script para Modal de erro ou aviso e toast de sucesso-->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const toastElList = document.querySelectorAll('.toast');
-            toastElList.forEach(function(toastEl) {
-                const toast = new bootstrap.Toast(toastEl);
-                toast.show();
-            });
-            const modalEl = document.getElementById('djangoMessagesModal');
-            if (modalEl) {
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-            }
-        });
-    </script>
+            </div>
+        {% endif %}
+    {% endfor %}
 {% endif %}
 
+<script>
+    // WebSocket
+    const socket = new WebSocket("ws://localhost:8000/ws/notifications/");
 
+    socket.onopen = function () {
+        console.log("Conectado ao WebSocket!");
+        socket.send(JSON.stringify({ message: "Olá servidor!" }));
+    };
 
-    <script>
-        // URL do WebSocket (ajuste para o seu domínio)
-        const socket = new WebSocket("ws://localhost:8000/ws/notifications/");
+    socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        console.log("Nova notificação:", data.message);
+    };
 
-        // Quando a conexão abrir
-        socket.onopen = function() {
-            console.log("Conectado ao WebSocket!");
-            // Se quiser mandar algo para o servidor
-            socket.send(JSON.stringify({ message: "Olá servidor!" }));
-        };
+    socket.onclose = function (event) {
+        console.log("Conexão fechada:", event);
+    };
 
-        // Quando receber uma mensagem
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            console.log("Nova notificação:", data.message);
-        };
-
-        // Quando a conexão fechar
-        socket.onclose = function(event) {
-            console.log("Conexão fechada:", event);
-        };
-
-        // Se ocorrer erro
-        socket.onerror = function(error) {
-            console.error("Erro no WebSocket:", error);
-        };
-    </script>
+    socket.onerror = function (error) {
+        console.error("Erro no WebSocket:", error);
+    };
+</script>
 
 {% endblock %}

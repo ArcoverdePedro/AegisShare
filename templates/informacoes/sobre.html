@@ -1,103 +1,128 @@
 {% extends 'navbar/navbar.html' %}
-{% load django_bootstrap5 %}
 {% load icon %}
+{% load bulma_tags %}
 
 {% block title %}Sobre - Aegis Share{% endblock %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
-
 
 {% block page_content %}
-    <div class="justify-content-center">
-        <div class="container text-center">
-            <h1 class="display-4 mb-3 fw-bold text-aegis-dark">{% icon "info" style="width: 20px; height: 20px;" %} Projeto Acadêmico {% icon "info" style="width: 20px; height: 20px;" %}</h1>
-            <p class="lead fw-light">Implementação de um sistema de compartilhamento de arquivos com base em IPFS e arquitetura Assíncrona.</p>
+
+<!-- Cabeçalho -->
+<div class="columns is-centered mt-6 mb-6">
+  <div class="column is-10">
+    <div class="box has-background-link has-text-white has-text-centered">
+      <h1 class="title has-text-white is-2">
+        {% icon "info" style="width: 20px; height: 20px;" %}
+        Projeto Acadêmico
+        {% icon "info" style="width: 20px; height: 20px;" %}
+      </h1>
+      <p class="subtitle has-text-white is-5">Sistema de compartilhamento de arquivos com base em IPFS e Assincronismo.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Objetivo -->
+<div class="container">
+  <div class="columns is-centered mb-6">
+    <div class="column is-10">
+      <h2 class="title is-3 has-text-centered has-text-link">Objetivo do Projeto</h2>
+      <p class="has-text-centered">
+        O Aegis Share foi desenvolvido como um projeto acadêmico para explorar e validar a viabilidade de integrar protocolos de rede descentralizados (como o IPFS) com a arquitetura de um framework web tradicional e robusto como o Django. O foco principal é a resolução de desafios técnicos em torno da segurança e da imutabilidade de arquivos.
+      </p>
+    </div>
+  </div>
+
+  <hr class="my-5">
+
+  <!-- Cards -->
+  <h2 class="title is-4 has-text-centered mb-5">Escopo Técnico da Implementação</h2>
+  <div class="columns is-variable is-8">
+    
+    <!-- Card 1 -->
+    <div class="column">
+        <div class="box has-shadow">
+            <div class="has-text-centered mb-3">
+            {% icon "lock" class="has-text-link" style="width: 30px; height: 30px;" %}
+            </div>
+            <h5 class="title is-5 has-text-centered">Segurança</h5>
+            <p>
+            O IPFS é um pilares no projeto. Arquivos recebem um hash (CID) e são distribuídos na rede, sendo assim imutáveis. Senhas protegidas com Argon2.
+            </p>
+            <div class="has-text-centered mt-3">
+            <span class="tag is-link">Arquitetura Segura</span>
+            </div>
         </div>
     </div>
 
-    <div class="container my-5">
-        <div class="row mb-5 justify-content-center">
-            <div class="col-lg-10">
-                <h2 class="text-center mb-4 text-aegis-primary fw-bold">O Objetivo do Projeto</h2>
-                <p class="fs-5 text-center text-secondary">
-                    O Aegis Share foi desenvolvido como um projeto acadêmico para explorar e validar a viabilidade de integrar protocolos de rede descentralizados (como o IPFS) com a arquitetura de um framework web tradicional e robusto como o Django. O foco principal é a resolução de desafios técnicos em torno da segurança e da imutabilidade de arquivos.
-                </p>
+    <!-- Card 2 -->
+    <div class="column">
+        <div class="box has-shadow">
+            <div class="has-text-centered mb-3">
+            {% icon "zap" class="has-text-danger" style="width: 30px; height: 30px;" %}
             </div>
-        </div>
-
-        <hr class="my-5">
-        
-            <h2 class="text-center mb-5 fw-bold">Escopo Técnico da Implementação</h2>
-            <div class="row g-4">
-                
-                <!-- Card 1: IPFS (Descentralização) -->
-                <div class="col-md-4">
-                    <div class="card p-4 feature-card shadow-sm border-0">
-                        <div class="icon-box text-center icon-ipfs">
-                            {% icon "lock" class="text-primary" style="width: 30px; height: 30px;" %}
-                        </div>
-                        <h5 class="card-title text-center fw-bold">Segurança</h5>
-                        <p class="card-text text-muted">A integração com o InterPlanetary File System (IPFS) é um dos pilares do projeto. Em vez de salvar arquivos em um servidor central, eles recebem um hash (CID) e são distribuídos pela rede IPFS, o que garante sua imutabilidade. Senhas são protegidas com o algoritmo Argon2, padrão moderno de criptografia.</p>
-
-                        <span class="badge aegis-primary">Arquitetura Segura</span>
-                    </div>
-                </div>
-                
-                <!-- Card 2: WebSockets (Tempo Real) -->
-                <div class="col-md-4">
-                    <div class="card p-4 feature-card shadow-sm border-0">
-                        <div class="icon-box text-center icon-realtime">
-                            {% icon "zap" class="text-danger" style="width: 30px; height: 30px;" %}
-                        </div>
-                        <h5 class="card-title text-center fw-bold">Velocidade e Assíncrona</h5>
-                        <p class="card-text text-muted">Django Channels, Redis e a biblioteca htmx foram incorporados ao projeto com foco em garantir alta responsividade na interface. Essas tecnologias são operadas em conjunto para proporcionar atualizações em tempo real e respostas imediatas no front-end, oferecendo uma experiência de uso mais fluida e interativa.</p>
-                        <span class="badge aegis-danger">Arquitetura Veloz</span>
-                    </div>
-                </div>
-
-                <!-- Card 3: Django (Robustez) -->
-                <div class="col-md-4">
-                    <div class="card p-4 feature-card shadow-sm border-0">
-                        <div class="icon-box text-center icon-django">
-                            {% icon "server" class="text-success" style="width: 30px; height: 30px;" %}
-                        </div>
-                        <h5 class="card-title text-center fw-bold">Estrutura</h5>
-                        <p class="card-text text-muted">Servido via Granian, o Django estrutura o projeto com a arquitetura MVC de forma clara e robusta. Facilitando tanto a experiência do usuário quanto o trabalho dos Devs, ao centralizar o gerenciamento de usuários, modelagem de dados e rotas de acesso, atuando como elo eficiente entre a interface e o subsistema IPFS.</p>
-                        <span class="badge aegis-success">Arquitetura de estruturada consolidada</span>
-                    </div>
-                </div>
-            </div>
-
-        <hr class="my-5">
-
-        <div class="row align-items-center">
-            <div class="col-lg-6 mb-4 mb-lg-0">
-                <h3 class="fw-bold mb-3">Design Arquitetural e Ferramentas</h3>
-                <p class="text-secondary">Esta é uma visão geral das tecnologias utilizadas para orquestrar o ambiente de desenvolvimento e produção do projeto:</p>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex align-items-center">
-                        {% icon "code" style="width: 20px; height: 20px;" %}
-                        <strong class="ms-2 me-2">Backend e Servidor:</strong> Django (Python) e Granian (ASGI, Rust).
-                    </li>
-                    <li class="list-group-item d-flex align-items-center">
-                        {% icon "globe" style="width: 20px; height: 20px;" %}
-                        <strong class="ms-2 me-2">Armazenamento:</strong> IPFS (Protocolo de rede P2P Descentralizado).
-                    </li>
-                    <li class="list-group-item d-flex align-items-center">
-                        {% icon "message-square" style="width: 20px; height: 20px;" %}
-                        <strong class="ms-2 me-2">Comunicação:</strong> Django Channels, com Redis e HTMX.
-                    </li>
-                    <li class="list-group-item d-flex align-items-center">
-                        {% icon "box" style="width: 20px; height: 20px;" %}
-                        <strong class="ms-2 me-2">Orquestração:</strong> Docker (gereciando IPFS, Redis e Django).
-                    </li>
-                </ul>
-            </div>
-            <div class="col-lg-6 text-center">
-                <img src="https://placehold.co/400x300/1f4068/ffffff?text=Diagrama+Arquitetura" class="img-fluid rounded shadow-lg" alt="Diagrama de Arquitetura do Projeto Acadêmico Aegis Share">
-                <small class="text-muted mt-2 d-block">Ilustração conceitual da arquitetura do projeto.</small>
+            <h5 class="title is-5 has-text-centered">Velocidade e Assíncrona</h5>
+            <p>
+            Django Channels, Redis e HTMX proporcionam atualizações em tempo real e responsividade, garantindo uma experiência fluida.
+            </p>
+            <div class="has-text-centered mt-3">
+            <span class="tag is-danger">Arquitetura Veloz</span>
             </div>
         </div>
     </div>
-    <!-- Fim do Conteúdo da Página "Sobre" -->
+
+    <!-- Card 3 -->
+    <div class="column">
+        <div class="box has-shadow">
+            <div class="has-text-centered mb-3">
+            {% icon "server" class="has-text-success" style="width: 30px; height: 30px;" %}
+            </div>
+            <h5 class="title is-5 has-text-centered">Estrutura</h5>
+            <p>
+            Servido via Granian, o Django estrutura o sistema com MVC claro e robusto, integrando front-end, autenticação e IPFS.
+            </p>
+            <div class="has-text-centered mt-3">
+            <span class="tag is-success">Arquitetura Estruturada</span>
+            </div>
+        </div>
+    </div>
+
+  </div>
+
+  <hr class="my-5">
+
+  <!-- Design Arquitetural -->
+  <div class="columns is-vcentered">
+    <div class="column is-6">
+      <h3 class="title is-4">Design Arquitetural e Ferramentas</h3>
+      <p class="has-text-grey mb-4">
+        Tecnologias utilizadas para orquestrar o ambiente de desenvolvimento e produção:
+      </p>
+      <ul class="content">
+        <li>
+          {% icon "code" style="width: 20px; height: 20px;" %}
+          <strong class="ml-2">Backend e Servidor:</strong> Django (Python) e Granian (ASGI, Rust)
+        </li>
+        <li>
+          {% icon "globe" style="width: 20px; height: 20px;" %}
+          <strong class="ml-2">Armazenamento:</strong> IPFS (Protocolo P2P)
+        </li>
+        <li>
+          {% icon "message-square" style="width: 20px; height: 20px;" %}
+          <strong class="ml-2">Comunicação:</strong> Django Channels, Redis, HTMX
+        </li>
+        <li>
+          {% icon "box" style="width: 20px; height: 20px;" %}
+          <strong class="ml-2">Orquestração:</strong> Docker (IPFS, Redis, Django)
+        </li>
+      </ul>
+    </div>
+
+    <div class="column is-6 has-text-centered">
+      <figure class="image is-4by3">
+        <img src="https://placehold.co/400x300/1f4068/ffffff?text=Diagrama+Arquitetura" class="is-rounded" alt="Diagrama de Arquitetura do Projeto Aegis Share">
+      </figure>
+      <small class="has-text-grey mt-2 is-block">Ilustração conceitual da arquitetura do projeto.</small>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

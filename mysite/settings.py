@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crispy_forms",
-    "django_hyperscript",
+    'crispy_bulma',
     "bulma",
     "django_feather",
     "aegis_share",
@@ -160,8 +160,8 @@ LOGIN_URL = "login"
 LOGOUT_REDIRECT_URL = "home"
 
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bulma"
+CRISPY_TEMPLATE_PACK = "bulma"
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -178,9 +178,40 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "/static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+# -----------------------------------------------------------
+# 1. STATIC_URL
+# -----------------------------------------------------------
+# A URL pública usada em templates (ex: <img src="/static/img.png">)
+STATIC_URL = '/static/'
+
+# -----------------------------------------------------------
+# 2. STATICFILES_DIRS (Desenvolvimento)
+# -----------------------------------------------------------
+# Lista de diretórios adicionais que o Django deve procurar.
+# É para arquivos estáticos *globais* que não pertencem a apps específicas.
+STATICFILES_DIRS = [
+    # Procura por arquivos na pasta 'static' que está na raiz do projeto
+    BASE_DIR / 'static',
+]
+
+# -----------------------------------------------------------
+# 3. STATIC_ROOT (Produção/Deployment)
+# -----------------------------------------------------------
+# O diretório ÚNICO para onde o comando 'collectstatic' irá copiar
+# TODOS os arquivos estáticos (do STATICFILES_DIRS e dos apps/static).
+# ESTA PASTA SERÁ SERVADA PELO SEU SERVIDOR WEB (Nginx/Apache) em produção.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# -----------------------------------------------------------
+# 4. STATICFILES_FINDERS (Opcional, mas útil)
+# -----------------------------------------------------------
+# Define como o Django encontra arquivos. O padrão é bom, mas é útil
+# para referência:
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 

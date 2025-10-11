@@ -20,13 +20,17 @@ class FirstUserForm(UserCreationForm):
         max_length=14,
         required=True,
         widget=forms.TextInput(
-            attrs={"class":"cpf", "placeholder": "999.999.999-99"}
+            attrs={
+                "class": "cpf",
+                "placeholder": "999.999.999-99",
+                'pattern': r'\d{3}\.\d{3}\.\d{3}-\d{2}',
+            }
         ),
     )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("username", "email", "cpf" , "password1", "password2")
+        fields = ("username", "email", "cpf", "password1", "password2")
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -56,7 +60,14 @@ class FormUserADM(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"class":"cpf", "placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(
+            attrs={
+                "class": "cpf input",
+                "placeholder": "999.999.999-99",
+                'inputmode': 'numeric',
+                'pattern': r'\d{3}\.\d{3}\.\d{3}-\d{2}',
+            }
+        ),
     )
 
     nivel_permissao = forms.ChoiceField(

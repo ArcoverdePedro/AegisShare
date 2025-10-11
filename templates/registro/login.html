@@ -1,68 +1,85 @@
 {% extends 'navbar/navbar.html' %}
-{% load django_bootstrap5 %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load bulma_tags %}
 {% load icon %}
-<head>
-{% bootstrap_css %}
-{% bootstrap_javascript %}
+
 {% block title %}Login - Aegis Share{% endblock %}
-</head>
 
 
 {% block page_content %}
     <div class="auth-container">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-6 col-lg-4">
-                    <div class="auth-card p-4">
+            <div class="columns is-centered">
+                <div class="column is-6-tablet is-4-desktop">
+                    <div class="box p-5">
 
-                        <div class="text-center mb-4">
-                            <h3 class="fw-bold">ENTRAR</h3>
-                            <p class="text-muted">Acesse sua conta</p>
+                        <div class="has-text-centered mb-4">
+                            <h3 class="title is-4 has-text-weight-bold">ENTRAR</h3>
+                            <p class="has-text-grey">Acesse sua conta</p>
                         </div>
 
                         <form method="post">
                             {% csrf_token %}
-                            
-                            <div class="mb-3">
-                                <label for="username" class="form-label">
-                                    {% icon "user" style="width: 20px; height: 20px;" %} Usuário
+
+                            <div class="field mb-4">
+                                <label class="label" for="username">
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            {% icon "user" style="width: 20px; height: 20px;" %}
+                                        </span>
+                                        <span>Usuário</span>
+                                    </span>
                                 </label>
-                                <input type="text" class="form-control" id="username" name="username" 
-                                    placeholder="Digite seu usuário" required>
+                                <div class="control">
+                                    <input class="input" type="text" id="username" name="username"
+                                        placeholder="Digite seu usuário" required>
+                                </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="password" class="form-label">
-                                    {% icon "lock" style="width: 20px; height: 20px;" %} Senha
+                            <div class="field mb-4">
+                                <label class="label" for="password">
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            {% icon "lock" style="width: 20px; height: 20px;" %}
+                                        </span>
+                                        <span>Senha</span>
+                                    </span>
                                 </label>
-                                <input type="password" class="form-control" id="password" name="password" 
-                                    placeholder="Digite sua senha" required>
+                                <div class="control">
+                                    <input class="input" type="password" id="password" name="password"
+                                        placeholder="Digite sua senha" required>
+                                </div>
                             </div>
 
                             <div id="message-container">
                                 {% if messages %}
                                     {% for message in messages %}
-                                        <div class="fade show alert alert-{{ message.tags }} auto-dismiss" role="alert">
+                                        <div class="notification is-{{ message.tags }} auto-dismiss">
                                             {{ message }}
                                         </div>
                                     {% endfor %}
                                 {% endif %}
                             </div>
 
-                            <div class="d-grid mb-3">
-                                <button type="submit" class="btn btn-aegis-primary btn-lg">
-                                    {% icon "arrow-right" style="width: 20px; height: 20px;" %} Entrar
+                            <div class="mt-4">
+                                <button type="submit" class="button is-primary is-fullwidth is-large">
+                                    <span class="icon-text is-align-items-center">
+                                        <span class="icon">
+                                            {% icon "arrow-right" %}
+                                        </span>
+                                        <span>Entrar</span>
+                                    </span>
                                 </button>
                             </div>
-
                         </form>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
 {% endblock %}
+
 
 {% block scripts %}
 {% endblock scripts %}

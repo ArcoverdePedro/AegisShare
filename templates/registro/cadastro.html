@@ -1,9 +1,9 @@
 {% extends 'navbar/navbar.html' %}
+{% load static %}
 {% load crispy_forms_tags %}
-{% load django_bootstrap5 %}
+{% load bulma_tags %}
+
 {% load icon %}
-{% bootstrap_css %}
-{% bootstrap_javascript %}
 
 
 {% block title %}Cadastro - Aegis Share{% endblock %}
@@ -12,46 +12,43 @@
 
 <div class="auth-container">
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-4">
-                <div class="auth-card p-4">
-                    <div class="text-center mb-4">
-                        <h3 class="fw-bold">CADASTRAR</h3>
-                        <p class="text-muted">Crie uma conta</p>
+        <div class="columns is-centered">
+            <div class="column is-6-tablet is-4-desktop">
+                <div class="box p-5">
+                    <div class="has-text-centered mb-4">
+                        <h3 class="title is-4 has-text-weight-bold">CADASTRAR</h3>
+                        <p class="has-text-grey">Crie uma conta</p>
                     </div>
-                    
+
                     <div id="message-container">
-                       {% if messages %}
+                        {% if messages %}
                             {% for message in messages %}
                                 {% if message.tags != "danger" %}
-                            
-                                    <div class="auto-dismiss alert alert-{{ message.tags }}" role="alert">
+                                    <div class="notification is-{{ message.tags }} auto-dismiss">
                                         {{ message }}
                                     </div>
-                            
                                 {% endif %}
-                           {% endfor %}
-                       {% endif %}
-                   </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
 
                     <form method="post">
                         {% csrf_token %}
-                        
-                        {{ form|crispy }} 
 
-                        <div class="d-grid mb-3 mt-4">
-                            <button type="submit" class="btn btn-aegis-primary btn-lg">
+                        {{ form|bulma }}
+
+                        <div class="mt-4 mb-3">
+                            <button type="submit" class="button is-primary is-rounded is-fullwidth is-large">
                                 {% icon "plus" style="width: 20px; height: 20px;" %} Cadastrar
                             </button>
                         </div>
 
                     </form>
-
-
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 
 {% endblock %}

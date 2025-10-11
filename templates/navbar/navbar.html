@@ -1,21 +1,18 @@
 <!DOCTYPE html>
 {% load static %}
 {% load bulma_tags %}
-{% load hyperscript %}
 {% load icon %}
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Meu App Django - Home{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}"> 
+    <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}">
+    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+    <link rel="stylesheet" href="{% static 'bulma/css/style.min.css' %}">
     
     
     <style>
-
-        .navbar-brand {
-            font-weight: 900;
-        }
 
         body {
             padding-top: 46px;
@@ -29,298 +26,6 @@
             margin-top: 0;
             padding-top: 10px; 
         }
-
-        .aegis-section {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            color: white;
-            padding: 80px 0 60px;
-            margin-top: 0;
-        }
-
-        /* Primary */
-        .aegis-primary {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Danger */
-        .aegis-danger {
-            background: linear-gradient(135deg, #ea6666ff 0%, #7b0d0dff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Success */
-        .aegis-success {
-            background: linear-gradient(135deg, #85ea66ff 0%, #0d7b0dff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Secondary */
-        .aegis-secondary {
-            background: linear-gradient(135deg, #8e98a0ff 0%, #363b41ff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Warning */
-        .aegis-warning {
-            background: linear-gradient(135deg, #ffc107ff 0%, #fd7e14ff 100%);
-            color: black;
-            margin-top: 0;
-        }
-
-        /* Info */
-        .aegis-info {
-            background: linear-gradient(135deg, #0dcaf0ff 0%, #0d6efdff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Light */
-        .aegis-light {
-            background: linear-gradient(135deg, #f8f9faff 0%, #e9ecefff 100%);
-            color: black;
-            margin-top: 0;
-        }
-
-        /* Dark */
-        .aegis-dark {
-            background: linear-gradient(135deg, #212529ff 0%, #000000ff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Link */
-        .aegis-link {
-            background: linear-gradient(135deg, #0d6efdff 0%, #0d1a7bff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        /* Meus Padrões de Botões */
-        .btn-aegis-primary {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-primary:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Secondary aegis */
-        .btn-aegis-secondary {
-            background: linear-gradient(135deg, #8e98a0ff 0%, #363b41ff 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-secondary:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Success aegis */
-        .btn-aegis-success {
-            background: linear-gradient(135deg, #85ea66ff 0%, #0d7b0dff 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-success:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Danger aegis */
-        .btn-aegis-danger {
-            background: linear-gradient(135deg, #ea6666ff 0%, #7b0d0dff 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-danger:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Warning aegis */
-        .btn-aegis-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-warning:hover {
-            background: linear-gradient(135deg, #e6ac00 0%, #c69500 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            color: #212529; /* Garante que o texto mantenha contraste */
-        }
-
-        /* Botão Info aegis */
-        .btn-aegis-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-info:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Light aegis */
-        .btn-aegis-light {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            color: #212529;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-light:hover {
-            background: linear-gradient(135deg, #e2e6ea 0%, #dae0e5 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            color: #212529; 
-        }
-
-        /* Botão Dark aegis */
-        .btn-aegis-dark {
-            background: linear-gradient(135deg, #343a40 0%, #1d2124 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-dark:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botão Link aegis */
-        .btn-aegis-link {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            text-decoration: none;
-        }
-
-        .btn-aegis-link:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            color: white;
-            text-decoration: none;
-        }
-
-        /* Texto Primary */
-        .text-aegis-primary {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Danger */
-        .text-aegis-danger {
-            background: linear-gradient(135deg, #ea6666 0%, #7b0d0d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Success */
-        .text-aegis-success {
-            background: linear-gradient(135deg, #85ea66 0%, #0d7b0d 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Secondary */
-        .text-aegis-secondary {
-            background: linear-gradient(135deg, #8e98a0 0%, #363b41 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Warning */
-        .text-aegis-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Info */
-        .text-aegis-info {
-            background: linear-gradient(135deg, #0dcaf0 0%, #0d6efd 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Light */
-        .text-aegis-light {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Dark */
-        .text-aegis-dark {
-            background: linear-gradient(135deg, #212529 0%, #000000 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        /* Texto Link */
-        .text-aegis-link {
-            background: linear-gradient(135deg, #0d6efd 0%, #0d1a7b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
 
         /* Classe genérica para auto-dismiss */
         .auto-dismiss {
@@ -357,7 +62,9 @@
     <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
         <div class="container">
             <div class="navbar-brand">
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+                    _= "on click toggle .is-active on #navbarMenu toggle .is-active on me"
+                >
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -433,7 +140,7 @@
                                 
                                 <hr class="navbar-divider">
                                 
-                                <a class="navbar-item" id="logoutTrigger">
+                                <a class="navbar-item" _="on click add .is-active to #logoutModal">
                                     {% icon "log-out" %} Sair
                                 </a>
                             </div>
@@ -460,101 +167,53 @@
         </div>
     </footer>
 
-    <!-- Modal de Logout -->
     <div class="modal" id="logoutModal">
-        <div class="modal-background"></div>
+        <div class="modal-background" _="on click remove .is-active from #logoutModal"></div>
+
         <div class="modal-card">
             <header class="modal-card-head">
                 <p class="modal-card-title">Confirmar Saída</p>
-                <button class="delete" aria-label="close" id="closeModal"></button>
+                <button class="delete" aria-label="close" _="on click remove .is-active from #logoutModal"></button>
             </header>
+
             <section class="modal-card-body">
                 <p>Tem certeza que deseja sair?</p>
             </section>
-            <footer class="modal-card-foot">
+
+            <footer class="modal-card-foot is-justify-content-flex-end">
                 <form method="post" action="{% url 'logout' %}" class="is-inline">
                     {% csrf_token %}
                     <button type="submit" class="button is-danger">Sair</button>
                 </form>
-                <button class="button" id="cancelModal">Cancelar</button>
+                <button class="button" _="on click remove .is-active from #logoutModal">Cancelar</button>
             </footer>
         </div>
     </div>
 
+
+
     {% block scripts %}
     {% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
 
     <script>
-        // Burger menu toggle
-        document.addEventListener('DOMContentLoaded', () => {
-            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-            
-            $navbarBurgers.forEach( el => {
-                el.addEventListener('click', () => {
-                    const target = el.dataset.target;
-                    const $target = document.getElementById(target);
-                    el.classList.toggle('is-active');
-                    $target.classList.toggle('is-active');
-                });
-            });
+        new Cleave('.cpf', {
+            delimiters: ['.', '.', '-'],
+            blocks: [3, 3, 3, 2],
+            numericOnly: true
+        });
+        new Cleave('.tel', {
+            delimiters: ['-'],
+            blocks: [5, 4],
+            numericOnly: true
         });
 
-        // Modal toggle
-        const modal = document.getElementById('logoutModal');
-        const logoutTrigger = document.getElementById('logoutTrigger');
-        const closeModal = document.getElementById('closeModal');
-        const cancelModal = document.getElementById('cancelModal');
-        const modalBackground = modal.querySelector('.modal-background');
 
-        if (logoutTrigger) {
-            logoutTrigger.addEventListener('click', () => {
-                modal.classList.add('is-active');
-            });
-        }
-
-        if (closeModal) {
-            closeModal.addEventListener('click', () => {
-                modal.classList.remove('is-active');
-            });
-        }
-
-        if (cancelModal) {
-            cancelModal.addEventListener('click', () => {
-                modal.classList.remove('is-active');
-            });
-        }
-
-        if (modalBackground) {
-            modalBackground.addEventListener('click', () => {
-                modal.classList.remove('is-active');
-            });
-        }
-
-        // Máscaras jQuery
-        $(document).ready(function(){
-            $('.cpf').mask('000.000.000-00', {
-                reverse: false,
-                translation: {
-                    '0': {pattern: /\d/} 
-                }
-            });
-            $('.telefone').mask('99999-9999', {
-                reverse: false,
-                translation: {
-                    '0': {pattern: /\d/} 
-                }
-            });
-        });
-
-        // Previne reenvio de formulário ao atualizar a página
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
 
-        // Reseta formulários quando a página carrega
         document.addEventListener('DOMContentLoaded', function() {
             const forms = document.getElementsByTagName('form');
             for (let form of forms) {

@@ -1,107 +1,82 @@
 {% load crispy_forms_tags %}
-{% load django_bootstrap5 %}
-
+{% load static %}
+{% load bulma_tags %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuração Inicial - Criar Administrador</title>
-    
-    {% bootstrap_css %}
-
+    <link rel="stylesheet" href="{% static 'bulma/css/style.min.css' %}">
     <style>
-        body {
-            background-color: #f8f9fa; /* Cor de fundo clara */
+        body.full-height-center {
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            margin: 0;
+            background-color: #f5f5f5;
         }
-        
-        .card {
-            max-width: 500px; /* Limita a largura do card */
+        .box-container {
+            max-width: 500px;
             width: 100%;
         }
-
-        .aegis-primary {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            color: white;
-            margin-top: 0;
-        }
-
-        .btn-aegis-primary {
-            background: linear-gradient(135deg, #66b3eaff 0%, #0d1a7bff 100%);
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-aegis-primary:hover {
-            filter: brightness(0.85);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .aegis-warning {
-            background: linear-gradient(135deg, #ffc107ff 0%, #fd7e14ff 100%);
-            color: black;
-            margin-top: 0;
-        }
-
     </style>
 </head>
-<body>
+<body class="full-height-center has-background-dark">
 
-<div class="card shadow-lg">
-    <div class="card-header aegis-primary text-white text-center">
-        <h1 class="h4 mb-0">Bem-vindo(a)! Configuração Inicial</h1>
+    <div class="box box-container has-shadow-lg p-0">
+
+        <!-- Cabeçalho -->
+        <div class="has-background-link has-text-centered p-4">
+            <h1 class="title is-4 has-text-white mb-0">
+                Bem-vindo(a)! Configuração Inicial
+            </h1>
+        </div>
+
+        <!-- Conteúdo principal -->
+        <div class="p-5">
+            <p class="has-text-centered mb-2">
+                Detectamos que este é o primeiro acesso ao <strong>Aegis Share</strong>.
+                Crie a primeira conta de Administrador.
+            </p>
+            <p class="has-text-grey has-text-centered mb-5">
+                Cada administrador deve ter sua própria conta.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                {{ form|bulma }}
+
+                <div class="mt-5">
+                    <button type="submit" class="button is-rounded is-link is-fullwidth is-large">
+                        Criar Superusuário
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="has-background-warning has-text-centered p-3">
+            <p class="has-text-black mb-0">
+                Após a criação, você será redirecionado(a) para a Home.
+            </p>
+        </div>
+
     </div>
-    <div class="card-body p-4">
-        <p class="text-center">
-            Detectamos que este é o Primeiro acesso ao Aegis Share. Crie a Primeira conta de Administrador.
-        </p>
-        <p class="text-muted text-center">
-            Cada Administrador deve ter sua propria conta
-        </p>
 
-        <form method="post">
-            {% csrf_token %}
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
-            {{ form|crispy }}
-
-            <div class="d-grid gap-2 mt-4">
-                <button type="submit" class="btn btn-aegis-primary btn-lg">
-                    Criar Superusuário
-                </button>
-            </div>
-        </form>
-    </div>
-    <div class="card-footer aegis-warning text-center">
-        Após a criação, você será redirecionado(a) para a Home.
-    </div>
-</div>
-
-{% bootstrap_javascript %}
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
-<script>
-    $(document).ready(function(){
-        $('.cpf').mask('000.000.000-00', {
-            reverse: false,
-            translation: {
-                '0': {pattern: /\d/} 
-            }
+    <script>
+        $(document).ready(function () {
+            $('.cpf').mask('000.000.000-00', {
+                translation: {
+                    '0': { pattern: /\d/ }
+                }
+            });
         });
-
-    });
-</script>
+    </script>
 
 </body>
 </html>
