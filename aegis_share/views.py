@@ -96,7 +96,7 @@ def cadastro(request):
 
             for error in form.non_field_errors():
                 messages.error(request, error)
-            
+
     return render(request, "registro/cadastro.html", {"form": form})
 
 
@@ -106,20 +106,16 @@ def notifications(request):
 
 
 @login_required
-def arquivos(request):
-    if request.user.nivel_permissao == "CLI":
-        ...
-        return render(request, "arquivos/meus_arquivos.html")
-    else:
-        ...
-        return render(request, "arquivos/arquivos_clientes.html")
+def arquivos(request, id):
+
+    return render(request, "arquivos/arquivos.html")
 
 
 @login_required
 def upload(request):
-    
+
     if request.user.nivel_permissao == "CLI":
         messages.error(request, "Sem permissão para essa página.")
         return redirect("home")
-    
+
     return render(request, "arquivos/upload.html")

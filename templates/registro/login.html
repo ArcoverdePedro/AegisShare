@@ -14,14 +14,11 @@
                 <div class="column is-6-tablet is-4-desktop">
                     <div class="box p-5">
 
-                        <div class="box has-background-link">
-                            <div class="has-text-centered mb-2">
-                                <h3 class="title is-4 has-text-weight-bold has-text-light">ENTRAR</h3>
-                                <p class="has-text-light">Acesse sua conta</p>
-                            </div>
+                        <div class="box has-background-link has-text-centered mb-3">
+                            <h3 class="title has-text-light is-3 has-text-weight-bold">ENTRAR</h3>
+                            <p class="has-text-light">Acesse sua conta</p>
                         </div>
                         
-                        <br>
 
                         <form method="post">
                             {% csrf_token %}
@@ -59,7 +56,7 @@
                             <div id="message-container">
                                 {% if messages %}
                                     {% for message in messages %}
-                                        <div class="notification is-{{ message.tags }} auto-dismiss">
+                                        <div class="notification is-{{ message.tags }} is-light auto-dismiss-up">
                                             {{ message }}
                                         </div>
                                     {% endfor %}

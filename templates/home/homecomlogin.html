@@ -19,7 +19,7 @@
                     </a>
                 {% endif %}
 
-                <a href="{% url "arquivos" %}" class="button is-light is-large mt-4">
+                <a href="{% url "arquivos" user.id %}" class="button is-light is-large mt-4">
                     <span class="icon">{% icon "search" style="width: 18px; height: 18px;" %}</span>
                     <span>Procurar um Arquivo</span>
                 </a>
@@ -32,8 +32,7 @@
 {% if messages %}
     {% for message in messages %}
         {% if message.tags == "success" %}
-            <div class="notification is-success is-dismissible auto-dismiss" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
-                <button class="delete" onclick="this.parentElement.remove()"></button>
+            <div class="notification is-success has-text-white is-dismissible auto-dismiss-down" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
                 {{ message }}
             </div>
         {% else %}

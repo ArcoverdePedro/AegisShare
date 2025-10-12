@@ -65,7 +65,6 @@ class FormUserADM(UserCreationForm):
                 "class": "cpf input",
                 "placeholder": "999.999.999-99",
                 'inputmode': 'numeric',
-                'pattern': r'\d{3}\.\d{3}\.\d{3}-\d{2}',
             }
         ),
     )

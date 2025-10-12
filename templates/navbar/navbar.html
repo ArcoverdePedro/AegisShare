@@ -27,30 +27,55 @@
             padding-top: 10px; 
         }
 
-        /* Classe genérica para auto-dismiss */
-        .auto-dismiss {
-            animation: autoDismiss 1s ease-in-out 2s forwards;
+        .auto-dismiss-down {
+            animation: autoDismissDown 1s ease-in-out 2s forwards;
             transform-origin: top;
         }
 
-        @keyframes autoDismiss {
+        @keyframes autoDismissDown {
             0% {
                 opacity: 1;
-                transform: scaleY(1);
+                transform: translateY(0);
                 max-height: 200px;
                 margin-bottom: 1rem;
             }
             70% {
                 opacity: 0;
-                transform: scaleY(0);
+                transform: translateY(20px); /* desliza para baixo */
             }
             100% {
                 opacity: 0;
+                transform: translateY(40px); /* vai ainda mais para baixo */
                 max-height: 0;
                 margin-bottom: 0;
                 padding-top: 0;
                 padding-bottom: 0;
-                transform: scaleY(0);
+                overflow: hidden;
+            }
+        }
+        .auto-dismiss-up {
+            animation: autoDismissUp 1s ease-in-out 2s forwards;
+            transform-origin: bottom;
+        }
+
+        @keyframes autoDismissUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 200px;
+                margin-bottom: 1rem;
+            }
+            70% {
+                opacity: 0;
+                transform: translateY(-20px); /* sobe */
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-40px); /* sobe mais */
+                max-height: 0;
+                margin-bottom: 0;
+                padding-top: 0;
+                padding-bottom: 0;
                 overflow: hidden;
             }
         }
@@ -80,20 +105,21 @@
 
                     {% if user.is_authenticated %}
                         <a class="navbar-item {% if request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" 
-                           href="{% url 'arquivos' %}">
-                            {% icon "info" style="width: 18px; height: 18px;" %} {% if user.nivel_permissao == 'CLI' %}Meus{% endif %} Arquivos
+                           href="{% url 'arquivos' user.id %}">
+                            {% icon "package" style="width: 18px; height: 18px;" %} Arquivos
                         </a>
-                        
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'products' %}is-active{% endif %}" 
-                           href="#">
-                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
-                        </a>
-                        
+                                                
                         {% if user.nivel_permissao != "CLI" %}
+                            <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" 
+                                href="{% url 'upload' %}">
+                                {% icon "upload" style="width: 18px; height: 18px;" %} Upload
+                            </a>    
+
                             <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
                                href="#">
-                                {% icon "mail" style="width: 18px; height: 18px;" %} Chat
+                                {% icon "message-square" style="width: 18px; height: 18px;" %} Chat
                             </a>
+
                         {% endif %}
                     {% else %}
                         <a class="navbar-item {% if request.resolver_match.url_name == 'sobre' %}is-active{% endif %}" 
@@ -115,43 +141,46 @@
                 
                 <div class="navbar-end">
                     {% if user.is_authenticated %}
-                        <div class="navbar-item has-dropdown is-hoverable">
-                            <a class="navbar-link">
+                        <div 
+                            class="navbar-item has-dropdown"
+                            id="userDropdown"
+                            _="on click from #userclickDropdown toggle .is-active on #userDropdown"
+                        >
+                            <a id="userclickDropdown" class="navbar-link">
                                 {% icon "user" %} {{ user.username }}
                             </a>
-                            
+
                             <div class="navbar-dropdown is-right">
-                                <a class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" 
-                                   href="#">
+
+                                <a href="#" class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">
                                     {% icon "user" %} Meu Perfil
                                 </a>
-                                
+
                                 {% if user.nivel_permissao != "CLI" %}
-                                    <a class="navbar-item {% if request.resolver_match.url_name == 'settings' %}is-active{% endif %}" 
-                                       href="#">
+                                    <a href="#" class="navbar-item {% if request.resolver_match.url_name == 'settings' %}is-active{% endif %}">
                                         {% icon "settings" %} Configurações
                                     </a>
-                                    
-                                    <a class="navbar-item {% if request.resolver_match.url_name == 'cadastro' %}is-active{% endif %}" 
-                                       href="{% url 'cadastro' %}">
+
+                                    <a href="{% url 'cadastro' %}" class="navbar-item {% if request.resolver_match.url_name == 'cadastro' %}is-active{% endif %}">
                                         {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                                     </a>
                                 {% endif %}
-                                
+
                                 <hr class="navbar-divider">
-                                
+
                                 <a class="navbar-item" _="on click add .is-active to #logoutModal">
                                     {% icon "log-out" %} Sair
                                 </a>
+
                             </div>
                         </div>
                     {% else %}
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}" 
-                           href="{% url 'login' %}">
+                        <a href="{% url 'login' %}" class="navbar-item {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}">
                             {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
                         </a>
                     {% endif %}
                 </div>
+
             </div>
         </div>
     </nav>
@@ -168,22 +197,19 @@
     </footer>
 
     <div class="modal" id="logoutModal">
-        <div class="modal-background" _="on click remove .is-active from #logoutModal"></div>
+        <div class="modal-background">
+        </div>
 
         <div class="modal-card">
             <header class="modal-card-head">
-                <p class="modal-card-title">Confirmar Saída</p>
+                <p class="modal-card-title">Confirmar Logout</p>
                 <button class="delete" aria-label="close" _="on click remove .is-active from #logoutModal"></button>
             </header>
 
-            <section class="modal-card-body">
-                <p>Tem certeza que deseja sair?</p>
-            </section>
-
-            <footer class="modal-card-foot is-justify-content-flex-end">
+            <footer class="buttons modal-card-foot is-justify-content-flex-end">
                 <form method="post" action="{% url 'logout' %}" class="is-inline">
                     {% csrf_token %}
-                    <button type="submit" class="button is-danger">Sair</button>
+                    <button type="submit" class="button is-danger has-text-light">Sair</button>
                 </form>
                 <button class="button" _="on click remove .is-active from #logoutModal">Cancelar</button>
             </footer>
@@ -208,19 +234,28 @@
             blocks: [5, 4],
             numericOnly: true
         });
-
-
-        if (window.history.replaceState) {
-            window.history.replaceState(null, null, window.location.href);
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const forms = document.getElementsByTagName('form');
-            for (let form of forms) {
-                form.reset();
+    </script>
+        
+    <script>
+        function limparURLDoHistorico() {
+            if (window.history.replaceState) {
+                window.history.replaceState(null, null, window.location.href);
             }
-        });
+        }
+        function resetarTodosOsFormularios() {
+            const forms = document.querySelectorAll('form');
+            
+            forms.forEach(form => {
+                form.reset();
+            });
+        }
+        limparURLDoHistorico();
+        window.addEventListener('load', resetarTodosOsFormularios);
     </script>
 
+
+
+
 </body>
+
 </html>

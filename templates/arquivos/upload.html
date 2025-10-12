@@ -1,12 +1,13 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>Modal Bulma + Hyperscript</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css">
-  <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
-</head>
-<body class="has-background-light p-6">
+{% extends 'navbar/navbar.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load bulma_tags %}
+{% load icon %}
+
+{% block title %}Upload - Aegis Share{% endblock %}
+
+
+{% block page_content %}
 
   <!-- Botão que abre o modal -->
   <button
@@ -41,6 +42,8 @@
       </footer>
     </div>
   </div>
+{% endblock %}
 
-</body>
-</html>
+
+{% block scripts %}
+{% endblock scripts %}

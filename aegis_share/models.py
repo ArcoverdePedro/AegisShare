@@ -53,7 +53,7 @@ class IPFSFile(models.Model):
         CustomUser, through="FileAccess", related_name="accessible_ipfs_files"
     )
 
-    def user_can_access(self, user):
+    def user_tem_acesso(self, user):
 
         if user.is_admin():
             return True
