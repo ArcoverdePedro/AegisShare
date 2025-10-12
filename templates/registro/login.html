@@ -14,10 +14,14 @@
                 <div class="column is-6-tablet is-4-desktop">
                     <div class="box p-5">
 
-                        <div class="has-text-centered mb-4">
-                            <h3 class="title is-4 has-text-weight-bold">ENTRAR</h3>
-                            <p class="has-text-grey">Acesse sua conta</p>
+                        <div class="box has-background-link">
+                            <div class="has-text-centered mb-2">
+                                <h3 class="title is-4 has-text-weight-bold has-text-light">ENTRAR</h3>
+                                <p class="has-text-light">Acesse sua conta</p>
+                            </div>
                         </div>
+                        
+                        <br>
 
                         <form method="post">
                             {% csrf_token %}
@@ -63,7 +67,7 @@
                             </div>
 
                             <div class="mt-4">
-                                <button type="submit" class="button is-primary is-fullwidth is-large">
+                                <button type="submit" class="button is-link is-fullwidth is-large">
                                     <span class="icon-text is-align-items-center">
                                         <span class="icon">
                                             {% icon "arrow-right" %}

@@ -15,10 +15,14 @@
         <div class="columns is-centered">
             <div class="column is-6-tablet is-4-desktop">
                 <div class="box p-5">
-                    <div class="has-text-centered mb-4">
-                        <h3 class="title is-4 has-text-weight-bold">CADASTRAR</h3>
-                        <p class="has-text-grey">Crie uma conta</p>
+                    <div class="box has-background-link">
+                        <div class="has-text-centered mb-4">
+                            <h3 class="title is-4 has-text-weight-bold">CADASTRAR</h3>
+                            <p class="has-text">Crie uma conta</p>
+                        </div>
                     </div>
+                    <br>
+                   
 
                     <div id="message-container">
                         {% if messages %}
@@ -38,7 +42,7 @@
                         {{ form|bulma }}
 
                         <div class="mt-4 mb-3">
-                            <button type="submit" class="button is-primary is-rounded is-fullwidth is-large">
+                            <button type="submit" class="button is-link is-rounded is-fullwidth is-large">
                                 {% icon "plus" style="width: 20px; height: 20px;" %} Cadastrar
                             </button>
                         </div>
