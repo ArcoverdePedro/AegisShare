@@ -3,7 +3,8 @@ revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.14'",
-    "python_full_version < '3.14'",
+    "python_full_version >= '3.12' and python_full_version < '3.14'",
+    "python_full_version < '3.12'",
 ]
 
 [[package]]
@@ -349,18 +350,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-bulma"
-version = "0.10.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/70/05/e19419d2f09eb0cd4bfe5a6237a9f3011e294d6741bf249f9e9faa1e044d/django_bulma-0.10.0.tar.gz", hash = "sha256:96a6c60dec445fdcd6729c714ab2f81343afb3fce1be390f9ad2ba65ceae3c30", size = 193339, upload-time = "2025-07-27T18:45:01.259Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/65/3627af7483a0627d3ecad4fc0e062908fddde58b6f08931c5af0bfc2fbc7/django_bulma-0.10.0-py3-none-any.whl", hash = "sha256:404dffed09fbc808642b5ac582c2dcdbd13722aa3e6cd14bfbd187b3a874628a", size = 203525, upload-time = "2025-07-27T18:44:59.819Z" },
-]
-
-[[package]]
 name = "django-crispy-forms"
 version = "2.4"
 source = { registry = "https://pypi.org/simple" }
@@ -411,6 +400,39 @@ wheels = [
 ]
 
 [[package]]
+name = "django-simple-bulma"
+version = "2.7.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.12'",
+]
+dependencies = [
+    { name = "django", marker = "python_full_version < '3.12'" },
+    { name = "libsass", marker = "python_full_version < '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c1/c6/90bb8bb61bac49252044029f179becf812efe0a81b59c98058193a445389/django_simple_bulma-2.7.1.tar.gz", hash = "sha256:516f48142e1da0b303e0b0f398358328d415dc90860003a7c4aabb288e7de245", size = 557900, upload-time = "2025-08-11T08:46:18.853Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/95/3eb1836745c8cd059dbfd6c2cbc315883527b51c530de1842f8444055843/django_simple_bulma-2.7.1-py3-none-any.whl", hash = "sha256:25bd86ac3077517a48b9305fa00e874146eab5dc84c8ad55a291a5986f691996", size = 624290, upload-time = "2025-08-11T08:46:17.333Z" },
+]
+
+[[package]]
+name = "django-simple-bulma"
+version = "3.0.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.14'",
+    "python_full_version >= '3.12' and python_full_version < '3.14'",
+]
+dependencies = [
+    { name = "django", marker = "python_full_version >= '3.12'" },
+    { name = "libsass", marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/c9/32673432991308c8f737a6fc64405cf159225a921d414deabd632942d573/django_simple_bulma-3.0.0.tar.gz", hash = "sha256:3769c45ac3f33d9ee2cb65f5cfca3b717c89009f431554ef19d6b17cdaf23e3e", size = 58433139, upload-time = "2025-07-29T23:09:21.098Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/be/220b2e0343c05d6a9ee1bc57b390f3900514ffd0f02f94bdc38b2a124db2/django_simple_bulma-3.0.0-py3-none-any.whl", hash = "sha256:8ccb008abc06118aff9c8a10fc3d0c13d3bca02ff7644b0ca6b0d49a5d28f2f2", size = 61817648, upload-time = "2025-07-29T23:09:15.474Z" },
+]
+
+[[package]]
 name = "dnspython"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -424,7 +446,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -564,6 +586,19 @@ wheels = [
 ]
 
 [[package]]
+name = "libsass"
+version = "0.23.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/b4/ab091585eaa77299558e3289ca206846aefc123fb320b5656ab2542c20ad/libsass-0.23.0.tar.gz", hash = "sha256:6f209955ede26684e76912caf329f4ccb57e4a043fd77fe0e7348dd9574f1880", size = 316068, upload-time = "2024-01-06T18:53:05.404Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/13/fc1bea1de880ca935137183727c7d4dd921c4128fc08b8ddc3698ba5a8a3/libsass-0.23.0-cp38-abi3-macosx_11_0_x86_64.whl", hash = "sha256:34cae047cbbfc4ffa832a61cbb110f3c95f5471c6170c842d3fed161e40814dc", size = 1086783, upload-time = "2024-01-06T19:02:38.903Z" },
+    { url = "https://files.pythonhosted.org/packages/55/2f/6af938651ff3aec0a0b00742209df1172bc297fa73531f292801693b7315/libsass-0.23.0-cp38-abi3-macosx_14_0_arm64.whl", hash = "sha256:ea97d1b45cdc2fc3590cb9d7b60f1d8915d3ce17a98c1f2d4dd47ee0d9c68ce6", size = 982759, upload-time = "2024-01-06T19:02:41.331Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/5a/eb5b62641df0459a3291fc206cf5bd669c0feed7814dded8edef4ade8512/libsass-0.23.0-cp38-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:4a218406d605f325d234e4678bd57126a66a88841cb95bee2caeafdc6f138306", size = 9444543, upload-time = "2024-01-06T19:02:43.191Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/fc/275783f5120970d859ae37d04b6a60c13bdec2aa4294b9dfa8a37b5c2513/libsass-0.23.0-cp38-abi3-win32.whl", hash = "sha256:31e86d92a5c7a551df844b72d83fc2b5e50abc6fbbb31e296f7bebd6489ed1b4", size = 775481, upload-time = "2024-01-06T19:02:46.05Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/20/caf3c7cf2432d85263119798c45221ddf67bdd7dae8f626d14ff8db04040/libsass-0.23.0-cp38-abi3-win_amd64.whl", hash = "sha256:a2ec85d819f353cbe807432d7275d653710d12b08ec7ef61c124a580a8352f3c", size = 872914, upload-time = "2024-01-06T19:02:47.61Z" },
+]
+
+[[package]]
 name = "morphys"
 version = "1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -689,11 +724,12 @@ dependencies = [
     { name = "channels-redis" },
     { name = "crispy-bulma" },
     { name = "django" },
-    { name = "django-bulma" },
     { name = "django-crispy-forms" },
     { name = "django-feather" },
     { name = "django-guardian" },
     { name = "django-htmx" },
+    { name = "django-simple-bulma", version = "2.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "django-simple-bulma", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "granian", extra = ["reload"] },
     { name = "ipfshttpclient" },
     { name = "python-dotenv" },
@@ -712,11 +748,11 @@ requires-dist = [
     { name = "channels-redis", specifier = ">=4.3.0" },
     { name = "crispy-bulma", specifier = ">=0.12.0" },
     { name = "django", specifier = ">=5.2.6" },
-    { name = "django-bulma", specifier = ">=0.10.0" },
     { name = "django-crispy-forms", specifier = ">=2.4" },
     { name = "django-feather", specifier = ">=0.3.0" },
     { name = "django-guardian", specifier = ">=3.2.0" },
     { name = "django-htmx", specifier = ">=1.26.0" },
+    { name = "django-simple-bulma", specifier = ">=2.7.1" },
     { name = "granian", extras = ["reload"], specifier = ">=2.5.4" },
     { name = "ipfshttpclient", specifier = ">=0.7.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },

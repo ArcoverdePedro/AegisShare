@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 {% load static %}
-{% load bulma_tags %}
+{% load django_simple_bulma %}
+{% bulma %}
 {% load django_htmx %}
 {% load icon %}
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Meu App Django - Home{% endblock %}</title>
+    <title>{% block title %}Home - Aegis Share{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}">
     <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
-    <link rel="stylesheet" href="{% static 'bulma/css/style.min.css' %}">
     {% htmx_script %}
     
     <style>

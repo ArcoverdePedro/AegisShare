@@ -1,8 +1,6 @@
 {% extends 'navbar/navbar.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
-{% load bulma_tags %}
-
 {% load icon %}
 
 
@@ -15,13 +13,11 @@
         <div class="columns is-centered">
             <div class="column is-7-tablet is-5-desktop">
                 <div class="box p-5">
-                    <div class="box has-background-link">
-                        <div class="has-text-centered mb-2">
-                            <h3 class="title has-text-light is-3 has-text-weight-bold">CADASTRAR</h3>
-                            <p class="has-text has-text-light">Crie uma conta</p>
-                        </div>
+                    <div class="box has-background-link has-text-centered">
+                        <p class="title has-text-light is-3 has-text-weight-bold">CADASTRAR</p>
+                        <p class="has-text has-text-light">Crie uma conta</p>
                     </div>
-                    <br>
+
                    
 
                     <div id="message-container">
@@ -39,7 +35,7 @@
                     <form method="post">
                         {% csrf_token %}
 
-                        {{ form|bulma }}
+                        {{ form|crispy }}
 
                         <div class="mt-4 mb-3">
                             <button type="submit" class="button is-link is-fullwidth is-large">
