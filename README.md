@@ -61,9 +61,9 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
     ```bash
     poetry install
     ```
-2.  **Ative o ambiente virtual:**
+2.  **Rode comandos diretamente com Poetry:**
     ```bash
-    poetry shell
+    poetry run <comando>
     ```
 
 ### Usando uv
@@ -72,9 +72,9 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
     ```bash
     uv sync
     ```
-2.  **Ative o ambiente virtual:**
+2.  **Rode comandos diretamente com UV:**
     ```bash
-    source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
+    uv run <comando>
     ```
 
 ### Usando Pip Tradicional
@@ -87,6 +87,10 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 2.  **Instale as dependências a partir do `pyproject.toml`:**
     ```bash
     pip install .
+    ```
+3. **Rode os comandos com python dentro da venv:**
+    ```bash
+    python (manage.py) <comando>
     ```
 
 -----
