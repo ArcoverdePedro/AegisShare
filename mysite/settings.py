@@ -168,7 +168,7 @@ USE_TZ = True
 # 1. STATIC_URL
 # -----------------------------------------------------------
 # A URL pública usada em templates (ex: <img src="/static/img.png">)
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 
 # -----------------------------------------------------------
 # 2. STATICFILES_DIRS (Desenvolvimento)
