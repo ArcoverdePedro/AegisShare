@@ -15,8 +15,8 @@ dependencies = [
     "django-guardian>=3.2.0",
     "django-htmx>=1.26.0",
     "django-simple-bulma>=2.7.1",
-    "granian[reload]>=2.5.4",
-    "ipfshttpclient>=0.7.0",
+    "granian>=2.5.4",
+    "httpx>=0.28.1",
     "python-dotenv>=1.1.1",
     "whitenoise>=6.11.0",
 ]
@@ -24,4 +24,5 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.13.2",
+    "granian[reload]>=2.5.4",
 ]

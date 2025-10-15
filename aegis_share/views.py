@@ -112,7 +112,7 @@ def arquivos(request, id):
 
 
 @login_required
-def upload(request):
+def upload(request, id):
 
     if request.user.nivel_permissao == "CLI":
         messages.error(request, "Sem permissão para essa página.")

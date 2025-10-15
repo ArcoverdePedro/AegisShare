@@ -112,7 +112,7 @@
                                                 
                         {% if user.nivel_permissao != "CLI" %}
                             <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" 
-                                href="{% url 'upload' %}">
+                                href="{% url 'upload' user.id %}">
                                 {% icon "upload" style="width: 18px; height: 18px;" %} Upload
                             </a>    
 

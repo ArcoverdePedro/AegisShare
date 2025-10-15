@@ -12,7 +12,7 @@
 
                 {% if user.nivel_permissao != 'CLI' %}
                     <p class="subtitle has-text-white is-5">O que deseja fazer?</p>
-                    <a href="{% url "upload" %}" class="button is-light is-large mt-4">
+                    <a href="{% url "upload" user.id %}" class="button is-light is-large mt-4">
                         <span class="icon">{% icon "upload" style="width: 18px; height: 18px;" %}</span>
                         <span>Upload de Arquivo</span>
                     </a>
