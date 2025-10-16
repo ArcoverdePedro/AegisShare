@@ -8,89 +8,75 @@
 
 
 {% block page_content %}
-<div class="container is-max-desktop mt-6">
-    <h1 class="title">Upload de Arquivo do Sistema</h1>
+    <section class="section">
+        <div class="container columns is-centered">
+            <div class="column is-half">
+                <div class="box">
+                    <div class="box has-background-link">
+                        <h1 class="title has-text-centered">Upload para IPFS</h1>
+                    </div>
+                    <form method="post" enctype="multipart/form-data" class="mb-4">
+                        {% csrf_token %}
+                        
+                        <div class="field">
+                            <label class="label">{{ form.arquivo.label }}</label>
+                            <div class="file has-name is-fullwidth">
+                                <label class="file-label">
+                                    <input class="file-input" type="file" name="arquivo" accept=".pdf,.png,.jpg,.jpeg">
+                                    <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Escolher arquivo…
+                                        </span>
+                                    </span>
+                                    <span class="file-name">
+                                        Nenhum arquivo selecionado
+                                    </span>
+                                </label>
+                            </div>
+                            
+                            <p class="help">
+                                Tipos permitidos: PDF, PNG, JPG, JPEG (máx. 10MB)
+                            </p>
+                        </div>
 
-    <div id="upload-form-container" class="box">
-        <form method="POST" enctype="multipart/form-data" 
-              action=""
-              _ = "on submit
-                   show .is-loading on #upload-button 
-                   then remove .is-hidden from #loading-message
-                   then fetch target.action 
-                   with body: new FormData(target) 
-                   then call console.log(it)
-                   then set my response to it.responseText
-                   then put my response into #upload-response
-                   then hide .is-loading on #upload-button
-                   then add .is-hidden to #loading-message
-                   then call resetFileInput()
-                   then if it.status is 200
-                     set the innerHTML of #upload-response to '<div class=\"notification is-success\">Arquivo enviado com sucesso!</div>'
-                     else 
-                     set the innerHTML of #upload-response to '<div class=\"notification is-danger\">Erro no upload: ' + it.status + '</div>'
-                   end
-                   then halt">
-            {% csrf_token %}
 
-            <div class="field">
-                <label class="label">Selecione o Arquivo</label>
-                <div class="file has-name is-boxed is-info" 
-                     id="bulma-file-input"
-                     _ = "on change from .file-input
-                          if my.files.length > 0
-                            set the innerText of .file-name to my.files[0].name
-                          else 
-                            set the innerText of .file-name to 'Nenhum arquivo selecionado'">
-                    <label class="file-label">
-                        <input class="file-input" type="file" name="arquivo" required>
-                        <span class="file-cta">
-                            <span class="file-icon">
-                                <i class="fas fa-upload"></i>
-                            </span>
-                            <span class="file-label">
-                                Escolher arquivo...
-                            </span>
-                        </span>
-                        <span class="file-name">
-                            Nenhum arquivo selecionado
-                        </span>
-                    </label>
+
+                        {% if form.arquivo.errors %}
+                            <div class="notification is-danger has-text-light auto-dismiss-up">
+                                {% for error in form.arquivo.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="field">
+                            <div class="control has-text-right">
+                                <button type="submit" name="upload_arquivo" class="button is-link">
+                                    <span>Upload para IPFS</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <div class="field">
-                <button type="submit" id="upload-button" class="button is-primary is-fullwidth">
-                    <span class="icon is-small"><i class="fas fa-paper-plane"></i></span>
-                    <span>Enviar Arquivo</span>
-                </button>
-            </div>
+        </div>
+    </section>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileInput = document.querySelector('.file-input');
+            const fileName = document.querySelector('.file-name');
             
-            <div id="loading-message" class="notification is-warning is-light is-hidden">
-                <p>Enviando arquivo, por favor aguarde...</p>
-            </div>
-
-            <div id="upload-response" class="mt-4">
-                </div>
-        </form>
-    </div>
-</div>
-
-<script>
-// Função simples de JS para resetar o input de arquivo e o nome no Bulma
-function resetFileInput() {
-    const fileInput = document.querySelector('#bulma-file-input .file-input');
-    const fileName = document.querySelector('#bulma-file-input .file-name');
-    
-    // Reseta o input de arquivo
-    fileInput.value = '';
-    
-    // Reseta o nome do arquivo no componente Bulma
-    fileName.textContent = 'Nenhum arquivo selecionado';
-}
-</script>
-
-<script src="https://unpkg.com/hyperscript@0.9.12"></script> 
+            fileInput.onchange = () => {
+                if (fileInput.files.length > 0) {
+                    fileName.textContent = fileInput.files[0].name;
+                }
+            };
+        });
+    </script>
 {% endblock %}
 
 

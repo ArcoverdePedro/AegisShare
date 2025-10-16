@@ -54,8 +54,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "crispy_forms",
-    'django_simple_bulma',
-    'crispy_bulma',
+    "django_simple_bulma",
+    "crispy_bulma",
     "django_feather",
     "aegis_share",
 ]
@@ -168,7 +168,7 @@ USE_TZ = True
 # 1. STATIC_URL
 # -----------------------------------------------------------
 # A URL pública usada em templates (ex: <img src="/static/img.png">)
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
 # -----------------------------------------------------------
 # 2. STATICFILES_DIRS (Desenvolvimento)
@@ -177,7 +177,7 @@ STATIC_URL = 'static/'
 # É para arquivos estáticos *globais* que não pertencem a apps específicas.
 STATICFILES_DIRS = [
     # Procura por arquivos na pasta 'static' que está na raiz do projeto
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
 # -----------------------------------------------------------
@@ -186,7 +186,7 @@ STATICFILES_DIRS = [
 # O diretório ÚNICO para onde o comando 'collectstatic' irá copiar
 # TODOS os arquivos estáticos (do STATICFILES_DIRS e dos apps/static).
 # ESTA PASTA SERÁ SERVADA PELO SEU SERVIDOR WEB (Nginx/Apache) em produção.
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # -----------------------------------------------------------
 # 4. STATICFILES_FINDERS (Opcional, mas útil)
@@ -194,9 +194,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Define como o Django encontra arquivos. O padrão é bom, mas é útil
 # para referência:
 STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'django_simple_bulma.finders.SimpleBulmaFinder',
+    "django.contrib.staticfiles.finders.FileSystemFinder",
+    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+    "django_simple_bulma.finders.SimpleBulmaFinder",
 ]
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

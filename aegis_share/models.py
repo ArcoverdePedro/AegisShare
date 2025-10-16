@@ -35,32 +35,33 @@ class CustomUser(AbstractUser):
 
 
 class IPFSFile(models.Model):
-    cid = models.CharField(
-        max_length=255, unique=True, verbose_name="IPFS Content ID"
+    pinata_id = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="ID do Pinata"
     )
-
+    cid = models.CharField(max_length=255, unique=True, verbose_name="IPFS Content ID")
     nome_arquivo = models.CharField(max_length=255)
-
+    mime_type = models.CharField(max_length=100, null=True, blank=True)
     tamanho_arquivo = models.BigIntegerField()
+    is_duplicate = models.BooleanField(default=False)
 
     dono_arquivo = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="uploaded_ipfs_file"
+        "CustomUser", on_delete=models.CASCADE, related_name="uploaded_ipfs_file"
     )
 
+    data_criado_pinata = models.DateTimeField(
+        null=True, blank=True, verbose_name="Data criada na Pinata"
+    )
     data_adicionado = models.DateTimeField(auto_now_add=True)
 
     usuarios_permitidos = models.ManyToManyField(
-        CustomUser, through="FileAccess", related_name="accessible_ipfs_files"
+        "CustomUser", through="FileAccess", related_name="accessible_ipfs_files"
     )
 
     def user_tem_acesso(self, user):
-
         if user.is_admin():
             return True
-
         if self.dono_arquivo == user:
             return True
-
         return self.usuarios_permitidos.filter(id=user.id).exists()
 
     def __str__(self):
@@ -68,7 +69,6 @@ class IPFSFile(models.Model):
 
 
 class FileAccess(models.Model):
-
     arquivo = models.ForeignKey(IPFSFile, on_delete=models.CASCADE)
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

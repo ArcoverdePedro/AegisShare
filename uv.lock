@@ -372,19 +372,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-guardian"
-version = "3.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e2/f9/bcff6a931298b9eb55e1550b55ab964fab747f594ba6d2d81cbe19736c5f/django_guardian-3.2.0.tar.gz", hash = "sha256:9e18ecd2e211b665972690c2d03d27bce0ea4932b5efac24a4bb9d526950a69e", size = 99940, upload-time = "2025-09-16T10:35:53.609Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/23/63a7d868373a73d25c4a5c2dd3cce3aaeb22fbee82560d42b6e93ba01403/django_guardian-3.2.0-py3-none-any.whl", hash = "sha256:0768565a057988a93fc4a1d93649c4a794abfd7473a8408a079cfbf83c559d77", size = 134674, upload-time = "2025-09-16T10:35:51.69Z" },
-]
-
-[[package]]
 name = "django-htmx"
 version = "1.26.0"
 source = { registry = "https://pypi.org/simple" }
@@ -622,7 +609,6 @@ dependencies = [
     { name = "django" },
     { name = "django-crispy-forms" },
     { name = "django-feather" },
-    { name = "django-guardian" },
     { name = "django-htmx" },
     { name = "django-simple-bulma", version = "2.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "django-simple-bulma", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -647,7 +633,6 @@ requires-dist = [
     { name = "django", specifier = ">=5.2.6" },
     { name = "django-crispy-forms", specifier = ">=2.4" },
     { name = "django-feather", specifier = ">=0.3.0" },
-    { name = "django-guardian", specifier = ">=3.2.0" },
     { name = "django-htmx", specifier = ">=1.26.0" },
     { name = "django-simple-bulma", specifier = ">=2.7.1" },
     { name = "granian", specifier = ">=2.5.4" },

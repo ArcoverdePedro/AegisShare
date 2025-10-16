@@ -23,7 +23,7 @@ class FirstUserForm(UserCreationForm):
             attrs={
                 "class": "cpf",
                 "placeholder": "999.999.999-99",
-                'pattern': r'\d{3}\.\d{3}\.\d{3}-\d{2}',
+                "pattern": r"\d{3}\.\d{3}\.\d{3}-\d{2}",
             }
         ),
     )
@@ -64,7 +64,7 @@ class FormUserADM(UserCreationForm):
             attrs={
                 "class": "cpf input",
                 "placeholder": "999.999.999-99",
-                'inputmode': 'numeric',
+                "inputmode": "numeric",
             }
         ),
     )
@@ -115,7 +115,7 @@ class ClienteForm(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"class":"cpf", "placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(attrs={"class": "cpf", "placeholder": "999.999.999-99"}),
     )
 
     class Meta(UserCreationForm.Meta):
@@ -132,9 +132,22 @@ class ClienteForm(UserCreationForm):
         return user
 
 
-class FileInputIPFSForm(forms.ModelForm):
-    """Form para upload ou registro de arquivos IPFS."""
+class IPFSForm(forms.Form):
+    arquivo = forms.FileField(
+        label="Selecione o arquivo",
+        required=True,
+        widget=forms.FileInput(attrs={"class": "file-input"}),
+    )
 
-    class Meta:
-        model = IPFSFile
-        fields = ["cid", "nome_arquivo", "tamanho_arquivo"]
+    def clean_arquivo(self):
+        file = self.cleaned_data.get("arquivo")
+
+        max_size = 10 * 1024 * 1024
+        if file.size > max_size:
+            raise forms.ValidationError("O arquivo excede o limite de 10MB.")
+
+        allowed_types = ["application/pdf", "image/png", "image/jpeg"]
+        if file.content_type not in allowed_types:
+            raise forms.ValidationError("Tipo de arquivo não permitido.")
+
+        return file

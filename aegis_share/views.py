@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import FormUserADM, FirstUserForm, ClienteForm
+from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm
 from django.views import View
 import requests
+from django.http import JsonResponse
+from django.utils import timezone
 from dotenv import load_dotenv
 import os
 
@@ -41,13 +43,45 @@ class FirstSuperuserCreateView(View):
         return render(request, self.template_name, {"form": form})
 
 
-def uploadipfs(filepath, jwt_token):
+def uploadipfs(filepath):
     url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
-    headers = {'Authorization': f'Bearer {os.getenv("PINATA_JWT_TOKEN")}'}
+    headers = {"Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}"}
 
-    with open(filepath, 'rb') as file:
-        response = requests.post(url, files={'file': file}, headers=headers)
-        return response.json()
+    with open(filepath, "rb") as file:
+        response = requests.post(url, files={"file": file}, headers=headers)
+
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return response.status_code
+
+
+def gerar_link_pinata(request):
+    if request.method == "POST":
+        url = "https://api.pinata.cloud/v3/files/private/download_link"
+
+        payload = {
+            "url": "https://example.mypinata.cloud/files/bafybeifq444z4b7yqzcyz4a5gspb2rpyfcdxp3mrfpigmllh52ld5tyzwm",
+            "expires": 500000,
+            "date": int(timezone.now().timestamp()),
+            "method": "GET",
+        }
+
+        headers = {
+            "Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}",
+            "Content-Type": "application/json",
+        }
+
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            response.raise_for_status()  # levanta erro se status != 2xx
+            data = response.json()
+            return JsonResponse({"success": True, "pinata_response": data})
+
+        except requests.RequestException as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Método não permitido"}, status=405)
 
 
 def home(request):
@@ -84,7 +118,6 @@ def custom_login(request):
 
 @login_required
 def cadastro(request):
-
     if request.user.nivel_permissao == "CLI":
         messages.error(request, "Sem permissão para essa página.")
         return redirect("home")
@@ -121,15 +154,46 @@ def notifications(request):
 
 @login_required
 def arquivos(request, id):
-
     return render(request, "arquivos/arquivos.html")
 
 
 @login_required
-def upload(request, id):
-
+def upload(request):
     if request.user.nivel_permissao == "CLI":
         messages.error(request, "Sem permissão para essa página.")
         return redirect("home")
 
-    return render(request, "arquivos/upload.html")
+    if request.method == "POST":
+        form = IPFSForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            arquivo = form.cleaned_data["arquivo"]
+            temp_path = f"/tmp/{arquivo.name}"
+
+            # salva temporariamente o arquivo
+            with open(temp_path, "wb+") as f:
+                for chunk in arquivo.chunks():
+                    f.write(chunk)
+
+            # envia para o Pinata
+            ipfs_file = uploadipfs(temp_path)
+
+            return JsonResponse(
+                {
+                    "mensagem": "Upload feito com sucesso!",
+                    "cid": ipfs_file.cid,
+                    "nome": ipfs_file.nome_arquivo,
+                    "mime_type": ipfs_file.mime_type,
+                    "tamanho": ipfs_file.tamanho_arquivo,
+                }
+            )
+
+    else:
+        form = IPFSForm()
+
+    return render(request, "arquivos/upload.html", {"form": form})
+
+
+@login_required
+def user(request):
+    return render(request, "user/user.html")

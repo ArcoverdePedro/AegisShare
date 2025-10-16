@@ -10,6 +10,7 @@ urlpatterns = [
     path("cadastro/", views.cadastro, name="cadastro"),
     path("sobre/", views.sobre, name="sobre"),
     path("arquivos/<str:id>", views.arquivos, name="arquivos"),
-    path("upload/<str:id>", views.upload, name="upload"),
+    path("upload/", views.upload, name="upload"),
+    path("user/", views.user, name="user"),
     path("notifications/", views.notifications, name="notifications"),
 ]
