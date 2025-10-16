@@ -124,3 +124,4 @@ Thumbs.db
 instance/
 .webassets-cache
 
+.env

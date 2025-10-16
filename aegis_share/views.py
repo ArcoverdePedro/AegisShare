@@ -4,11 +4,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import FormUserADM, FirstUserForm, ClienteForm
 from django.views import View
+import requests
+from dotenv import load_dotenv
+import os
 
 # from .models import
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+load_dotenv()
 
 
 class FirstSuperuserCreateView(View):
@@ -34,6 +39,15 @@ class FirstSuperuserCreateView(View):
             return redirect("home")
 
         return render(request, self.template_name, {"form": form})
+
+
+def uploadipfs(filepath, jwt_token):
+    url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+    headers = {'Authorization': f'Bearer {os.getenv("PINATA_JWT_TOKEN")}'}
+
+    with open(filepath, 'rb') as file:
+        response = requests.post(url, files={'file': file}, headers=headers)
+        return response.json()
 
 
 def home(request):

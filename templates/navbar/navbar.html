@@ -142,14 +142,13 @@
                 
                 <div class="navbar-end">
                     {% if user.is_authenticated %}
+                        <a id="userclickDropdown" class="navbar-link">
+                            {% icon "user" %} {{ user.username }}
+                        </a>
                         <div 
                             class="navbar-item has-dropdown"
-                            id="userDropdown"
-                            _="on click from #userclickDropdown toggle .is-active on #userDropdown"
+                            id="userDropdown" 
                         >
-                            <a id="userclickDropdown" class="navbar-link">
-                                {% icon "user" %} {{ user.username }}
-                            </a>
 
                             <div class="navbar-dropdown is-right">
 
@@ -191,7 +190,7 @@
         {% endblock %}
     </div>
 
-    <footer class="footer has-background-dark has-text-light has-text-centered" style="padding: 1rem 1.5rem;">
+    <footer class="footer has-background-dark has-text-light has-text-centered" style="padding: 0.5rem 1rem;">
         <div class="container">
             <p>&#x1F12F; <a href="https://github.com/ArcoverdePedro/AegisShare.git" class="has-text-white">Aegis Share</a>, Projeto de <a href="https://github.com/ArcoverdePedro" class="has-text-white">Pedro Abílio Pereira Arcoverde.</a> {% now "Y" %}</p>
         </div>
@@ -254,6 +253,39 @@
         window.addEventListener('load', resetarTodosOsFormularios);
     </script>
 
+    <script>
+        function initDropdown(buttonId, dropdownId) {
+            const button = document.getElementById(buttonId);
+            const dropdown = document.getElementById(dropdownId);
+            
+            if (!button || !dropdown) {
+                console.warn(`Dropdown não encontrado: ${buttonId} ou ${dropdownId}`);
+                return;
+            }
+            
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdown.classList.toggle('is-active');
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                    dropdown.classList.remove('is-active');
+                }
+            });
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && dropdown.classList.contains('is-active')) {
+                    dropdown.classList.remove('is-active');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initDropdown('userclickDropdown', 'userDropdown');
+        });
+    </script>
 
 
 
