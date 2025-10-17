@@ -122,13 +122,3 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
     ```
 
 3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.
-
------
-
-## Configurações Específicas
-
-Certifique-se de que as seguintes variáveis de ambiente (ou configurações no `settings.py`) estejam corretas:
-
-  * **`REDIS_URL`**: O endereço da sua instância Redis (padrão: `redis://127.0.0.1:6379/1`).
-  * **`IPFS_HTTP_CLIENT_HOST`**: O endereço da API do seu daemon IPFS (padrão: `127.0.0.1`).
-  * **`IPFS_HTTP_CLIENT_PORT`**: A porta da API do seu daemon IPFS (padrão: `5001`).
