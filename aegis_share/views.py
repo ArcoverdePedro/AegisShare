@@ -45,7 +45,7 @@ class FirstSuperuserCreateView(View):
 
 
 def uploadipfs(filepath):
-    url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
+    url = "https://uploads.pinata.cloud/v3/files"
     headers = {"Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}"}
 
     with open(filepath, "rb") as file:
@@ -75,7 +75,7 @@ def gerar_link_pinata(request):
 
         try:
             response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()  # levanta erro se status != 2xx
+            response.raise_for_status()
             data = response.json()
             return JsonResponse({"success": True, "pinata_response": data})
 
@@ -83,6 +83,7 @@ def gerar_link_pinata(request):
             return JsonResponse({"success": False, "error": str(e)}, status=500)
 
     return JsonResponse({"error": "Método não permitido"}, status=405)
+
 
 @login_required
 def buscar_cliente(request):
@@ -175,26 +176,23 @@ def upload(request):
         form = IPFSForm(request.POST, request.FILES)
 
         if form.is_valid():
+            cliente_id = form.cleaned_data["cliente_id"]
             arquivo = form.cleaned_data["arquivo"]
-            temp_path = f"/tmp/{arquivo.name}"
+            arq_temp = f"/tmp/{arquivo.name}"
 
             # salva temporariamente o arquivo
-            with open(temp_path, "wb+") as f:
+            with open(arq_temp, "wb+") as f:
                 for chunk in arquivo.chunks():
                     f.write(chunk)
 
             # envia para o Pinata
-            ipfs_file = uploadipfs(temp_path)
+            ipfs_file = uploadipfs(arq_temp)
 
-            return JsonResponse(
-                {
-                    "mensagem": "Upload feito com sucesso!",
-                    "cid": ipfs_file.cid,
-                    "nome": ipfs_file.nome_arquivo,
-                    "mime_type": ipfs_file.mime_type,
-                    "tamanho": ipfs_file.tamanho_arquivo,
-                }
-            )
+            if ipfs_file is int:
+                messages.error(request, f"Request erro: {ipfs_file}")
+            else:
+                messages.success(request, f"Deu Certo {ipfs_file}")
+
 
     else:
         form = IPFSForm()

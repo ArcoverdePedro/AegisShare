@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, IPFSFile
+from uuid import UUID
 from crispy_bulma.widgets import FileUploadInput
 
 
@@ -62,7 +63,7 @@ class FormUserADM(UserCreationForm):
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf input",
+                "class": "cpf",
                 "placeholder": "999.999.999-99",
             }
         ),
@@ -116,7 +117,7 @@ class ClienteForm(UserCreationForm):
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf input",
+                "class": "cpf",
                 "placeholder": "999.999.999-99",
             }
         ),
@@ -138,35 +139,65 @@ class ClienteForm(UserCreationForm):
 
 class IPFSForm(forms.Form):
     cliente = forms.CharField(
-        label="Buscar cliente (nome ou CPF)",
-        required=False,
+        label="Buscar cliente",
+        required=True,
         widget=forms.TextInput(
             attrs={
                 "placeholder": "Digite o nome ou CPF do cliente",
                 "id": "cliente_input",
-                "class": "input is-rounded"
+                "class": "input"
             }
         ),
+        error_messages={
+            'required': 'Campo Cliente é obrigatório.'
+        }
     )
     
-    arquivo = forms.FileField(
-        label="Selecione o arquivo",
-        required=False,
-        widget=FileUploadInput(attrs={'id': 'id_arquivo'})
+    cliente_id = forms.CharField(
+        required=True,
+        widget=forms.HiddenInput(attrs={"id": "cliente_id"}),
+        error_messages={'required': 'Cliente inválido ou não selecionado.'}
     )
 
+    arquivo = forms.FileField(
+        label="Selecione o arquivo",
+        required=True,
+        widget=forms.FileInput(attrs={
+            'id': 'id_arquivo',
+            'class': 'file-input'
+        }),
+        error_messages={
+            'required': 'Campo Arquivo é obrigatório.'
+        }
+    )
+
+    def clean_cliente_id(self):
+        from uuid import UUID
+        cliente_id = self.cleaned_data.get("cliente_id")
+
+        if not cliente_id:
+            raise forms.ValidationError("Cliente não selecionado.")
+
+        try:
+            UUID(cliente_id)
+        except ValueError:
+            raise forms.ValidationError("Identificador de cliente inválido.")
+
+        if not CustomUser.objects.filter(id=cliente_id).exists():
+            raise forms.ValidationError("Cliente inexistente.")
+
+        return cliente_id
+    
     def clean_arquivo(self):
         arquivo = self.cleaned_data.get("arquivo")
         
-        if not arquivo:
-            raise forms.ValidationError("Este campo é obrigatório.")
-
-        max_size = 10 * 1024 * 1024  # 10MB
-        if arquivo.size > max_size:
-            raise forms.ValidationError("O arquivo excede o limite de 10MB.")
-
-        allowed_types = ["application/pdf", "image/png", "image/jpeg"]
-        if arquivo.content_type not in allowed_types:
-            raise forms.ValidationError("Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos.")
-
+        if arquivo:
+            max_size = 10 * 1024 * 1024  # 10MB
+            if arquivo.size > max_size:
+                raise forms.ValidationError("O arquivo excede o limite de 10MB.")
+            
+            allowed_types = ["application/pdf", "image/png", "image/jpeg"]
+            if arquivo.content_type not in allowed_types:
+                raise forms.ValidationError("Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos.")
+        
         return arquivo

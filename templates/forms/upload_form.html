@@ -1,0 +1,92 @@
+{% block extra_css %}
+<style>
+    /* Oculta o input file padrão */
+    .file-input {
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
+    }
+</style>
+{% endblock %}
+
+<form method="post" enctype="multipart/form-data" id="uploadForm" class="mb-4">
+    {% csrf_token %}
+    <!-- Campo Cliente -->
+    <div class="field">
+        <label class="label" for="{{ form.cliente.id_for_label }}">{{ form.cliente.label }}</label>
+        <div class="control">
+            {{ form.cliente }}
+        </div>
+
+        {% if form.cliente.errors %}
+        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
+            {% for error in form.cliente.errors %}
+            {{ error }}
+            {% endfor %}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Campo Arquivo com estilo Bulma -->
+    <div class="field">
+        <label class="label">{{ form.arquivo.label }}</label>
+        <div class="control">
+            <div class="file has-name is-fullwidth">
+                <label class="file-label">
+                    {{ form.arquivo }}
+                    <span class="file-cta">
+                        <span class="file-icon">
+                            <i class="fas fa-upload"></i>
+                        </span>
+                        <span class="file-label">
+                            Choose a file …
+                        </span>
+                    </span>
+                    <span class="file-name" id="file-name-display">
+                        No file chosen
+                    </span>
+                </label>
+            </div>
+        </div>
+
+        {% if form.arquivo.errors %}
+            <div class="notification is-danger is-light mt-1 auto-dismiss-up">
+                {% for error in form.arquivo.errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <input type="hidden" name="cliente_id" id="cliente_id">
+
+    <div class="field mt-5">
+        <div id="div_upload" class="control has-text-right">
+            <button type="submit" id="btn_upload" name="upload_arquivo" class="button is-link">
+                <span>Upload para IPFS</span>
+            </button>
+        </div>
+    </div>
+</form>
+{% block scripts %}
+<script>
+    const fileInput = document.querySelector("#id_arquivo");
+    const fileNameDisplay = document.querySelector("#file-name-display");
+
+    if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileNameDisplay.textContent = this.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+            }
+        });
+    }
+</script>
+
+<script>
+    $(function() {
+        initAutocompleteCliente("cliente_input", "cliente_id", "cliente");
+    });
+</script>
+{% endblock scripts %}

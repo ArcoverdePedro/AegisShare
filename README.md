@@ -1,6 +1,5 @@
 # Aegis Share - Compartilhamento de Arquivos Descentralizado
 ![IPFS Badge](https://img.shields.io/badge/IPFS-65C2CB?logo=ipfs&logoColor=fff&style=for-the-badge) ![Django Badge](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=fff&style=for-the-badge) ![Bulma Badge](https://img.shields.io/badge/Bulma-00D1B2?logo=bulma&logoColor=fff&style=for-the-badge) ![htmx Badge](https://img.shields.io/badge/htmx-36C?logo=htmx&logoColor=fff&style=for-the-badge)
-![Hyperscript](https://img.shields.io/badge/%2F%2F%2F__%20Hyperscript-black?style=for-the-badge&labelColor=0d1a7bff)
 ![uv Badge](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=fff&style=for-the-badge) ![Redis Badge](https://img.shields.io/badge/Redis-FF4438?logo=redis&logoColor=fff&style=for-the-badge)
 ![Docker Badge](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff&style=for-the-badge)
 

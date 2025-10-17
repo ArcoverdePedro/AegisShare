@@ -13,6 +13,8 @@
     <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+
     {% htmx_script %}
     
     <style>
@@ -228,9 +230,16 @@
 
     <!--JavaScript para mascaras-->
     <script>
-        $(document).ready(function(){
-            $('.cpf').mask('000.000.000-00');
-            $('.tel').mask('(00) 00000-0000');
+        new Cleave('.cpf', {
+            delimiters: ['.', '.', '-'],
+            blocks: [3, 3, 3, 2],
+            numericOnly: true
+        });
+
+        new Cleave('.tel', {
+            delimiters: ['-'],
+            blocks: [5, 4],
+            numericOnly: true
         });
     </script>
 
