@@ -11,6 +11,7 @@ urlpatterns = [
     path("sobre/", views.sobre, name="sobre"),
     path("arquivos/<str:id>", views.arquivos, name="arquivos"),
     path("upload/", views.upload, name="upload"),
+    path('buscar-cliente/', views.buscar_cliente, name='buscar_cliente'),
     path("user/", views.user, name="user"),
     path("notifications/", views.notifications, name="notifications"),
 ]

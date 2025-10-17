@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, IPFSFile
+from crispy_bulma.widgets import FileUploadInput
 
 
 class FirstUserForm(UserCreationForm):
@@ -21,9 +22,8 @@ class FirstUserForm(UserCreationForm):
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf",
+                "class": "cpf input",
                 "placeholder": "999.999.999-99",
-                "pattern": r"\d{3}\.\d{3}\.\d{3}-\d{2}",
             }
         ),
     )
@@ -64,7 +64,6 @@ class FormUserADM(UserCreationForm):
             attrs={
                 "class": "cpf input",
                 "placeholder": "999.999.999-99",
-                "inputmode": "numeric",
             }
         ),
     )
@@ -115,7 +114,12 @@ class ClienteForm(UserCreationForm):
         label="CPF",
         max_length=14,
         required=True,
-        widget=forms.TextInput(attrs={"class": "cpf", "placeholder": "999.999.999-99"}),
+        widget=forms.TextInput(
+            attrs={
+                "class": "cpf input",
+                "placeholder": "999.999.999-99",
+            }
+        ),
     )
 
     class Meta(UserCreationForm.Meta):
@@ -133,21 +137,36 @@ class ClienteForm(UserCreationForm):
 
 
 class IPFSForm(forms.Form):
+    cliente = forms.CharField(
+        label="Buscar cliente (nome ou CPF)",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Digite o nome ou CPF do cliente",
+                "id": "cliente_input",
+                "class": "input is-rounded"
+            }
+        ),
+    )
+    
     arquivo = forms.FileField(
         label="Selecione o arquivo",
-        required=True,
-        widget=forms.FileInput(attrs={"class": "file-input"}),
+        required=False,
+        widget=FileUploadInput(attrs={'id': 'id_arquivo'})
     )
 
     def clean_arquivo(self):
-        file = self.cleaned_data.get("arquivo")
+        arquivo = self.cleaned_data.get("arquivo")
+        
+        if not arquivo:
+            raise forms.ValidationError("Este campo é obrigatório.")
 
-        max_size = 10 * 1024 * 1024
-        if file.size > max_size:
+        max_size = 10 * 1024 * 1024  # 10MB
+        if arquivo.size > max_size:
             raise forms.ValidationError("O arquivo excede o limite de 10MB.")
 
         allowed_types = ["application/pdf", "image/png", "image/jpeg"]
-        if file.content_type not in allowed_types:
-            raise forms.ValidationError("Tipo de arquivo não permitido.")
+        if arquivo.content_type not in allowed_types:
+            raise forms.ValidationError("Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos.")
 
-        return file
+        return arquivo

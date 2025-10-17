@@ -10,7 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Home - Aegis Share{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}">
-    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     {% htmx_script %}
     
     <style>
@@ -88,9 +90,7 @@
     <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
         <div class="container">
             <div class="navbar-brand">
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
-                    _= "on click toggle .is-active on #navbarMenu toggle .is-active on me"
-                >
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" id="burgerButton">
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
                     <span aria-hidden="true"></span>
@@ -157,11 +157,7 @@
                             <span>{{ user.username }}</span>
                         </a>
 
-                        <div 
-                            class="navbar-item has-dropdown"
-                            id="userDropdown" 
-                        >
-
+                        <div class="navbar-item has-dropdown" id="userDropdown">
                             <div class="navbar-dropdown is-right">
 
                                 <a href="#" class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">
@@ -180,7 +176,7 @@
 
                                 <hr class="navbar-divider">
 
-                                <a class="navbar-item" _="on click add .is-active to #logoutModal">
+                                <a id="openLogoutModal" class="navbar-item">
                                     {% icon "log-out" %} Sair
                                 </a>
 
@@ -209,21 +205,18 @@
     </footer>
 
     <div class="modal" id="logoutModal">
-        <div class="modal-background">
-        </div>
-
+        <div class="modal-background"></div>
         <div class="modal-card">
             <header class="modal-card-head">
                 <p class="modal-card-title">Confirmar Logout</p>
-                <button class="delete" aria-label="close" _="on click remove .is-active from #logoutModal"></button>
+                <button class="delete" aria-label="close" id="closeButtonTop"></button>
             </header>
-
             <footer class="buttons modal-card-foot is-justify-content-flex-end">
                 <form method="post" action="{% url 'logout' %}" class="is-inline">
                     {% csrf_token %}
                     <button type="submit" class="button is-danger has-text-light">Sair</button>
                 </form>
-                <button class="button" _="on click remove .is-active from #logoutModal">Cancelar</button>
+                <button class="button" id="cancelButton">Cancelar</button>
             </footer>
         </div>
     </div>
@@ -233,21 +226,15 @@
     {% block scripts %}
     {% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
-
+    <!--JavaScript para mascaras-->
     <script>
-        new Cleave('.cpf', {
-            delimiters: ['.', '.', '-'],
-            blocks: [3, 3, 3, 2],
-            numericOnly: true
-        });
-        new Cleave('.tel', {
-            delimiters: ['-'],
-            blocks: [5, 4],
-            numericOnly: true
+        $(document).ready(function(){
+            $('.cpf').mask('000.000.000-00');
+            $('.tel').mask('(00) 00000-0000');
         });
     </script>
-        
+
+    <!--JavaScript para não dar erro de resubmit-->
     <script>
         function limparURLDoHistorico() {
             if (window.history.replaceState) {
@@ -265,6 +252,41 @@
         window.addEventListener('load', resetarTodosOsFormularios);
     </script>
 
+    <!--JavaScript para Modais-->
+    <script>
+            function initStaticModalToggle(modalId, openButtonSelector, closeButtonSelector) {
+                const modal = document.getElementById(modalId);
+
+                if (!modal) {
+                    console.error(`Modal com ID '${modalId}' não encontrado.`);
+                    return;
+                }
+                const openButtons = document.querySelectorAll(openButtonSelector);
+                const closeButtons = modal.querySelectorAll(closeButtonSelector); 
+                const openModal = () => {
+                    modal.classList.add('is-active');
+                };
+                const closeModal = () => {
+                    modal.classList.remove('is-active');
+                };
+                openButtons.forEach(button => {
+                    button.addEventListener('click', openModal);
+                });
+                closeButtons.forEach(button => {
+                    button.addEventListener('click', closeModal);
+                });
+            }
+            // Uso:
+            document.addEventListener('DOMContentLoaded', () => {
+                initStaticModalToggle(
+                    'logoutModal',                 // ID do Modal
+                    '#openLogoutModal',            // Seletor(es) do botão que abre
+                    '.delete, #cancelButton'       // Seletor(es) do botão que fecha (X, Cancelar, etc.)
+                );
+            });
+    </script>
+
+    <!--JavaScript para Dropdowns-->
     <script>
         function initDropdown(buttonId, dropdownId) {
             const button = document.getElementById(buttonId);
@@ -299,8 +321,67 @@
         });
     </script>
 
+    <!--JavaScript para autocomplete-->
+    <script>
+        function initAutocompleteCliente(inputPrefix, hiddenPrefix, type) {
+            $("input[id^='" + inputPrefix + "']").each(function() {
+                var $input = $(this);
+                var itemId = $input.attr("id").replace(inputPrefix, "");
+                var $hidden = $("#" + hiddenPrefix + itemId);
 
+                $input.autocomplete({
+                    source: function(request, response) {
+                        $.ajax({
+                            url: "{% url 'buscar_cliente' %}",
+                            dataType: "json",
+                            data: {
+                                type: type,
+                                term: request.term
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                        label: item.nome,
+                                        value: item.nome,
+                                        id: item.id
+                                    };
+                                }));
+                            }
+                        });
+                    },
+                    minLength: 2,
+                    select: function(event, ui) {
+                        $hidden.val(ui.item.id);
+                    }
+                });
+            });
+        }
 
+        // Inicializar 
+        //$(function() {
+        //    initAutocompleteCliente("id-input-visivel", "id-input-oculto", "oque-sera-enviado-pelo-type");
+        //});
+    </script>
+
+    <!--JavaScript para o botão burger-->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $burger = document.getElementById('burgerButton');
+
+            if ($burger) {
+                const $target = document.getElementById('navbarMenu');
+
+                if ($target) {
+                    $burger.addEventListener('click', () => {
+                        $burger.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                        let isExpanded = $burger.classList.contains('is-active');
+                        $burger.setAttribute('aria-expanded', isExpanded);
+                    });
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>

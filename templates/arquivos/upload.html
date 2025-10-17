@@ -5,81 +5,45 @@
 
 {% block title %}Upload - Aegis Share{% endblock %}
 
-
-
 {% block page_content %}
-    <section class="section">
-        <div class="container columns is-centered">
-            <div class="column is-half">
-                <div class="box">
-                    <div class="box has-background-link">
-                        <h1 class="title has-text-centered">Upload para IPFS</h1>
-                    </div>
-                    <form method="post" enctype="multipart/form-data" class="mb-4">
-                        {% csrf_token %}
-                        
-                        <div class="field">
-                            <label class="label">{{ form.arquivo.label }}</label>
-                            <div class="file has-name is-fullwidth">
-                                <label class="file-label">
-                                    <input class="file-input" type="file" name="arquivo" accept=".pdf,.png,.jpg,.jpeg">
-                                    <span class="file-cta">
-                                        <span class="file-icon">
-                                            <i class="fas fa-upload"></i>
-                                        </span>
-                                        <span class="file-label">
-                                            Escolher arquivo…
-                                        </span>
-                                    </span>
-                                    <span class="file-name">
-                                        Nenhum arquivo selecionado
-                                    </span>
-                                </label>
-                            </div>
-                            
-                            <p class="help">
-                                Tipos permitidos: PDF, PNG, JPG, JPEG (máx. 10MB)
-                            </p>
-                        </div>
-
-
-
-                        {% if form.arquivo.errors %}
-                            <div class="notification is-danger has-text-light auto-dismiss-up">
-                                {% for error in form.arquivo.errors %}
-                                    <p>{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        
-                        <div class="field">
-                            <div class="control has-text-right">
-                                <button type="submit" name="upload_arquivo" class="button is-link">
-                                    <span>Upload para IPFS</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+<section class="section">
+  <div class="container columns is-centered">
+    <div class="column is-half">
+      <div class="box">
+        <div class="box has-background-link">
+          <h1 class="title has-text-centered has-text-white">Upload para IPFS</h1>
         </div>
-    </section>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const fileInput = document.querySelector('.file-input');
-            const fileName = document.querySelector('.file-name');
-            
-            fileInput.onchange = () => {
-                if (fileInput.files.length > 0) {
-                    fileName.textContent = fileInput.files[0].name;
-                }
-            };
-        });
-    </script>
+
+        <form method="post" enctype="multipart/form-data" id="uploadForm" class="mb-4">
+            {% csrf_token %}
+            {{ form|crispy }}
+
+          
+            <input type="hidden" name="cliente_id" id="cliente-id">
+
+          <!-- Botão de envio -->
+          <div class="field mt-5">
+            <div id="div_upload" class="control has-text-right">
+              <button type="submit" id="btn_upload" name="upload_arquivo" class="button is-link is-rounded">
+                <span>Upload para IPFS</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
 {% endblock %}
 
-
-
 {% block scripts %}
+
+<script>
+    $(function() {
+        initAutocompleteCliente("cliente_input", "cliente_id", "cliente");
+    });
+</script>
 {% endblock scripts %}

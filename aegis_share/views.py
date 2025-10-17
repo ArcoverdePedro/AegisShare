@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm
+from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm, CustomUser
 from django.views import View
 import requests
 from django.http import JsonResponse
+from django.db.models import Q
 from django.utils import timezone
 from dotenv import load_dotenv
 import os
@@ -82,6 +83,13 @@ def gerar_link_pinata(request):
             return JsonResponse({"success": False, "error": str(e)}, status=500)
 
     return JsonResponse({"error": "Método não permitido"}, status=405)
+
+@login_required
+def buscar_cliente(request):
+    term = request.GET.get('term', '')
+    clientes = CustomUser.objects.filter(nivel_permissao="CLI").filter(username__icontains=term)[:10]
+    results = [{"id": c.id, "nome": c.username, "cpf": c.cpf} for c in clientes]
+    return JsonResponse(results, safe=False)
 
 
 def home(request):
