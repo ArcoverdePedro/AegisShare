@@ -3,20 +3,13 @@ from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm, CustomUser
+from .models import IPFSFile, CustomUser
 from django.views import View
-import requests
 from django.http import JsonResponse
-from django.db.models import Q
-from django.utils import timezone
-from dotenv import load_dotenv
-import os
-
-# from .models import
+from .utils import gerar_link_pinata, uploadipfs, dar_acesso, get_arquivos_por_permissao
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
-
-load_dotenv()
 
 
 class FirstSuperuserCreateView(View):
@@ -42,47 +35,6 @@ class FirstSuperuserCreateView(View):
             return redirect("home")
 
         return render(request, self.template_name, {"form": form})
-
-
-def uploadipfs(filepath):
-    url = "https://uploads.pinata.cloud/v3/files"
-    headers = {"Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}"}
-
-    with open(filepath, "rb") as file:
-        response = requests.post(url, files={"file": file}, headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return response.status_code
-
-
-def gerar_link_pinata(request):
-    if request.method == "POST":
-        url = "https://api.pinata.cloud/v3/files/private/download_link"
-
-        payload = {
-            "url": "https://example.mypinata.cloud/files/bafybeifq444z4b7yqzcyz4a5gspb2rpyfcdxp3mrfpigmllh52ld5tyzwm",
-            "expires": 500000,
-            "date": int(timezone.now().timestamp()),
-            "method": "GET",
-        }
-
-        headers = {
-            "Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}",
-            "Content-Type": "application/json",
-        }
-
-        try:
-            response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            data = response.json()
-            return JsonResponse({"success": True, "pinata_response": data})
-
-        except requests.RequestException as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
-
-    return JsonResponse({"error": "Método não permitido"}, status=405)
 
 
 @login_required
@@ -162,8 +114,12 @@ def notifications(request):
 
 
 @login_required
-def arquivos(request, id):
-    return render(request, "arquivos/arquivos.html")
+def arquivos(request):
+    context = {}
+    user = request.user
+    context["arquivos"] = get_arquivos_por_permissao(user)
+
+    return render(request, "arquivos/arquivos.html", context)
 
 
 @login_required
@@ -176,29 +132,44 @@ def upload(request):
         form = IPFSForm(request.POST, request.FILES)
 
         if form.is_valid():
-            cliente_id = form.cleaned_data["cliente_id"]
+            dono_arquivo = CustomUser.objects.get(id=form.cleaned_data["cliente_id"])
             arquivo = form.cleaned_data["arquivo"]
             arq_temp = f"/tmp/{arquivo.name}"
 
-            # salva temporariamente o arquivo
             with open(arq_temp, "wb+") as f:
                 for chunk in arquivo.chunks():
                     f.write(chunk)
 
-            # envia para o Pinata
             ipfs_file = uploadipfs(arq_temp)
 
-            if ipfs_file is int:
-                messages.error(request, f"Request erro: {ipfs_file}")
+
+            if isinstance(ipfs_file, int):
+                messages.error(request, f"Request deu erro no Servidor: {ipfs_file}")
             else:
-                messages.success(request, f"Deu Certo {ipfs_file}")
-
-
+                if "data" in ipfs_file:
+                    dados = ipfs_file["data"]
+                    id_arquivo = dados["id"]
+                    nome = dados["name"]
+                    cid = dados["cid"]
+                    tamanho = dados["size"]
+                    mime_type = dados["mime_type"]
+                    arq_upload = IPFSFile.objects.create(
+                        pinata_id=id_arquivo,
+                        cid=cid,
+                        nome_arquivo=nome,
+                        tamanho_arquivo=tamanho,
+                        mime_type=mime_type,
+                        dono_arquivo=dono_arquivo,
+                    )
+                    if request.user.nivel_permissao == "FUNC":
+                        dar_acesso(arquivo=arq_upload, usuario_alvo=request.user)
+                    messages.success(request, "Arquivo enviado com sucesso!")
+                else:
+                    messages.error(request, "Resposta inesperada do Pinata")
     else:
         form = IPFSForm()
 
     return render(request, "arquivos/upload.html", {"form": form})
-
 
 @login_required
 def user(request):

@@ -1,6 +1,5 @@
 {% block extra_css %}
 <style>
-    /* Oculta o input file padrão */
     .file-input {
         opacity: 0;
         position: absolute;
@@ -13,23 +12,26 @@
     {% csrf_token %}
     <!-- Campo Cliente -->
     <div class="field">
-        <label class="label" for="{{ form.cliente.id_for_label }}">{{ form.cliente.label }}</label>
-        <div class="control">
-            {{ form.cliente }}
-        </div>
+        <label class="label" for="{{ form.cliente.id_for_label }}">
+            {{ form.cliente.label }}
+        </label>
+
+        <div class="control">{{ form.cliente }}</div>
 
         {% if form.cliente.errors %}
         <div class="notification is-danger is-light mt-1 auto-dismiss-up">
-            {% for error in form.cliente.errors %}
-            {{ error }}
-            {% endfor %}
-        </p>
+            {% for error in form.cliente.errors %} {{ error }} {% endfor %}
+        </div>
+        cliente_id {% endif %} {% if form.cliente_id.errors %}
+        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
+            {% for error in form.cliente_id.errors %} {{ error }} {% endfor %}
+        </div>
         {% endif %}
     </div>
 
     <!-- Campo Arquivo com estilo Bulma -->
     <div class="field">
-        <label class="label">{{ form.arquivo.label }}</label>
+        <label class="label"> {{ form.arquivo.label }} </label>
         <div class="control">
             <div class="file has-name is-fullwidth">
                 <label class="file-label">
@@ -38,31 +40,32 @@
                         <span class="file-icon">
                             <i class="fas fa-upload"></i>
                         </span>
-                        <span class="file-label">
-                            Choose a file …
-                        </span>
+                        <span class="file-label"> Selecionar Arquivo… </span>
                     </span>
                     <span class="file-name" id="file-name-display">
-                        No file chosen
+                        Sem arquivo
                     </span>
                 </label>
             </div>
         </div>
 
         {% if form.arquivo.errors %}
-            <div class="notification is-danger is-light mt-1 auto-dismiss-up">
-                {% for error in form.arquivo.errors %}
-                {{ error }}
-                {% endfor %}
-            </div>
+        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
+            {% for error in form.arquivo.errors %} {{ error }} {% endfor %}
+        </div>
         {% endif %}
     </div>
 
-    <input type="hidden" name="cliente_id" id="cliente_id">
+    <input type="hidden" name="cliente_id" id="cliente_id" />
 
     <div class="field mt-5">
         <div id="div_upload" class="control has-text-right">
-            <button type="submit" id="btn_upload" name="upload_arquivo" class="button is-link">
+            <button
+                type="submit"
+                id="btn_upload"
+                name="upload_arquivo"
+                class="button is-link"
+            >
                 <span>Upload para IPFS</span>
             </button>
         </div>
@@ -74,18 +77,18 @@
     const fileNameDisplay = document.querySelector("#file-name-display");
 
     if (fileInput && fileNameDisplay) {
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener("change", function () {
             if (this.files.length > 0) {
                 fileNameDisplay.textContent = this.files[0].name;
             } else {
-                fileNameDisplay.textContent = 'No file chosen';
+                fileNameDisplay.textContent = "No file chosen";
             }
         });
     }
 </script>
 
 <script>
-    $(function() {
+    $(function () {
         initAutocompleteCliente("cliente_input", "cliente_id", "cliente");
     });
 </script>

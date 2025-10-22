@@ -143,7 +143,7 @@ class IPFSForm(forms.Form):
         required=True,
         widget=forms.TextInput(
             attrs={
-                "placeholder": "Digite o nome ou CPF do cliente",
+                "placeholder": "Buscar Cliente",
                 "id": "cliente_input",
                 "class": "input"
             }

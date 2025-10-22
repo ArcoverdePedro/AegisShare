@@ -108,7 +108,7 @@
 
                     {% if user.is_authenticated %}
                         <a class="navbar-item {% if request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" 
-                           href="{% url 'arquivos' user.id %}">
+                           href="{% url 'arquivos' %}">
                             {% icon "package" style="width: 18px; height: 18px;" %} Arquivos
                         </a>
                                                 
@@ -118,7 +118,7 @@
                                 {% icon "upload" style="width: 18px; height: 18px;" %} Upload
                             </a>    
 
-                            <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
+                            <a class="navbar-item {% if request.resolver_match.url_name == 'chat' %}is-active{% endif %}" 
                                href="#">
                                 {% icon "message-square" style="width: 18px; height: 18px;" %} Chat
                             </a>
@@ -162,7 +162,7 @@
                         <div class="navbar-item has-dropdown" id="userDropdown">
                             <div class="navbar-dropdown is-right">
 
-                                <a href="#" class="navbar-item {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}">
+                                <a href="{% url "user" %}" class="navbar-item {% if request.resolver_match.url_name == 'user' %}is-active{% endif %}">
                                     {% icon "user" %} Meu Perfil
                                 </a>
 
