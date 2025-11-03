@@ -13,11 +13,24 @@
     <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
     {% htmx_script %}
     
     <style>
+
+        .search-input {
+            max-width: 70%;
+        }
+
+        .date-search-input {
+            max-width: 25%;
+        }
+
+        .date-filters {
+            display: flex;
+            gap: 3px;
+        }
 
         body {
             padding-top: 46px;
@@ -58,6 +71,7 @@
                 overflow: hidden;
             }
         }
+
         .auto-dismiss-up {
             animation: autoDismissUp 1s ease-in-out 2s forwards;
             transform-origin: bottom;
@@ -130,11 +144,6 @@
                             {% icon "info" style="width: 18px; height: 18px;" %} Sobre
                         </a>
                         
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'products' %}is-active{% endif %}" 
-                           href="#">
-                            {% icon "package" style="width: 18px; height: 18px;" %} Produtos
-                        </a>
-                        
                         <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
                            href="#">
                             {% icon "mail" style="width: 18px; height: 18px;" %} Contato
@@ -144,11 +153,11 @@
                 
                 <div class="navbar-end">
                     {% if user.is_authenticated %}
-                        <a id="userclickDropdown" class="navbar-link is-flex is-align-items-center">
+                        <button id="userclickDropdown" class="navbar-link is-flex is-align-items-center">
                             {% if user.foto_perfil %}
                                 <figure class="image is-32x32 mr-2">
                                     <img class="is-rounded" 
-                                        src="data:image/jpeg;base64,{{ user.foto_perfil }}" 
+                                        src="{{ user.foto_perfil }}" 
                                         alt="{{ user.username }}">
                                 </figure>
                             {% else %}
@@ -157,7 +166,7 @@
                                 </span>
                             {% endif %}
                             <span>{{ user.username }}</span>
-                        </a>
+                        </button>
 
                         <div class="navbar-item has-dropdown" id="userDropdown">
                             <div class="navbar-dropdown is-right">
@@ -199,6 +208,17 @@
         {% block page_content %}
         {% endblock %}
     </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == "success" %}
+                <div class="notification is-{{ message.tags }} has-text-white is-dismissible auto-dismiss-down" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
+                    {{ message }}
+                </div>   
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
 
     <footer class="footer has-background-dark has-text-light has-text-centered" style="padding: 0.5rem 1rem;">
         <div class="container">
@@ -230,16 +250,30 @@
 
     <!--JavaScript para mascaras-->
     <script>
-        new Cleave('.cpf', {
-            delimiters: ['.', '.', '-'],
-            blocks: [3, 3, 3, 2],
-            numericOnly: true
-        });
+        $(document).ready(function(){
+            var SPMaskBehavior = function (val) {
+            return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
+            },
+            spOptions = {
+            onKeyPress: function (val, e, field, options) {
+                field.mask(SPMaskBehavior.apply({}, arguments), options);
+            }
+            };
 
-        new Cleave('.tel', {
-            delimiters: ['-'],
-            blocks: [5, 4],
-            numericOnly: true
+            $('.tel').mask(SPMaskBehavior, spOptions); 
+
+            $('.data').mask('00/00/0000', {
+                placeholder: 'dd/mm/aaaa',
+                clearIfNotMatch: true,
+                onKeyPress: function(value, event, currentField) {
+
+                    var day = value.substring(0,2);
+                    var month = value.substring(3,5);
+                    
+                    if (day > 31) currentField.val('31/' + month + value.substring(5));
+                    if (month > 12) currentField.val(day + '/12' + value.substring(5));
+                }
+            });
         });
     </script>
 

@@ -1,12 +1,13 @@
+from datetime import datetime, timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm, CustomUser
+from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm, FotoForm
 from .models import IPFSFile, CustomUser
 from django.views import View
 from django.http import JsonResponse
-from .utils import gerar_link_pinata, uploadipfs, dar_acesso, get_arquivos_por_permissao
+from .utils import uploadipfs, dar_acesso, arquivos_por_permissao, imagem_para_base64
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -37,14 +38,55 @@ class FirstSuperuserCreateView(View):
         return render(request, self.template_name, {"form": form})
 
 
+# Ajax / HTMX
 @login_required
 def buscar_cliente(request):
     term = request.GET.get('term', '')
     clientes = CustomUser.objects.filter(nivel_permissao="CLI").filter(username__icontains=term)[:10]
-    results = [{"id": c.id, "nome": c.username, "cpf": c.cpf} for c in clientes]
+    results = [{"id": c.id, "nome": c.username} for c in clientes]
     return JsonResponse(results, safe=False)
 
 
+@login_required
+def buscar_arquivo(request):
+    arquivos = arquivos_por_permissao(request.user)
+    
+    nome_filtro = request.GET.get('nome', '')
+    dono_filtro = request.GET.get('dono', '')
+    data_min_filtro = request.GET.get('data_min', '').strip()
+    data_max_filtro = request.GET.get('data_max', '').strip()
+    
+    if nome_filtro:
+        arquivos = arquivos.filter(nome_arquivo__icontains=nome_filtro)
+    
+    if dono_filtro:
+        arquivos = arquivos.filter(dono_arquivo__username__icontains=dono_filtro)
+    
+    if data_min_filtro and len(data_min_filtro) == 10: 
+        try:
+            data_min_obj = datetime.strptime(data_min_filtro, '%d/%m/%Y').date()
+            arquivos = arquivos.filter(data_adicionado__date__gte=data_min_obj)
+        except ValueError:
+            pass
+    
+    if data_max_filtro and len(data_max_filtro) == 10:
+        try:
+            data_max_date = datetime.strptime(data_max_filtro, '%d/%m/%Y').date()
+            
+            data_limite = data_max_date + timedelta(days=1)
+            
+            arquivos = arquivos.filter(data_adicionado__lt=data_limite)
+            
+        except ValueError:
+            pass
+
+    if request.headers.get('HX-Request'):
+        return render(request, 'arquivos/htmx_arquivos.html', {'arquivos': arquivos})
+    
+    return render(request, 'arquivos/arquivos.html', {'arquivos': arquivos})
+
+
+# Views Padrões
 def home(request):
     if request.user.is_authenticated:
         return render(request, "home/homecomlogin.html")
@@ -117,7 +159,7 @@ def notifications(request):
 def arquivos(request):
     context = {}
     user = request.user
-    context["arquivos"] = get_arquivos_por_permissao(user)
+    context["arquivos"] = arquivos_por_permissao(user)
 
     return render(request, "arquivos/arquivos.html", context)
 
@@ -165,12 +207,26 @@ def upload(request):
                         dar_acesso(arquivo=arq_upload, usuario_alvo=request.user)
                     messages.success(request, "Arquivo enviado com sucesso!")
                 else:
-                    messages.error(request, "Resposta inesperada do Pinata")
+                    messages.error(request, "Resposta inesperada da API Pinata")
     else:
         form = IPFSForm()
 
     return render(request, "arquivos/upload.html", {"form": form})
 
+
 @login_required
 def user(request):
-    return render(request, "user/user.html")
+    user = request.user
+    if request.method == "POST":
+        if 'alterar_foto' in request.POST:
+            form = FotoForm(request.POST, request.FILES)
+            if form.is_valid():
+                foto = form.cleaned_data["arquivo"]
+                fotobase64 = imagem_para_base64(foto)
+                user.foto_perfil = fotobase64
+                user.save()
+            else:
+                messages.error(request, "Formato de imagem inválido")
+    else:
+        form = FotoForm()
+    return render(request, "user/user.html", {"form": form})

@@ -6,12 +6,13 @@
 {% block title %}Arquivos - Aegis Share{% endblock %}
 
 {% block page_content %}
+
 <div class="container mt-5">
   <div class="columns">
     <div class="column is-full">
       <div class="box has-shadow">
         <div class="box has-background-link p-4">
-          <h5 class="title has-text-light is-5 mb-0">{% if request.user.nivel_permissao == "CLI" %}Meus{% endif %}  Arquivos</h5>
+          <h5 class="title has-text-light is-5 mb-0">{% if request.user.nivel_permissao == "CLI" %}Meus {% endif %}Arquivos</h5>
         </div>
 
         <div class="p-0">
@@ -20,37 +21,86 @@
               <table class="table is-hoverable is-fullwidth mb-0">
                 <thead>
                   <tr>
-                    <th>Nome</th>
-                    <th>Dono</th>
-                    <th>CID</th>
-                    <th>Tamanho</th>
-                    <th>Data</th>
-                    <th>Arquivo</th>
+                    <form id="form_filtros">
+                      <th>
+                        <div>Nome</div>
+                        <input type="text" class="input is-small search-input" value="{{request.GET.nome}}" name="nome"
+                            hx-get="{% url "buscar_arquivo" %}"
+                            title="Selecione o Nome do arquivo"
+                            hx-trigger="keyup changed delay:200ms"
+                            hx-target="#table-body"
+                            hx-push-url="true"
+                            hx-include="#form_filtros"
+                            placeholder="Filtrar nome...">
+                      </th>
+
+                      {% if request.user.nivel_permissao != "CLI" %}
+                        <th>
+                            <div>Dono</div>
+                            <input type="text" class="input is-small search-input" value="{{request.GET.dono}}" name="dono"
+                                hx-get="{% url "buscar_arquivo" %}"
+                                title="Selecione o dono"
+                                hx-trigger="keyup changed delay:200ms"
+                                hx-target="#table-body"
+                                hx-push-url="true"
+                                hx-include="#form_filtros"
+                                placeholder="Filtrar dono...">
+                        </th>
+                      {% endif %}
+
+                      <th>
+                          <div>Data (Completa)</div>
+                          <div class="date-filters">
+                              <input type="text" class="input is-small date-search-input data" value="{{request.GET.data_min}}" name="data_min"
+                                    hx-get="{% url "buscar_arquivo" %}"
+                                    title="Data Inicial"
+                                    hx-trigger="keyup changed delay:500ms"
+                                    hx-target="#table-body"
+                                    hx-push-url="true"
+                                    hx-include="#form_filtros"
+                                    placeholder="dd/mm/aaaa"
+                                    maxlength="10">
+
+                              <input type="text" class="input is-small date-search-input data" value="{{request.GET.data_max}}" name="data_max"
+                                    hx-get="{% url "buscar_arquivo" %}"
+                                    title="Data Limite"
+                                    hx-trigger="keyup changed delay:500ms"
+                                    hx-target="#table-body"
+                                    hx-push-url="true"
+                                    hx-include="#form_filtros"
+                                    placeholder="dd/mm/aaaa"
+                                    maxlength="10">
+                          </div>
+                      </th>
+                    
+                      <th>
+                        Tamanho
+                      </th>
+                      
+                      <th>
+                        CID
+                      </th>
+
+                      <th>
+                        Arquivo
+                      </th>
+                    </form>
                   </tr>
                 </thead>
-                <tbody>
-                  {% for arquivo in arquivos %}
-                    <tr>
-                      <td>{{ arquivo.nome_arquivo }}</td>
-                      <td>{{ arquivo.dono_arquivo.username }}</td>
-                      <td style="max-width: 100px; word-break: break-word;">
-                        <small>{{ arquivo.cid|truncatechars:20 }}</small>
-                      </td>
-                      <td>{{ arquivo.tamanho_arquivo|filesizeformat }}</td>
-                      <td>{{ arquivo.data_adicionado|date:"d/m/Y H:i" }}</td>
-                      <td>
-                        <a href="https://ipfs.io/ipfs/{{ arquivo.cid }}" target="_blank" class="button is-small is-link">
-                          Abrir
-                        </a>
-                      </td>
-                    </tr>
-                  {% endfor %}
+                <tbody id="table-body">
+                  
+                  {% include "arquivos/htmx_arquivos.html" %}
+
                 </tbody>
               </table>
             </div>
           {% else %}
             <div class="p-4">
-              <p class=" mb-0">Sem nenhum arquivo registrado.</p>
+              {% if user.nivel_permissao == "FUNC" %}
+                <p class=" mb-0">Sem nenhum arquivo registrado ou compartilhado com você.</p>
+              {% else %}
+                <p class=" mb-0">Sem arquivos.</p>
+              {% endif %}
             </div>
           {% endif %}
         </div>
@@ -58,4 +108,25 @@
     </div>
   </div>
 </div>
+
+<script>
+  function copiarCID(cid) {
+      navigator.clipboard.writeText(cid).then(() => {
+          mostrarNotificacao('CID copiado!', 'success');
+      }).catch(err => {
+          console.error('Erro ao copiar: ', err);
+          mostrarNotificacao('Erro ao copiar CID', 'danger');
+      });
+  }
+
+  function mostrarNotificacao(mensagem, tipo) {
+      const notificationHTML = `
+          <div class="notification is-${tipo} has-text-white is-dismissible auto-dismiss-down" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
+              ${mensagem}
+          </div>
+      `;
+      
+      document.body.insertAdjacentHTML('beforeend', notificationHTML);
+  }
+</script>
 {% endblock %}

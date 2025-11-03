@@ -1,8 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, IPFSFile
-from uuid import UUID
-from crispy_bulma.widgets import FileUploadInput
+from .models import CustomUser
+from .utils import limpar_strings
 
 
 class FirstUserForm(UserCreationForm):
@@ -17,26 +16,45 @@ class FirstUserForm(UserCreationForm):
         ),
     )
 
-    cpf = forms.CharField(
-        label="CPF",
-        max_length=14,
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf input",
-                "placeholder": "999.999.999-99",
+                "class": "tel",
+                "placeholder": "(99) 99999-9999",
             }
         ),
     )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("username", "email", "cpf", "password1", "password2")
+        fields = (
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "telefone",
+            "nivel_permissao",
+            "password1",
+            "password2",
+        )
+
+    def clean_telefone(self):
+        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_limpo = limpar_strings(telefone_formatado)
+
+        if not (10 <= len(telefone_limpo) <= 11):
+            raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
+
+        return telefone_limpo
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         user.cpf = self.cleaned_data["cpf"]
+        user.telefone = self.cleaned_data["telefone"]
         user.is_staff = True
         user.is_superuser = True
         user.nivel_permissao = "ADM"
@@ -57,14 +75,14 @@ class FormUserADM(UserCreationForm):
         ),
     )
 
-    cpf = forms.CharField(
-        label="CPF",
-        max_length=14,
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf",
-                "placeholder": "999.999.999-99",
+                "class": "tel",
+                "placeholder": "(99) 99999-9999",
             }
         ),
     )
@@ -78,18 +96,29 @@ class FormUserADM(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = CustomUser
         fields = (
+            "first_name",
+            "last_name",
             "username",
             "email",
-            "cpf",
+            "telefone",
             "nivel_permissao",
             "password1",
             "password2",
         )
 
+    def clean_telefone(self):
+        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_limpo = limpar_strings(telefone_formatado)
+
+        if not (10 <= len(telefone_limpo) <= 11):
+            raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
+
+        return telefone_formatado
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.cpf = self.cleaned_data["cpf"]
+        user.telefone = self.cleaned_data["telefone"]
         user.nivel_permissao = self.cleaned_data["nivel_permissao"]
         if self.cleaned_data["nivel_permissao"] == "ADM":
             user.is_staff = True
@@ -111,26 +140,46 @@ class ClienteForm(UserCreationForm):
         ),
     )
 
-    cpf = forms.CharField(
-        label="CPF",
-        max_length=14,
+
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
         required=True,
         widget=forms.TextInput(
             attrs={
-                "class": "cpf",
-                "placeholder": "999.999.999-99",
+                "class": "tel",
+                "placeholder": "(99) 99999-9999",
             }
         ),
     )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("username", "email", "cpf", "password1", "password2")
+        fields = (
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "telefone",
+            "nivel_permissao",
+            "password1",
+            "password2",
+        )
+
+
+    def clean_telefone(self):
+        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_limpo = limpar_strings(telefone_formatado)
+
+        if not (10 <= len(telefone_limpo) <= 11):
+            raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
+
+        return telefone_formatado
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.cpf = self.cleaned_data["cpf"]
+        user.telefone = self.cleaned_data["telefone"]
         user.nivel_permissao = "CLI"
         if commit:
             user.save()
@@ -199,5 +248,26 @@ class IPFSForm(forms.Form):
             allowed_types = ["application/pdf", "image/png", "image/jpeg"]
             if arquivo.content_type not in allowed_types:
                 raise forms.ValidationError("Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos.")
+        
+        return arquivo
+
+
+class FotoForm(forms.Form):
+    arquivo = forms.FileField(
+        label="Selecione a Foto",
+        required=True,
+        widget=forms.FileInput(attrs={
+            'id': 'id_foto',
+            'class': 'file-input'
+        }),
+    )
+
+    def clean_arquivo(self):
+        arquivo = self.cleaned_data.get("arquivo")
+        
+        if arquivo:
+            max_size = 10 * 1024 * 1024
+            if arquivo.size > max_size:
+                raise forms.ValidationError("O arquivo excede o limite de 10MB.")
         
         return arquivo

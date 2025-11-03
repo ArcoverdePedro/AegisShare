@@ -1,0 +1,20 @@
+{% for arquivo in arquivos %}
+    <tr>
+        <td>{{ arquivo.nome_arquivo }}</td>
+        {% if request.user.nivel_permissao != "CLI" %}<td>{{ arquivo.dono_arquivo.username }}</td>{% endif %}
+        <td>{{ arquivo.data_adicionado|date:"d/m/Y H:i" }}</td>
+        <td>{{ arquivo.tamanho_em_mb }}</td>
+        <td style="word-break: break-word;">
+            <small title="Copiar CID: {{arquivo.cid}}" style="cursor: pointer;" onclick="copiarCID('{{ arquivo.cid }}')">
+                {{ arquivo.cid|truncatechars:20 }}
+            </small>
+        </td>
+        <td>
+            <a href="https://ipfs.io/ipfs/{{ arquivo.cid }}" target="_blank" class="button is-small is-link">
+                Abrir
+            </a>
+        </td>
+    </tr>
+{% empty %}
+    <tr><td colspan="6" class="has-text-centered">Nenhum arquivo encontrado</td></tr>
+{% endfor %}

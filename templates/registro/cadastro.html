@@ -23,7 +23,7 @@
                     <div id="message-container">
                         {% if messages %}
                             {% for message in messages %}
-                                {% if message.tags != "danger" %}
+                                {% if message.tags != "danger" and message.tags != "success" %}
                                     <div class="notification is-{{ message.tags }} auto-dismiss-up">
                                         {{ message }}
                                     </div>

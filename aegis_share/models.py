@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
 
     foto_perfil = models.TextField(null=True, blank=True)
 
-    cpf = models.CharField(max_length=15, null=True, blank=True)
+    telefone = models.CharField(max_length=16, null=True, blank=True)
 
     nivel_permissao = models.CharField(
         max_length=4,
@@ -47,6 +47,10 @@ class IPFSFile(models.Model):
     usuarios_permitidos = models.ManyToManyField(
         "CustomUser", through="FileAccess", related_name="accessible_ipfs_files"
     )
+
+    @property
+    def tamanho_em_mb(self):
+        return f"{(self.tamanho_arquivo / (1024 * 1024)):.2f} MB"
 
     def user_tem_acesso(self, user):
         if user.is_admin():

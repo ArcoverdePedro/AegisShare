@@ -7,5 +7,177 @@
 {% block title %}{{user.username}} - Aegis Share{% endblock %}
 
 {% block page_content %}
+<section class="section">
+    <div class="container is-max-desktop">
+        
+        <div class="card">
 
+            <div class="card-content">
+                <div class="media is-flex is-align-items-center">
+                    
+                    <div class="media-left">
+                        <figure class="image is-96x96 is-flex is-justify-content-center is-align-items-center">
+                            <div id="btn-abrir-modal-foto" style="cursor: pointer;">
+                                {% if user.foto_perfil %}
+                                    <img class="is-rounded" 
+                                        src="{{ user.foto_perfil }}" 
+                                        alt="{{ user.username }}">
+                                {% else %}
+                                    <span class="icon is-large has-text-grey-light is-96x96">
+                                        {% if user.nivel_permissao == "ADM" %}
+                                            {% icon "user" class="icon has-text-link" style="width: 96px; height: 96px;" %}
+                                        {% elif user.nivel_permissao == "FUNC" %}
+                                            {% icon "user" class="icon has-text-info" style="width: 96px; height: 96px;" %}
+                                        {% else %}
+                                            {% icon "user" class="icon has-text-primary" style="width: 96px; height: 96px;" %}
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </figure>
+                    </div>
+
+                    <div class="media-content ml-4">
+                        <p class="title is-3 mb-1">{{ user.get_full_name|default:user.username }}</p>
+                        {% if user.nivel_permissao == "ADM" %}
+                            <span class="tag is-link">{{ user.nivel_permissao }}</span>
+                        {% elif user.nivel_permissao == "FUNC" %}
+                            <span class="tag is-info">{{ user.nivel_permissao }}</span>
+                        {% else %}
+                            <span class="tag is-primary">{{ user.nivel_permissao }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="content">
+                    
+                    <div class="columns is-multiline">
+                        <div class="column is-6">
+                            <p class="is-size-6"><strong><span class="icon-text">{% icon "mail" %}<span> Email:</span></span></strong></p>
+                            <p class="is-size-6 ml-4">{{ user.email }}</p>
+                        </div>
+
+                        <div class="column is-6">
+                            <p class="is-size-6"><strong><span class="icon-text">{% icon "user" %}<span> Username:</span></span></strong></p>
+                            <p class="is-size-6 ml-4">
+                                {{user.username}}
+                            </p>
+                        </div>
+                        
+                        <div class="column is-6">
+                            <p class="is-size-6"><strong><span class="icon-text">{% icon "phone" %}<span> Telefone:</span></span></strong></p>
+                            <p class="is-size-6 ml-4">
+                                {{user.telefone}}
+                            </p>
+                        </div>
+                        <div class="column is-6">
+                            <p class="is-size-6"><strong><span class="icon-text">{% icon "calendar" %}<span> Membro Desde:</span></span></strong></p>
+                            <p class="is-size-6 ml-4">{{ user.date_joined|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <footer class="card-footer">
+                {% if user.nivel_permissao == "ADM" %}
+                    <a href="#" class="card-footer-item button is-ghost has-text-link">
+                        {% icon "lock" %} Mudar Senha
+                    </a>
+                {% elif user.nivel_permissao == "FUNC" %}
+                    <a href="#" class="card-footer-item button is-ghost has-text-info">
+                        {% icon "lock" %} Mudar Senha
+                    </a>
+                {% else %}
+                    <a href="#" class="card-footer-item button is-ghost has-text-primary">
+                        {% icon "lock" %} Mudar Senha
+                    </a>
+                {% endif %}
+            </footer>
+            
+        </div>
+    </div>
+</section>
+
+<div id="modal-editar-foto" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        
+        <header class="modal-card-head">
+            <p class="modal-card-title">Alterar Foto de Perfil</p>
+            <button class="delete" aria-label="close"></button>
+        </header>
+        
+        <form method="post" enctype="multipart/form-data" id="form-upload-foto">
+            <section class="modal-card-body">
+                {% csrf_token %}
+                <div class="field">
+                    <label class="label"> {{ form.arquivo.label }} </label>
+                    <div class="control">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                {{ form.arquivo }}
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label"> Selecionar Arquivo… </span>
+                                </span>
+                                <span class="file-name" id="file-name-display">
+                                    Sem arquivo
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {% if form.arquivo.errors %}
+                    <div class="notification is-danger is-light mt-1 auto-dismiss-up">
+                        {% for error in form.arquivo.errors %} {{ error }} {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <footer class="buttons modal-card-foot is-justify-content-flex-end">
+                {% if user.nivel_permissao == "ADM" %}
+                    <button type="submit" name="alterar_foto" class="button is-link" id="btn-salvar-foto">Salvar Alterações</button>
+                {% elif user.nivel_permissao == "FUNC" %}
+                    <button type="submit" name="alterar_foto" class="button is-info" id="btn-salvar-foto">Salvar Alterações</button>
+                {% else %}
+                    <button type="submit" name="alterar_foto" class="button is-primary" id="btn-salvar-foto">Salvar Alterações</button>
+                {% endif %}
+                <button type="button" class="button" id="fechar-modal-foto">Cancelar</button>
+            </footer>
+        </form>
+    </div>
+</div>
 {% endblock %}
+{% block scripts %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        initStaticModalToggle(
+            'modal-editar-foto',
+            '#btn-abrir-modal-foto',
+            '.delete, #fechar-modal-foto'
+        );
+    });
+</script>
+
+<script>
+    const fileInput = document.querySelector("#id_foto");
+    const fileNameDisplay = document.querySelector("#file-name-display");
+
+    if (fileInput && fileNameDisplay) {
+        fileInput.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                fileNameDisplay.textContent = this.files[0].name;
+            } else {
+                fileNameDisplay.textContent = "No file chosen";
+            }
+        });
+    }
+</script>
+
+{% endblock scripts %}
