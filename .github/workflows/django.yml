@@ -1,0 +1,40 @@
+name: Django CI - Project Mode (uv.lock)
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11, 3.12, 3.13] 
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    # 1. Configurar Python e uv
+    - name: Setup Python and uv
+      uses: astral-sh/setup-uv@v1
+      with:
+        python-version: ${{ matrix.python-version }} 
+        # Caching é crucial para a velocidade. Ele salva os pacotes baixados.
+        enable-cache: true 
+
+    # 2. Sincronizar Dependências do Projeto
+    - name: Sync Dependencies from uv.lock
+      # O uv sync cria/atualiza o .venv baseado no uv.lock
+      # --frozen: Garante que NADA será alterado no uv.lock (ideal para CI)
+      # --dev: Instala as dependências de desenvolvimento/testes
+      run: |
+        uv sync --frozen --dev 
+
+    # 3. Rodar os Testes
+    - name: Run Tests
+      # uv run executa o comando DENTRO do ambiente virtual sincronizado
+      run: |
+        uv run python manage.py test
