@@ -9,6 +9,12 @@ on:
       - master
     types: [closed]
 
+# 🔐 CONFIGURAÇÃO DE PERMISSÕES CRÍTICA
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
 jobs:
   sync-branches:
     # Só executa quando um PR é mergeado ou em push direto na master
@@ -20,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Busca todo o histórico
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }} # ✅ Já incluso automaticamente
 
       - name: Configurar Git
         run: |
@@ -29,7 +35,7 @@ jobs:
 
       - name: Sincronizar com branches de clientes
         env:
-          # Formato esperado: "cliente-a cliente-b cliente-c"
+          # Formato: "cliente-a cliente-b cliente-c"
           CLIENT_BRANCHES: ${{ vars.CLIENT_BRANCHES }}
         run: |
           # Garante que estamos na master primeiro
@@ -53,10 +59,11 @@ jobs:
                 echo "Abortando merge..."
                 git merge --abort
                 
-                # Cria issue sobre o conflito
+                # Cria issue sobre o conflito usando GitHub CLI
                 gh issue create \
-                  --title "⚠️ Conflito ao sincronizar branch: $branch" \
-                  --body "Conflito detectado ao sincronizar master com $branch. Resolução manual necessária."
+                  --title "Conflito ao sincronizar branch: $branch" \
+                  --body "Conflito detectado ao sincronizar master com $branch em $(date). Resolução manual necessária." \
+                  --label "conflito,sincronização"
               fi
             else
               echo "⚠️ Branch $branch não existe, pulando..."
@@ -70,4 +77,3 @@ jobs:
         if: always()
         run: |
           echo "🏁 Sincronização concluída!"
-          echo "Verifique os logs acima para detalhes de cada branch."
