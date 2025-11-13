@@ -55,6 +55,12 @@ def buscar_arquivo(request):
     dono_filtro = request.GET.get('dono', '')
     data_min_filtro = request.GET.get('data_min', '').strip()
     data_max_filtro = request.GET.get('data_max', '').strip()
+    ordenar = request.GET.get('ordenar')
+    
+    if ordenar == 'tamano_menor':
+        arquivos = arquivos.order_by('-tamanho_arquivo') 
+    elif ordenar == 'tamanho_maior':
+        arquivos = arquivos.order_by('tamanho_arquivo')
     
     if nome_filtro:
         arquivos = arquivos.filter(nome_arquivo__icontains=nome_filtro)
@@ -230,3 +236,8 @@ def user(request):
     else:
         form = FotoForm()
     return render(request, "user/user.html", {"form": form})
+
+
+@login_required
+def chat(request):
+    return render(request, "chat/chat.html")

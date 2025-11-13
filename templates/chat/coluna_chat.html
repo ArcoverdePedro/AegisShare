@@ -1,0 +1,44 @@
+<div class="box p-0" style="height: 100%; display: flex; flex-direction: column; border-radius: 8px;">
+
+    <!-- Área de Mensagens (Carregada via HTMX) -->
+    <div id="chat-messages-area" class="is-flex-grow-1 p-5" style="overflow-y: auto;">
+        <!-- CONTEÚDO INICIAL DA CONVERSA SELECIONADA -->
+        <div class="has-text-centered has-text-grey-light p-6">
+            <span class="icon is-large"><i class="fas fa-comments fa-3x"></i></span>
+            <p class="mt-3 is-size-5">Clique em uma conversa ao lado para começar!</p>
+            <!-- Simulação de uma conversa ativa para o primeiro item -->
+            {% if "1" %}
+                <article class="message is-info is-pulled-left my-4" style="max-width: 60%;">
+                    <div class="message-body has-text-left">
+                        Olá, aqui é o robô de simulação. Bem-vindo ao chat!
+                    </div>
+                </article>
+                <article class="message is-primary is-pulled-right my-4" style="max-width: 60%;">
+                    <div class="message-body has-text-left">
+                        Obrigado! Esta é uma ótima interface.
+                    </div>
+                </article>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Formulário de Envio de Mensagem (Fixo) -->
+    <div class="p-4" style="border-top: 1px solid #ededed;">
+        <form hx-post="#" hx-target="#chat-messages-area" hx-swap="beforeend">
+            {% csrf_token %}
+            <div class="field has-addons">
+                <div class="control is-expanded">
+                    <input class="input is-medium is-rounded" type="text" name="message_content" placeholder="Escreva sua mensagem...">
+                </div>
+                <div class="control">
+                    <button type="submit" class="button is-primary is-medium is-rounded ml-2">
+                        <span class="icon is-small">
+                            <i class="fas fa-paper-plane"></i>
+                        </span>
+                        <span>Enviar</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

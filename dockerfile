@@ -1,6 +1,6 @@
 FROM python:3.13-slim-trixie
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/
 
 ENV UV_NO_CACHE=1 \
     UV_CONCURRENT_INSTALLS=4 \
@@ -30,7 +30,8 @@ RUN uv sync --frozen --no-dev --no-cache \
     && find /app -type f -name '*.pyc' -delete \
     && find . -type f -name '*.py[co]' -delete  \
     && find . -type d -name '*.egg-info' -exec rm -rf {} + 2>/dev/null || true  \
-    && find . -name '*.md' -delete 2>/dev/null || true
+    && find . -name '*.md' -delete 2>/dev/null || true \
+    && apt-get autoremove -y
 
 COPY . .
 

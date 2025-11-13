@@ -12,6 +12,7 @@ urlpatterns = [
     path("arquivos/", views.arquivos, name="arquivos"),
     path("upload/", views.upload, name="upload"),
     path("user/", views.user, name="user"),
+    path("chat/", views.chat, name="chat"),
     path("notifications/", views.notifications, name="notifications"),
     path('buscar-cliente/', views.buscar_cliente, name='buscar_cliente'),
     path("buscar_arquivo/", views.buscar_arquivo, name="buscar_arquivo"),

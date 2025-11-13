@@ -11,8 +11,27 @@
   <div class="columns">
     <div class="column is-full">
       <div class="box has-shadow">
-        <div class="box has-background-link p-4">
-          <h5 class="title has-text-light is-5 mb-0">{% if request.user.nivel_permissao == "CLI" %}Meus {% endif %}Arquivos</h5>
+        <div class="box has-background-link p-4 mb-3"> 
+            <nav class="level is-mobile mb-0">
+              <div class="level-left">
+                  <div class="level-item">
+                      <h5 class="title has-text-light is-5 mb-0">
+                          {% if request.user.nivel_permissao == "CLI" %}Meus {% endif %}Arquivos
+                      </h5>
+                  </div>
+              </div>
+
+              <div class="level-right">
+                  <div class="level-item">
+                      <a href="{% url 'buscar_arquivo' %}" class="button is-small is-light is-inverted">
+                          <span class="icon is-small">
+                              {% icon "x" %}
+                          </span>
+                          <span>Remover Filtros</span>
+                      </a>
+                  </div>
+              </div>
+            </nav>
         </div>
 
         <div class="p-0">
@@ -73,8 +92,22 @@
                           </div>
                       </th>
                     
-                      <th>
-                        Tamanho
+                      <th
+                        hx-get="{% url 'buscar_arquivo' %}"
+                        hx-trigger="change"
+                        hx-target="#table-body"
+                        hx-push-url="true"
+                        hx-include="#form_filtros"
+                      >
+                        <div>Tamanho</div>
+                        <label class="radio">
+                          <input type="radio" name="ordenar" value="tamano_menor" {% if request.GET.ordenar == "tamano_menor" %} checked {% endif %} />
+                          <span class="icon">{% icon "arrow-up" %}</span>
+                        </label>
+                        <label class="radio">
+                          <input type="radio" name="ordenar" value="tamano_maior" {% if request.GET.ordenar == "tamano_maior" %} checked {% endif %} />
+                          <span class="icon">{% icon "arrow-down" %}</span>
+                        </label>
                       </th>
                       
                       <th>

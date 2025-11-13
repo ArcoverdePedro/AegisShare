@@ -1,41 +1,41 @@
-name: Sincronizar Main com Branches de Clientes
+name: Sincronizar master com Branches de Clientes
 
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
     types: [closed]
 
 jobs:
   sync-branches:
-    # Só executa quando um PR é mergeado ou em push direto na main
+    # Só executa quando um PR é mergeado ou em push direto na master
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Busca todo o histórico
+          fetch-depth: 0 # Busca todo o histórico
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Configurar Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-      
+
       - name: Sincronizar com branches de clientes
         env:
           # Formato esperado: "cliente-a cliente-b cliente-c"
           CLIENT_BRANCHES: ${{ vars.CLIENT_BRANCHES }}
         run: |
-          # Garante que estamos na main primeiro
-          git checkout main
-          git pull origin main
-          
+          # Garante que estamos na master primeiro
+          git checkout master
+          git pull origin master
+
           for branch in $CLIENT_BRANCHES; do
             echo "🔄 Sincronizando branch: $branch"
             
@@ -44,8 +44,8 @@ jobs:
               git checkout $branch
               git pull origin $branch
               
-              # Tenta fazer merge da main
-              if git merge origin/main --no-edit; then
+              # Tenta fazer merge da master
+              if git merge origin/master --no-edit; then
                 echo "✅ Merge bem-sucedido na branch $branch"
                 git push origin $branch
               else
@@ -56,16 +56,16 @@ jobs:
                 # Cria issue sobre o conflito
                 gh issue create \
                   --title "⚠️ Conflito ao sincronizar branch: $branch" \
-                  --body "Conflito detectado ao sincronizar main com $branch. Resolução manual necessária."
+                  --body "Conflito detectado ao sincronizar master com $branch. Resolução manual necessária."
               fi
             else
               echo "⚠️ Branch $branch não existe, pulando..."
             fi
             
-            # Volta para main antes da próxima iteração
-            git checkout main
+            # Volta para master antes da próxima iteração
+            git checkout master
           done
-      
+
       - name: Notificar resultado
         if: always()
         run: |

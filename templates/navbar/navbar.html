@@ -133,7 +133,7 @@
                             </a>    
 
                             <a class="navbar-item {% if request.resolver_match.url_name == 'chat' %}is-active{% endif %}" 
-                               href="#">
+                               href="{% url 'chat' %}">
                                 {% icon "message-square" style="width: 18px; height: 18px;" %} Chat
                             </a>
 
@@ -219,12 +219,6 @@
         {% endfor %}
     {% endif %}
     
-
-    <footer class="footer has-background-dark has-text-light has-text-centered" style="padding: 0.5rem 1rem;">
-        <div class="container">
-            <p>&#x1F12F; <a href="https://github.com/ArcoverdePedro/AegisShare.git" class="has-text-white">Aegis Share</a>, Projeto de <a href="https://github.com/ArcoverdePedro" class="has-text-white">Pedro Abílio Pereira Arcoverde.</a> {% now "Y" %}</p>
-        </div>
-    </footer>
 
     <div class="modal" id="logoutModal">
         <div class="modal-background"></div>

@@ -1,0 +1,229 @@
+{% extends 'navbar/navbar.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load icon %}
+
+{% block title %}Chat{% endblock %}
+
+{% block page_content %}
+<style>
+    /* Garante que o container principal ocupe toda a altura disponível */
+    .page-content-wrapper {
+        height: 100vh; /* Altura total da viewport */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chat-container {
+        display: flex;
+        flex: 1; /* Ocupa todo o espaço disponível */
+        min-height: 0; /* Importante para o flex funcionar corretamente */
+        overflow: hidden;
+    }
+    
+    .conversations-sidebar {
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--bulma-border);
+        background: var(--bulma-scheme-main);
+    }
+    
+    .conversations-list {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0; /* Importante para scroll funcionar */
+    }
+    
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* Importante para flex funcionar */
+    }
+    
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        background: var(--bulma-scheme-main-ter);
+        min-height: 0; /* Importante para scroll funcionar */
+    }
+    
+    .message.is-mine {
+        justify-content: flex-end;
+    }
+    
+    /* Estilo para o formulário fixo na parte inferior */
+    .message-form-container {
+        flex-shrink: 0; /* Impede que o formulário encolha */
+        background: var(--bulma-scheme-main);
+        border-top: 1px solid var(--bulma-border);
+    }
+    
+    /* Garante que o body e html tenham altura completa */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+
+<div class="page-content-wrapper">
+    <div class="chat-container">
+        <!-- Sidebar com conversas -->
+        <div class="conversations-sidebar">
+            <div class="box mb-0" style="border-radius: 0; border: none; border-bottom: 1px solid var(--bulma-border);">
+                <h1 class="title is-5 mb-0">Conversas</h1>
+            </div>
+            
+            <div class="box mb-0 p-4" style="border-radius: 0; border: none; border-bottom: 1px solid var(--bulma-border);">
+                <input class="input" type="text" placeholder="Buscar ou Iniciar Conversa">
+            </div>
+            
+            <div class="conversations-list">
+                {% for conversation in conversations %}
+                <a class="panel-block is-block py-3" 
+                   hx-get="{% url 'chat:conversation_detail' conversation.id %}" 
+                   hx-target="#chat-area"
+                   hx-swap="innerHTML">
+                    <div class="media">
+                        <div class="media-left">
+                            {% if conversation.user.avatar %}
+                                <figure class="image is-48x48">
+                                    <img class="is-rounded" src="{{ conversation.user.avatar.url }}" alt="{{ conversation.user.name }}">
+                                </figure>
+                            {% else %}
+                                <span class="icon is-large has-background-link has-text-white" style="width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600;">
+                                    {{ conversation.user.name.0 }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="media-content">
+                            <div class="level mb-1">
+                                <div class="level-left">
+                                    <strong>{{ conversation.user.name }}</strong>
+                                </div>
+                                <div class="level-right">
+                                    <small class="has-text-grey">{{ conversation.last_message_time|timesince }}</small>
+                                </div>
+                            </div>
+                            <p class="is-size-7 has-text-grey" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ conversation.last_message|truncatewords:8 }}
+                                {% if conversation.unread_count %}
+                                    <span class="tag is-primary is-small is-rounded ml-2">{{ conversation.unread_count }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Área principal do chat -->
+        <div class="chat-main" id="chat-area">
+            <!-- Header do chat -->
+            <div class="box mb-0" style="border-radius: 0; border: none; border-bottom: 1px solid var(--bulma-border); flex-shrink: 0;">
+                <div class="media">
+                    <div class="media-left">
+                        <span class="icon is-large has-background-primary has-text-white" style="width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 600;">U</span>
+                    </div>
+                    <div class="media-content">
+                        <p class="title is-6 mb-1">User</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mensagens -->
+            <div class="chat-messages" id="messages-container">
+                <div class="columns is-mobile mb-4">
+                    <div class="column is-8">
+                        <div class="box has-background-white has-text-dark">
+                            <p class="mb-1">Fala de Lá</p>
+                            <p class="is-size-7 has-text-grey has-text-right">{% now "Y-m-d H:i" %}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="columns is-mobile is-justify-content-flex-end mb-4 message is-mine">
+                    <div class="column is-8">
+                        <div class="box has-background-success-light has-text-success-dark">
+                            <p class="mb-1">Fala daqui</p>
+                            <p class="is-size-7 has-text-grey has-text-right">{% now "Y-m-d H:i" %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input de mensagem FIXO na parte inferior -->
+            <div class="message-form-container">
+                <div class="box mb-0" style="border-radius: 0; border: none;">
+                    <form id="message-form" 
+                          hx-post="{% comment %}{% url 'chat:send_message' conversation.id %}{% endcomment %}" 
+                          hx-target="#messages-container" 
+                          hx-swap="beforeend"
+                          hx-on::after-request="document.getElementById('message-input').value = ''">
+                        {% csrf_token %}
+                        <div class="field has-addons">
+                            <p class="control is-expanded">
+                                <input type="text" 
+                                       id="message-input"
+                                       name="message" 
+                                       class="input is-rounded" 
+                                       placeholder="Escreva uma mensagem..."
+                                       autocomplete="off"
+                                       required>
+                            </p>
+                            <p class="control">
+                                <button type="submit" class="button is-primary is-rounded">
+                                    <span class="icon">{% icon "arrow-up" %}</span>
+                                </button>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Função para rolar para a última mensagem
+    function scrollToBottom() {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+    
+    // Rolar para baixo quando a página carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        scrollToBottom();
+        
+        // Adicionar classe ativa às conversas
+        document.querySelectorAll('.panel-block').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.panel-block').forEach(i => {
+                    i.classList.remove('is-active', 'has-background-link-light');
+                });
+                this.classList.add('is-active', 'has-background-link-light');
+            });
+        });
+    });
+    
+    // Rolar para baixo após novas mensagens via HTMX
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'messages-container') {
+            scrollToBottom();
+        }
+    });
+    
+    // Rolar para baixo quando o container de mensagens for atualizado
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.target.id === 'messages-container') {
+            scrollToBottom();
+        }
+    });
+</script>
+{% endblock %}

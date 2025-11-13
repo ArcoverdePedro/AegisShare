@@ -1,13 +1,10 @@
 import base64
 from io import BytesIO
 from PIL import Image
-from django.db.models import Q
-from django.utils import timezone
 import requests
 from dotenv import load_dotenv
 import re
 import os
-from django.http import JsonResponse
 from .models import FileAccess, IPFSFile
 
 
@@ -34,13 +31,13 @@ def dar_acesso(arquivo, usuario_alvo):
 def arquivos_por_permissao(user):
     
     if user.is_admin():
-        return IPFSFile.objects.all()
+        return IPFSFile.objects.all().order_by("-data_adicionado")
     
     elif user.nivel_permissao == "FUNC":
-        return IPFSFile.objects.filter(usuarios_permitidos=user)
+        return IPFSFile.objects.filter(usuarios_permitidos=user).order_by("-data_adicionado")
     
     else:
-        return IPFSFile.objects.filter(dono_arquivo=user)
+        return IPFSFile.objects.filter(dono_arquivo=user).order_by("-data_adicionado")
 
 
 def limpar_strings(string_com_formatacao):
@@ -51,7 +48,6 @@ def limpar_strings(string_com_formatacao):
         return ""
 
     return re.sub(r'[^0-9]', '', string_com_formatacao)
-
 
 
 def imagem_para_base64(arquivo_imagem):

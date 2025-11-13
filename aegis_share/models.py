@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractUser
+from django.conf import settings
 
 
 class CustomUser(AbstractUser):
@@ -79,3 +80,49 @@ class FileAccess(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - Acesso a {self.arquivo.nome_arquivo}"
+
+
+class Conversation(models.Model):
+    """Representa uma conversa entre dois ou mais usuários."""
+    participants = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='conversations',
+        verbose_name='Participantes'
+    )
+    data_ultima_msg = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Última mensagem em'
+    )
+    
+    def __str__(self):
+        return f"Conversa entre {', '.join(self.participants.values_list('username', flat=True))}"
+
+
+class Message(models.Model):
+    """Representa uma única mensagem em uma conversa."""
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        verbose_name='Conversa'
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+        verbose_name='Remetente'
+    )
+    content = models.TextField(verbose_name='Conteúdo')
+
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Data/Hora'
+    )
+
+    class Meta:
+        ordering = ['timestamp']
+        verbose_name = 'Mensagem'
+        verbose_name_plural = 'Mensagens'
+
+    def __str__(self):
+        return f"Mensagem de {self.sender.username} em {self.timestamp.strftime('%H:%M')}"
