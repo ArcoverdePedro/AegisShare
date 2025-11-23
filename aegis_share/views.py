@@ -50,45 +50,45 @@ def buscar_cliente(request):
 @login_required
 def buscar_arquivo(request):
     arquivos = arquivos_por_permissao(request.user)
-    
+
     nome_filtro = request.GET.get('nome', '')
     dono_filtro = request.GET.get('dono', '')
     data_min_filtro = request.GET.get('data_min', '').strip()
     data_max_filtro = request.GET.get('data_max', '').strip()
     ordenar = request.GET.get('ordenar')
-    
+
     if ordenar == 'tamano_menor':
-        arquivos = arquivos.order_by('-tamanho_arquivo') 
+        arquivos = arquivos.order_by('-tamanho_arquivo')
     elif ordenar == 'tamanho_maior':
         arquivos = arquivos.order_by('tamanho_arquivo')
-    
+
     if nome_filtro:
         arquivos = arquivos.filter(nome_arquivo__icontains=nome_filtro)
-    
+
     if dono_filtro:
         arquivos = arquivos.filter(dono_arquivo__username__icontains=dono_filtro)
-    
-    if data_min_filtro and len(data_min_filtro) == 10: 
+
+    if data_min_filtro and len(data_min_filtro) == 10:
         try:
             data_min_obj = datetime.strptime(data_min_filtro, '%d/%m/%Y').date()
             arquivos = arquivos.filter(data_adicionado__date__gte=data_min_obj)
         except ValueError:
             pass
-    
+
     if data_max_filtro and len(data_max_filtro) == 10:
         try:
             data_max_date = datetime.strptime(data_max_filtro, '%d/%m/%Y').date()
-            
+
             data_limite = data_max_date + timedelta(days=1)
-            
+
             arquivos = arquivos.filter(data_adicionado__lt=data_limite)
-            
+
         except ValueError:
             pass
 
     if request.headers.get('HX-Request'):
         return render(request, 'arquivos/htmx_arquivos.html', {'arquivos': arquivos})
-    
+
     return render(request, 'arquivos/arquivos.html', {'arquivos': arquivos})
 
 
