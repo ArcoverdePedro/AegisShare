@@ -31,9 +31,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Formatar Django
+      - name: Formatar Django e Aplicar Migrações
         run: |
-          # Garante que estamos na master primeiro
+          # 1. Configuração e Sincronização
           git checkout master
           git pull origin master
 
@@ -41,12 +41,30 @@ jobs:
           pip install uv
           uv sync --dev
 
-          # Ajustar tudo para deploy
+          # 2. Executar Formatação e Migrações
+          # Comando de formatação
           uv run task fmt
-          uv run manage.py makemigrations && uv run manage.py migrate
 
-          # Envio de volta ao Github
-          git push origin
+          # Comandos de migração (pode gerar novos arquivos .py)
+          uv run manage.py makemigrations 
+          uv run manage.py migrate
+
+          # 3. Preparar para Commit
+
+          # Adiciona todos os arquivos modificados/novos (incluindo migrações e formatação)
+          git add .
+
+          # Verifica se há alterações para commitar
+          if ! git diff-index --quiet HEAD --; then
+            # Se houver alterações, commita com a mensagem automática
+            git commit -m "chore(ci): Formatação e Migrações automáticas"
+            
+            # 4. Envio de volta ao Github
+            echo "Alterações encontradas e commitadas. Enviando para o GitHub..."
+            git push origin master
+          else
+            echo "Nenhuma alteração encontrada após formatação e migrações. O push será ignorado."
+          fi
 
       - name: Notificar resultado
         if: always()
