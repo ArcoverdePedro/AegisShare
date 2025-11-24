@@ -57,7 +57,7 @@ jobs:
           # Verifica se há alterações para commitar
           if ! git diff-index --quiet HEAD --; then
             # Se houver alterações, commita com a mensagem automática
-            git commit -m "chore(ci): Formatação e Migrações automáticas"
+            git commit -m "GHA(ci): Formatação e Migrações automáticas"
             
             # 4. Envio de volta ao Github
             echo "Alterações encontradas e commitadas. Enviando para o GitHub..."
