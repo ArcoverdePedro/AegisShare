@@ -43,6 +43,7 @@ jobs:
 
           # Ajustar tudo para deploy
           uv run task fmt
+          uv run manage.py makemigrations && uv run manage.py migrate
 
           # Envio de volta ao Github
           git push origin
