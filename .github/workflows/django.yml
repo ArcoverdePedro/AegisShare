@@ -43,7 +43,6 @@ jobs:
 
           # Ajustar tudo para deploy
           uv run task fmt
-          uv run task migrate
 
           # Envio de volta ao Github
           git push origin
