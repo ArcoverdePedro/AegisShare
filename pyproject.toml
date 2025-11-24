@@ -26,4 +26,27 @@ dependencies = [
 dev = [
     "ruff>=0.13.2",
     "granian[reload]>=2.5.4",
+    "taskipy>=1.14.1",
 ]
+
+[tool.ruff]
+exclude = [
+    "venv/",
+    ".venv/",
+    "env/",
+    ".env/",
+    "build/",
+    "dist/",
+    "*.egg-info/",
+    "*.db",
+    "*.sqlite3",
+    "*.log",
+    "aegis_share/models.py",
+    "aegis_share/migrations/",
+    "test_tmp_*",
+]
+
+[tool.taskipy.tasks]
+fmt = 'ruff check --fix && ruff format'
+server = 'granian mysite.asgi:application  --interface asgi --reload --host 0.0.0.0 --port 8000'
+migrate = 'manage.py makemigrations && uv run manage.py migrate'

@@ -1,20 +1,145 @@
 {% for arquivo in arquivos %}
-    <tr>
-        <td>{{ arquivo.nome_arquivo }}</td>
-        {% if request.user.nivel_permissao != "CLI" %}<td>{{ arquivo.dono_arquivo.username }}</td>{% endif %}
-        <td>{{ arquivo.data_adicionado|date:"d/m/Y H:i" }}</td>
-        <td>{{ arquivo.tamanho_em_mb }}</td>
-        <td style="word-break: break-word;">
-            <small title="Copiar CID: {{arquivo.cid}}" style="cursor: pointer;" onclick="copiarCID('{{ arquivo.cid }}')">
-                {{ arquivo.cid|truncatechars:20 }}
-            </small>
-        </td>
-        <td>
-            <a href="https://ipfs.io/ipfs/{{ arquivo.cid }}" target="_blank" class="button is-small is-link">
-                Abrir
-            </a>
-        </td>
-    </tr>
+<tr>
+    <td>{{ arquivo.nome_arquivo }}</td>
+
+    {% if request.user.nivel_permissao != "CLI" %}
+        <td>{{ arquivo.dono_arquivo.username }}</td>
+    {% endif %}
+
+    <td>{{ arquivo.data_adicionado|date:"d/m/Y H:i" }}</td>
+    <td>{{ arquivo.tamanho_em_mb }}</td>
+
+    <td style="word-break: break-word;">
+        <small title="Copiar CID: {{ arquivo.cid }}" style="cursor: pointer;"
+               onclick="copiarCID('{{ arquivo.cid }}')">
+            {{ arquivo.cid|truncatechars:20 }}
+        </small>
+    </td>
+
+    <td>
+        <button class="button is-small is-link"
+                onclick="abrirModal('modal-{{ arquivo.id }}')">
+            Ações
+        </button>
+    </td>
+</tr>
+
+
+    <div id="modal-{{ arquivo.id }}" class="modal">
+        <div class="modal-background" onclick="fecharModal('modal-{{ arquivo.id }}')"></div>
+
+        <div class="modal-card">
+
+            <header class="modal-card-head">
+                <p class="modal-card-title">{{ arquivo.nome_arquivo }}</p>
+                <button class="delete" aria-label="close"
+                        onclick="fecharModal('modal-{{ arquivo.id }}')"></button>
+            </header>
+
+            <section class="modal-card-body">
+                <p><strong>CID:</strong> {{ arquivo.cid }}</p>
+                <p><strong>Tamanho:</strong> {{ arquivo.tamanho_em_mb }}</p>
+            </section>
+
+            <footer class="buttons modal-card-foot">
+                <a href="https://ipfs.io/ipfs/{{ arquivo.cid }}" 
+                class="button is-link" target="_blank">
+                    Abrir no IPFS
+                </a>
+                {% if user.nivel_permissao == "ADM" %}
+                    <button class="button is-primary is-dark has-text-light"
+                        onclick="abrirModal('modal-acesso-{{ arquivo.id }}')">
+                        Dar acesso
+                    </button>
+                {% endif %}
+
+                <button class="button"
+                        onclick="fecharModal('modal-{{ arquivo.id }}')">
+                    Cancelar
+                </button>
+            </footer>
+
+        </div>
+    </div>
+
+
+    <div id="modal-acesso-{{ arquivo.id }}" class="modal">
+        <div class="modal-background" onclick="fecharModal('modal-acesso-{{ arquivo.id }}')"></div>
+
+        <div class="modal-card">
+
+            <header class="modal-card-head">
+                <p class="modal-card-title">Conceder acesso</p>
+                <button class="delete" aria-label="close"
+                        onclick="fecharModal('modal-acesso-{{ arquivo.id }}')"></button>
+            </header>
+
+            <section class="modal-card-body">
+
+                <p>Selecione quem terá acesso ao arquivo:</p>
+
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="arquivo_id" value="{{arquivo.id}}">
+                    <div class="field">
+                        <label class="label">Usuário</label>
+                        <div class="control">
+                            <input 
+                                type="text" 
+                                id="usuario_input_{{ arquivo.id }}"
+                                class="input"
+                                name="usuario_nome"
+                                placeholder="Digite o nome do usuário"
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <input 
+                            type="hidden" 
+                            name="usuario_id" 
+                            id="usuario_id_{{ arquivo.id }}">
+                    </div>
+
+                    <br>
+
+                    <footer class="buttons modal-card-foot">
+                        <button class="button is-primary is-dark has-text-light" name="dar_acesso" type="submit">Conceder acesso</button>
+                        <button type="button" class="button"
+                                onclick="fecharModal('modal-acesso-{{ arquivo.id }}')">
+                            Cancelar
+                        </button>
+                    </footer>
+
+                </form>
+
+            </section>
+
+        </div>
+    </div>
+
+
+
 {% empty %}
     <tr><td colspan="6" class="has-text-centered">Nenhum arquivo encontrado</td></tr>
 {% endfor %}
+
+<script>
+function abrirModal(id) {
+    document.getElementById(id).classList.add("is-active");
+}
+
+function fecharModal(id) {
+    document.getElementById(id).classList.remove("is-active");
+}
+</script>
+
+<script>
+$(function() {
+    initAutocompleteFuncionario(
+        "usuario_input_",  // prefixo do input visível
+        "usuario_id_",     // prefixo do hidden
+        "usuario"          // será enviado como ?type=usuario
+    );
+});
+</script>
+

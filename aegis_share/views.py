@@ -41,9 +41,21 @@ class FirstSuperuserCreateView(View):
 # Ajax / HTMX
 @login_required
 def buscar_cliente(request):
-    term = request.GET.get('term', '')
-    clientes = CustomUser.objects.filter(nivel_permissao="CLI").filter(username__icontains=term)[:10]
+    term = request.GET.get("term", "")
+    clientes = CustomUser.objects.filter(nivel_permissao="CLI").filter(
+        username__icontains=term
+    )[:10]
     results = [{"id": c.id, "nome": c.username} for c in clientes]
+    return JsonResponse(results, safe=False)
+
+
+@login_required
+def buscar_funcionario(request):
+    term = request.GET.get("term", "")
+    funcionarios = CustomUser.objects.filter(nivel_permissao="FUNC").filter(
+        username__icontains=term
+    )[:10]
+    results = [{"id": c.id, "nome": c.username} for c in funcionarios]
     return JsonResponse(results, safe=False)
 
 
@@ -51,16 +63,16 @@ def buscar_cliente(request):
 def buscar_arquivo(request):
     arquivos = arquivos_por_permissao(request.user)
 
-    nome_filtro = request.GET.get('nome', '')
-    dono_filtro = request.GET.get('dono', '')
-    data_min_filtro = request.GET.get('data_min', '').strip()
-    data_max_filtro = request.GET.get('data_max', '').strip()
-    ordenar = request.GET.get('ordenar')
+    nome_filtro = request.GET.get("nome", "")
+    dono_filtro = request.GET.get("dono", "")
+    data_min_filtro = request.GET.get("data_min", "").strip()
+    data_max_filtro = request.GET.get("data_max", "").strip()
+    ordenar = request.GET.get("ordenar")
 
-    if ordenar == 'tamano_menor':
-        arquivos = arquivos.order_by('-tamanho_arquivo')
-    elif ordenar == 'tamanho_maior':
-        arquivos = arquivos.order_by('tamanho_arquivo')
+    if ordenar == "tamano_menor":
+        arquivos = arquivos.order_by("-tamanho_arquivo")
+    elif ordenar == "tamanho_maior":
+        arquivos = arquivos.order_by("tamanho_arquivo")
 
     if nome_filtro:
         arquivos = arquivos.filter(nome_arquivo__icontains=nome_filtro)
@@ -70,14 +82,14 @@ def buscar_arquivo(request):
 
     if data_min_filtro and len(data_min_filtro) == 10:
         try:
-            data_min_obj = datetime.strptime(data_min_filtro, '%d/%m/%Y').date()
+            data_min_obj = datetime.strptime(data_min_filtro, "%d/%m/%Y").date()
             arquivos = arquivos.filter(data_adicionado__date__gte=data_min_obj)
         except ValueError:
             pass
 
     if data_max_filtro and len(data_max_filtro) == 10:
         try:
-            data_max_date = datetime.strptime(data_max_filtro, '%d/%m/%Y').date()
+            data_max_date = datetime.strptime(data_max_filtro, "%d/%m/%Y").date()
 
             data_limite = data_max_date + timedelta(days=1)
 
@@ -86,10 +98,10 @@ def buscar_arquivo(request):
         except ValueError:
             pass
 
-    if request.headers.get('HX-Request'):
-        return render(request, 'arquivos/htmx_arquivos.html', {'arquivos': arquivos})
+    if request.headers.get("HX-Request"):
+        return render(request, "arquivos/htmx_arquivos.html", {"arquivos": arquivos})
 
-    return render(request, 'arquivos/arquivos.html', {'arquivos': arquivos})
+    return render(request, "arquivos/arquivos.html", {"arquivos": arquivos})
 
 
 # Views Padrões
@@ -166,7 +178,19 @@ def arquivos(request):
     context = {}
     user = request.user
     context["arquivos"] = arquivos_por_permissao(user)
-
+    if request.method == "POST":
+        if "dar_acesso" in request.POST:
+            user_id = request.POST.get("usuario_id")
+            user_name = request.POST.get("usuario_nome")
+            arquivo_id = request.POST.get("arquivo_id")
+            if not user_id or not user_name:
+                messages.error(request, "Usuario não Reconhecido")
+            else:
+                usuario = CustomUser.objects.get(id=user_id)
+                arquivo = IPFSFile.objects.get(id=arquivo_id)
+                dar_acesso(arquivo, usuario)
+                messages.success(request, "Usuario com acesso")
+                return redirect("arquivos")
     return render(request, "arquivos/arquivos.html", context)
 
 
@@ -189,7 +213,6 @@ def upload(request):
                     f.write(chunk)
 
             ipfs_file = uploadipfs(arq_temp)
-
 
             if isinstance(ipfs_file, int):
                 messages.error(request, f"Request deu erro no Servidor: {ipfs_file}")
@@ -224,7 +247,7 @@ def upload(request):
 def user(request):
     user = request.user
     if request.method == "POST":
-        if 'alterar_foto' in request.POST:
+        if "alterar_foto" in request.POST:
             form = FotoForm(request.POST, request.FILES)
             if form.is_valid():
                 foto = form.cleaned_data["arquivo"]

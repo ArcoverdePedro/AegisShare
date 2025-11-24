@@ -18,7 +18,7 @@
     {% htmx_script %}
     
     <style>
-
+        
         .search-input {
             max-width: 70%;
         }
@@ -176,10 +176,6 @@
                                 </a>
 
                                 {% if user.nivel_permissao != "CLI" %}
-                                    <a href="#" class="navbar-item {% if request.resolver_match.url_name == 'settings' %}is-active{% endif %}">
-                                        {% icon "settings" %} Configurações
-                                    </a>
-
                                     <a href="{% url 'cadastro' %}" class="navbar-item {% if request.resolver_match.url_name == 'cadastro' %}is-active{% endif %}">
                                         {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
                                     </a>
@@ -370,6 +366,40 @@
                     source: function(request, response) {
                         $.ajax({
                             url: "{% url 'buscar_cliente' %}",
+                            dataType: "json",
+                            data: {
+                                type: type,
+                                term: request.term
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                        label: item.nome,
+                                        value: item.nome,
+                                        id: item.id
+                                    };
+                                }));
+                            }
+                        });
+                    },
+                    minLength: 2,
+                    select: function(event, ui) {
+                        $hidden.val(ui.item.id);
+                    }
+                });
+            });
+        }
+
+        function initAutocompleteFuncionario(inputPrefix, hiddenPrefix, type) {
+            $("input[id^='" + inputPrefix + "']").each(function() {
+                var $input = $(this);
+                var itemId = $input.attr("id").replace(inputPrefix, "");
+                var $hidden = $("#" + hiddenPrefix + itemId);
+
+                $input.autocomplete({
+                    source: function(request, response) {
+                        $.ajax({
+                            url: "{% url 'buscar_funcionario' %}",
                             dataType: "json",
                             data: {
                                 type: type,

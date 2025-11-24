@@ -42,7 +42,7 @@ class FirstUserForm(UserCreationForm):
         )
 
     def clean_telefone(self):
-        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_formatado = self.cleaned_data.get("telefone")
         telefone_limpo = limpar_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
@@ -107,7 +107,7 @@ class FormUserADM(UserCreationForm):
         )
 
     def clean_telefone(self):
-        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_formatado = self.cleaned_data.get("telefone")
         telefone_limpo = limpar_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
@@ -140,7 +140,6 @@ class ClienteForm(UserCreationForm):
         ),
     )
 
-
     telefone = forms.CharField(
         label="Telefone",
         max_length=15,
@@ -166,9 +165,8 @@ class ClienteForm(UserCreationForm):
             "password2",
         )
 
-
     def clean_telefone(self):
-        telefone_formatado = self.cleaned_data.get('telefone')
+        telefone_formatado = self.cleaned_data.get("telefone")
         telefone_limpo = limpar_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
@@ -194,34 +192,28 @@ class IPFSForm(forms.Form):
             attrs={
                 "placeholder": "Buscar Cliente",
                 "id": "cliente_input",
-                "class": "input"
+                "class": "input",
             }
         ),
-        error_messages={
-            'required': 'Campo Cliente é obrigatório.'
-        }
+        error_messages={"required": "Campo Cliente é obrigatório."},
     )
-    
+
     cliente_id = forms.CharField(
         required=True,
         widget=forms.HiddenInput(attrs={"id": "cliente_id"}),
-        error_messages={'required': 'Cliente inválido ou não selecionado.'}
+        error_messages={"required": "Cliente inválido ou não selecionado."},
     )
 
     arquivo = forms.FileField(
         label="Selecione o arquivo",
         required=True,
-        widget=forms.FileInput(attrs={
-            'id': 'id_arquivo',
-            'class': 'file-input'
-        }),
-        error_messages={
-            'required': 'Campo Arquivo é obrigatório.'
-        }
+        widget=forms.FileInput(attrs={"id": "id_arquivo", "class": "file-input"}),
+        error_messages={"required": "Campo Arquivo é obrigatório."},
     )
 
     def clean_cliente_id(self):
         from uuid import UUID
+
         cliente_id = self.cleaned_data.get("cliente_id")
 
         if not cliente_id:
@@ -236,19 +228,21 @@ class IPFSForm(forms.Form):
             raise forms.ValidationError("Cliente inexistente.")
 
         return cliente_id
-    
+
     def clean_arquivo(self):
         arquivo = self.cleaned_data.get("arquivo")
-        
+
         if arquivo:
             max_size = 10 * 1024 * 1024  # 10MB
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
-            
+
             allowed_types = ["application/pdf", "image/png", "image/jpeg"]
             if arquivo.content_type not in allowed_types:
-                raise forms.ValidationError("Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos.")
-        
+                raise forms.ValidationError(
+                    "Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos."
+                )
+
         return arquivo
 
 
@@ -256,18 +250,15 @@ class FotoForm(forms.Form):
     arquivo = forms.FileField(
         label="Selecione a Foto",
         required=True,
-        widget=forms.FileInput(attrs={
-            'id': 'id_foto',
-            'class': 'file-input'
-        }),
+        widget=forms.FileInput(attrs={"id": "id_foto", "class": "file-input"}),
     )
 
     def clean_arquivo(self):
         arquivo = self.cleaned_data.get("arquivo")
-        
+
         if arquivo:
             max_size = 10 * 1024 * 1024
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
-        
+
         return arquivo

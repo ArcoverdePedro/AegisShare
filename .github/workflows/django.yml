@@ -31,44 +31,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sincronizar com branches de clientes
-        env:
-          CLIENT_BRANCHES: ${{ vars.CLIENT_BRANCHES }}
+      - name: Formatar Django
         run: |
           # Garante que estamos na master primeiro
           git checkout master
           git pull origin master
 
-          for branch in $CLIENT_BRANCHES; do
-            echo "🔄 Sincronizando branch: $branch"
-            
-            # Verifica se a branch existe remotamente
-            if git ls-remote --heads origin $branch | grep -q $branch; then
-              git checkout $branch
-              git pull origin $branch
-              
-              # Tenta fazer merge da master
-              if git merge origin/master --no-edit; then
-                echo "✅ Merge bem-sucedido na branch $branch"
-                git push origin $branch
-              else
-                echo "⚠️ Conflito detectado na branch $branch"
-                echo "Abortando merge..."
-                git merge --abort
-                
-                # Cria issue sobre o conflito usando GitHub CLI
-                gh issue create \
-                  --title "Conflito ao sincronizar branch: $branch" \
-                  --body "Conflito detectado ao sincronizar master com $branch em $(date). Resolução manual necessária." \
-                  --label "conflito,sincronização"
-              fi
-            else
-              echo "⚠️ Branch $branch não existe, pulando..."
-            fi
-            
-            # Volta para master antes da próxima iteração
-            git checkout master
-          done
+          # Instala gerenciador e pacote
+          pip install uv
+          uv sync dev
+
+          # Ajustar tudo para deploy
+          uv run task fmt
+          uv run task migrate
+
+          # Envio de volta ao Github
+          git push origin
 
       - name: Notificar resultado
         if: always()

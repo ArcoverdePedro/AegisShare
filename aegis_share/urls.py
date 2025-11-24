@@ -14,6 +14,7 @@ urlpatterns = [
     path("user/", views.user, name="user"),
     path("chat/", views.chat, name="chat"),
     path("notifications/", views.notifications, name="notifications"),
-    path('buscar-cliente/', views.buscar_cliente, name='buscar_cliente'),
+    path("buscar-cliente/", views.buscar_cliente, name="buscar_cliente"),
+    path("buscar-funcionario/", views.buscar_funcionario, name="buscar_funcionario"),
     path("buscar_arquivo/", views.buscar_arquivo, name="buscar_arquivo"),
 ]
