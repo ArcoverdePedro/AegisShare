@@ -39,7 +39,7 @@ jobs:
 
           # Instala gerenciador e pacote
           pip install uv
-          uv sync dev
+          uv sync --dev
 
           # Ajustar tudo para deploy
           uv run task fmt
