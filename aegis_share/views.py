@@ -1,14 +1,19 @@
 from datetime import datetime, timedelta
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import FormUserADM, FirstUserForm, ClienteForm, IPFSForm, FotoForm
-from .models import IPFSFile, CustomUser
+from .models import IPFSFile, CustomUser, Message, Conversation
 from django.views import View
-from django.http import JsonResponse
+from django.utils import timezone
+from django.http import JsonResponse, HttpResponse
 from .utils import uploadipfs, dar_acesso, arquivos_por_permissao, imagem_para_base64
 from django.contrib.auth import get_user_model
+from django.db.models import Q, Max, Count, Case, When, IntegerField
+from django.template.loader import render_to_string
+from django.conf import settings
+
 
 User = get_user_model()
 
@@ -169,11 +174,6 @@ def cadastro(request):
 
 
 @login_required
-def notifications(request):
-    return render(request, "notifications/notifications.html")
-
-
-@login_required
 def arquivos(request):
     context = {}
     user = request.user
@@ -262,5 +262,176 @@ def user(request):
 
 
 @login_required
-def chat(request):
-    return render(request, "chat/chat.html")
+def user_list(request):
+    eu = request.user
+    
+    # Filtra as conversas onde o usuário logado participa
+    conversations = (
+        Conversation.objects
+        .filter(participants=eu)
+        .prefetch_related("messages", "participants")
+        .order_by("-updated_at")
+    )
+    
+    # Lista todos os usuários exceto eu mesmo
+    all_users = CustomUser.objects.exclude(id=eu.id).order_by('username')
+    all_users = all_users.exclude(nivel_permissao="CLI").order_by('username')
+    
+    # Adiciona informações de conversa para cada usuário
+    users_data = []
+    for user in all_users:
+        # Busca conversa existente com este usuário
+        conversation = conversations.filter(participants=user).first()
+        
+        user_info = {
+            'id': user.id,
+            'username': user.username,
+            'foto_perfil': user.foto_perfil,
+            'nivel_permissao': user.nivel_permissao,
+            'get_nivel_permissao_display': user.get_nivel_permissao_display(),
+            'last_message': None,
+            'unread_count': 0,
+            'active_conversation': False
+        }
+        
+        if conversation:
+            last_msg = conversation.get_last_message()
+            if last_msg:
+                user_info['last_message'] = last_msg
+            user_info['unread_count'] = conversation.get_unread_count(eu)
+        
+        users_data.append(user_info)
+    
+    # Ordena: usuários com mensagens não lidas primeiro, depois por última atividade
+    users_data.sort(key=lambda x: (
+        -x['unread_count'],
+        -(x['last_message'].created_at.timestamp() if x['last_message'] else 0)
+    ))
+    
+    context = {
+        "users": users_data,
+    }
+    
+    return render(request, "chat/partials/user_list.html", context)
+
+
+@login_required
+def load_conversation(request, conversation_id):
+    """Carrega uma conversa específica"""
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    
+    # Marcar mensagens como lidas
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    
+    messages = conversation.messages.all().order_by('created_at')
+    other_user = conversation.get_other_user(request.user)
+    
+    # Pega o ID da última mensagem
+    last_message = messages.last()
+    last_message_id = str(last_message.id) if last_message else ""
+    
+    context = {
+        'conversation': conversation,
+        'messages': messages,
+        'other_user': other_user,
+        'last_message_id': last_message_id
+    }
+    
+    if request.headers.get('HX-Request'):
+        return render(request, 'chat/partials/chat_conversation.html', context)
+    
+    return JsonResponse({'error': 'Requisição inválida'}, status=400)
+
+
+@login_required
+def check_new_messages(request, conversation_id):
+    """Verifica e retorna novas mensagens"""
+    conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+    
+    # Pega o ID da última mensagem que o cliente tem
+    last_message_id = request.GET.get('last_message_id', '')
+    
+    if last_message_id:
+        try:
+            # Busca mensagens mais recentes que a última que o cliente tem
+            new_messages = conversation.messages.filter(
+                created_at__gt=Message.objects.get(id=last_message_id).created_at
+            ).order_by('created_at')
+        except Message.DoesNotExist:
+            # Se não encontrar a mensagem, retorna todas
+            new_messages = conversation.messages.all().order_by('created_at')
+    else:
+        # Se não tem ID, não retorna nada (primeira carga)
+        return HttpResponse(status=204)
+    
+    if not new_messages.exists():
+        return HttpResponse(status=204)  # No content
+    
+    # Marca as novas mensagens como lidas (exceto as do próprio usuário)
+    new_messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    
+    # Renderiza as novas mensagens
+    html_parts = []
+    for message in new_messages:
+        context = {'message': message}
+        html_parts.append(render(request, 'chat/partials/chat_message.html', context).content.decode('utf-8'))
+    
+    return HttpResponse(''.join(html_parts))
+
+
+@login_required
+def send_message(request, conversation_id):
+    """Envia uma mensagem"""
+    if request.method == 'POST':
+        conversation = get_object_or_404(Conversation, id=conversation_id, participants=request.user)
+        content = request.POST.get('content', '').strip()
+        
+        if content:
+            message = Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                content=content
+            )
+            
+            # Atualiza o timestamp da conversa
+            conversation.updated_at = timezone.now()
+            conversation.save(update_fields=['updated_at'])
+            
+            # Retorna apenas a nova mensagem para ser adicionada via HTMX
+            context = {'message': message}
+            return render(request, 'chat/partials/chat_message.html', context)
+        
+        return HttpResponse(status=204)  # No content
+    
+    return JsonResponse({'error': 'Método não permitido'}, status=405)
+
+
+@login_required
+def get_or_create_conversation(request, user_id):
+    """Obtém ou cria uma conversa com outro usuário"""
+    other_user = get_object_or_404(CustomUser, id=user_id)
+    
+    if other_user == request.user:
+        return JsonResponse({'error': 'Não é possível iniciar conversa consigo mesmo'}, status=400)
+    
+    # Busca conversa existente ou cria uma nova
+    conversation = Conversation.objects.filter(
+        participants=request.user
+    ).filter(
+        participants=other_user
+    ).distinct().first()
+    
+    if not conversation:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, other_user)
+    
+    return JsonResponse({
+        'conversation_id': str(conversation.id),
+        'redirect_url': f'/chat/{conversation.id}/'
+    })
+
+
+@login_required
+def chat_index(request):
+    """Página principal do chat"""
+    return render(request, 'chat/chat_index.html')

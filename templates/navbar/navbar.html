@@ -33,7 +33,6 @@
         }
 
         body {
-            padding-top: 46px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -132,8 +131,8 @@
                                 {% icon "upload" style="width: 18px; height: 18px;" %} Upload
                             </a>    
 
-                            <a class="navbar-item {% if request.resolver_match.url_name == 'chat' %}is-active{% endif %}" 
-                               href="{% url 'chat' %}">
+                            <a class="navbar-item {% if request.resolver_match.url_name == 'chat_index' %}is-active{% endif %}" 
+                               href="{% url 'chat_index' %}">
                                 {% icon "message-square" style="width: 18px; height: 18px;" %} Chat
                             </a>
 
@@ -142,11 +141,6 @@
                         <a class="navbar-item {% if request.resolver_match.url_name == 'sobre' %}is-active{% endif %}" 
                            href="{% url 'sobre' %}">
                             {% icon "info" style="width: 18px; height: 18px;" %} Sobre
-                        </a>
-                        
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" 
-                           href="#">
-                            {% icon "mail" style="width: 18px; height: 18px;" %} Contato
                         </a>
                     {% endif %}
                 </div>

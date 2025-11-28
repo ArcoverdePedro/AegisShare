@@ -52,27 +52,4 @@
     {% endfor %}
 {% endif %}
 
-<script>
-    // WebSocket
-    const socket = new WebSocket("ws://localhost:8000/ws/notifications/");
-
-    socket.onopen = function () {
-        console.log("Conectado ao WebSocket!");
-        socket.send(JSON.stringify({ message: "Olá servidor!" }));
-    };
-
-    socket.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        console.log("Nova notificação:", data.message);
-    };
-
-    socket.onclose = function (event) {
-        console.log("Conexão fechada:", event);
-    };
-
-    socket.onerror = function (error) {
-        console.error("Erro no WebSocket:", error);
-    };
-</script>
-
 {% endblock %}

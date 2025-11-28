@@ -1,5 +1,6 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
+{% load static %}
 
 {% block title %}Sobre - Aegis Share{% endblock %}
 
@@ -60,7 +61,7 @@
             </div>
             <h5 class="title is-5 has-text-centered">Velocidade e Assíncrona</h5>
             <p>
-            Django Channels, Redis e HTMX proporcionam atualizações em tempo real e responsividade, garantindo uma experiência fluida.
+              Redis e HTMX proporcionam atualizações em tempo real e responsividade, garantindo uma experiência fluida.
             </p>
             <div class="has-text-centered mt-3">
             <span class="tag is-danger">Arquitetura Veloz</span>
@@ -106,7 +107,7 @@
         </li>
         <li>
           {% icon "message-square" style="width: 20px; height: 20px;" %}
-          <strong class="ml-2">Comunicação:</strong> Django Channels, Redis, HTMX
+          <strong class="ml-2">Comunicação:</strong> Redis, HTMX e Ajax
         </li>
         <li>
           {% icon "box" style="width: 20px; height: 20px;" %}
@@ -116,8 +117,8 @@
     </div>
 
     <div class="column is-6 has-text-centered">
-      <figure class="image is-4by3">
-        <img src="https://placehold.co/400x300/1f4068/ffffff?text=Diagrama+Arquitetura" class="is-rounded" alt="Diagrama de Arquitetura do Projeto Aegis Share">
+      <figure class="image is-4by6" style="width: 45%; margin: 0 auto;">
+        <img src="{% static "images/fluxo.png" %}" alt="Diagrama de Arquitetura do Projeto Aegis Share">
       </figure>
       <small class="has-text-grey mt-2 is-block">Ilustração conceitual da arquitetura do projeto.</small>
     </div>

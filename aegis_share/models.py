@@ -83,46 +83,69 @@ class FileAccess(models.Model):
 
 
 class Conversation(models.Model):
-    """Representa uma conversa entre dois ou mais usuários."""
+    """Modelo para representar uma conversa entre dois usuários"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        related_name='conversations',
-        verbose_name='Participantes'
+        related_name='conversations'
     )
-    data_ultima_msg = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Última mensagem em'
-    )
-    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
     def __str__(self):
-        return f"Conversa entre {', '.join(self.participants.values_list('username', flat=True))}"
+        return f"Conversa {self.id}"
+
+    def get_other_user(self, user):
+        """Retorna o outro participante da conversa"""
+        return self.participants.exclude(id=user.id).first()
+
+    def get_last_message(self):
+        """Retorna a última mensagem da conversa"""
+        return self.messages.order_by('-created_at').first()
+
+    def get_unread_count(self, user):
+        """Conta mensagens não lidas para um usuário"""
+        return self.messages.filter(is_read=False).exclude(sender=user).count()
 
 
 class Message(models.Model):
-    """Representa uma única mensagem em uma conversa."""
+    """Modelo para representar uma mensagem"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
-        related_name='messages',
-        verbose_name='Conversa'
+        related_name='messages'
     )
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='sent_messages',
-        verbose_name='Remetente'
+        related_name='sent_messages'
     )
-    content = models.TextField(verbose_name='Conteúdo')
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    timestamp = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Data/Hora'
+    # Campos opcionais para anexos
+    attachment = models.ForeignKey(
+        'IPFSFile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='messages'
     )
 
     class Meta:
-        ordering = ['timestamp']
-        verbose_name = 'Mensagem'
-        verbose_name_plural = 'Mensagens'
+        ordering = ['created_at']
 
     def __str__(self):
-        return f"Mensagem de {self.sender.username} em {self.timestamp.strftime('%H:%M')}"
+        return f"{self.sender.username}: {self.content[:50]}"
+
+    def mark_as_read(self):
+        """Marca a mensagem como lida"""
+        if not self.is_read:
+            self.is_read = True
+            self.save(update_fields=['is_read'])

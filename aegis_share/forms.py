@@ -36,7 +36,6 @@ class FirstUserForm(UserCreationForm):
             "username",
             "email",
             "telefone",
-            "nivel_permissao",
             "password1",
             "password2",
         )
@@ -53,7 +52,6 @@ class FirstUserForm(UserCreationForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
-        user.cpf = self.cleaned_data["cpf"]
         user.telefone = self.cleaned_data["telefone"]
         user.is_staff = True
         user.is_superuser = True
