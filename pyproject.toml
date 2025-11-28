@@ -27,6 +27,7 @@ dev = [
     "ruff>=0.13.2",
     "granian[reload]>=2.5.4",
     "taskipy>=1.14.1",
+    "isort>=7.0.0",
 ]
 
 [tool.ruff]
@@ -47,6 +48,6 @@ exclude = [
 ]
 
 [tool.taskipy.tasks]
-fmt = 'ruff check --fix && ruff format'
+fmt = 'isort . && ruff check --fix && ruff format'
 server = 'granian mysite.asgi:application  --interface asgi --reload --host 0.0.0.0 --port 8000'
 migrate = 'uv run manage.py makemigrations && uv run manage.py migrate'
