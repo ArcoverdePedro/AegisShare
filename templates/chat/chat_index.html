@@ -8,19 +8,47 @@
 
         <div class="column is-one-quarter">
             <div class="box" style="height: 100%; display: flex; flex-direction: column; margin: 0; border-radius: 6px 0 0 6px;">
-                <div class="has-background p-4">
-                    <h4 class="title is-5 mb-0">Conversas</h4>
-                </div>
-                <div id="user-list" 
-                        hx-get="{% url 'user_list' %}" 
-                        hx-trigger="load, every 5s"
-                        hx-target="this"
-                        style="flex: 1; overflow-y: auto;"> 
-                    <div class="has-text-centered p-6">
-                        <button class="button is-loading is-large is-ghost"></button>
-                        <p class="mt-2">Carregando usuários...</p>
+                <div class="has-background p-4" style="border-bottom: 1px solid #dbdbdb;">
+                    <h4 class="title is-5 mb-3">Conversas</h4>
+                    
+                    <div class="field">
+                        <p class="control has-icons-left">
+                            <input class="input is-small is-rounded" 
+                                type="text" 
+                                placeholder="Buscar usuário..."
+                                name="search"
+                                id="user-search-input"
+                                
+                                hx-get="{% url 'user_list' %}"
+                                hx-target="#user-list-container"
+                                hx-trigger="keyup changed delay:300ms, search"
+                                hx-indicator="#user-list-loading">
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </p>
                     </div>
-                </div>
+                    </div>
+                
+                <div id="user-list-container" 
+                    style="flex: 1; overflow-y: auto;">
+                    
+                    <div id="user-list-loading" class="htmx-indicator has-text-centered p-6" style="display: none;">
+                        <button class="button is-loading is-large is-ghost"></button>
+                        <p class="mt-2">Buscando...</p>
+                    </div>
+                    
+                    <div id="user-list" 
+                        hx-get="{% url 'user_list' %}" 
+                        hx-trigger="load, every 4s"
+                        hx-target="this"
+                        hx-swap="innerHTML">
+                        <div class="has-text-centered p-6">
+                            <button class="button is-loading is-large is-ghost"></button>
+                            <p class="mt-2">Carregando usuários...</p>
+                        </div>
+                    </div>
+                    </div>
             </div>
         </div>
 
@@ -38,163 +66,268 @@
                     </div>
                 </div>
 
-                <div id="message-form-container" style="display: none;">
-                    </div>
+                <div id="message-form-container" style="display: none;"></div>
             </div>
         </div>
     </div>
 
-    <style>
-        .box {
-            margin: 0 !important;
-            border-radius: 0 !important;
-        }
+<style>
+    .box {
+        margin: 0 !important;
+        border-radius: 0 !important;
+    }
 
-        .column .box {
-            margin: 0;
-            border-radius: 0;
-        }
+    .column .box {
+        margin: 0;
+        border-radius: 0;
+    }
 
-        .message {
-            margin-bottom: 1rem;
-            padding: 0.75rem 1rem;
-            border-radius: 18px;
-            max-width: 70%;
-            word-wrap: break-word;
-        }
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 18px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
 
-        .message.sent {
-            background: #3273dc;
-            color: white;
-            margin-left: auto;
-            margin-right: 0;
-        }
+    .message.sent {
+        background: #3273dc;
+        color: white;
+        margin-left: auto;
+        margin-right: 0;
+    }
 
-        .message.received {
-            background: #f5f5f5;
-            color: #363636;
-            border: 1px solid #dbdbdb;
-        }
+    .message.received {
+        background: #f5f5f5;
+        color: #363636;
+        border: 1px solid #dbdbdb;
+    }
 
-        .user-item {
-            padding: 1rem;
-            border-bottom: 1px solid #f5f5f5;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+    .user-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f5f5f5;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
 
-        .user-item:hover {
-            background-color: #fafafa;
-        }
+    .user-item:hover {
+        background-color: #fafafa;
+    }
 
-        .user-item.active {
-            background-color: #eff5fb;
-            border-right: 3px solid #3273dc;
-        }
+    .user-item.active {
+        background-color: #eff5fb;
+        border-right: 3px solid #3273dc;
+    }
 
-        .unread-badge {
-            background: #f14668;
-            color: white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
+    .unread-badge {
+        background: #f14668;
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
 
-        .last-message-preview {
-            font-size: 0.875rem;
-            color: #7a7a7a;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-        }
+    .last-message-preview {
+        font-size: 0.875rem;
+        color: #7a7a7a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
 
-        .user-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
+    .user-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
 
-        .user-details {
-            flex: 1;
-            min-width: 0;
-        }
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
 
-        .user-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+    .user-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-        .chat-container {
-            margin: 0 !important;
-            border-radius: 0 !important;
-        }
-    </style>
+    .chat-container {
+        margin: 0 !important;
+        border-radius: 0 !important;
+    }
+</style>
 
     <script>
-        // Função para iniciar conversa
-        function startConversation(userId) {
-            console.log('Iniciando conversa com usuário:', userId);
+    let chatSocket = null;
+    let currentConversationId = null;
+
+    // Função para rolar para baixo (melhor definida antes de ser usada)
+    function scrollToBottom() {
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            // Rola para o final
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    }
+
+    // --- WebSocket para conversa específica (mensagens em tempo real) ---
+    function connectChatSocket(conversationId) {
+        // Desconecta do socket anterior se existir
+        if (chatSocket) {
+            chatSocket.close();
+        }
+        
+        currentConversationId = conversationId;
+        
+        // Define o protocolo wss: ou ws:
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${conversationId}/`;
+        
+        chatSocket = new WebSocket(wsUrl);
+        
+        chatSocket.onopen = function(e) {
+            console.log('✅ WebSocket conectado à conversa:', conversationId);
+        };
+        
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
             
-            // Mostrar loading
-            document.getElementById('conversation-messages').innerHTML = `
-                <div class="has-text-centered p-6">
-                    <button class="button is-loading is-large is-ghost"></button>
-                    <p class="mt-2">Carregando conversa...</p>
-                </div>
-            `;
-            
-            // Fazer requisição para obter/conversa
-            fetch(`/chat/conversation/${userId}/`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Erro na requisição');
+            if (data.type === 'new_message') {
+                const messagesContainer = document.getElementById('messages-container');
+                
+                if (messagesContainer && currentConversationId === conversationId) {
+                    // Adiciona o HTML da nova mensagem
+                    messagesContainer.insertAdjacentHTML('beforeend', data.message_html);
+                    scrollToBottom();
+                    
+                    // Remove mensagem vazia se existir
+                    const emptyMessage = document.getElementById('empty-message');
+                    if (emptyMessage) {
+                        emptyMessage.remove();
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.redirect_url) {
-                        console.log('Redirecionando para:', data.redirect_url);
-                        // Carrega a conversa via HTMX
-                        htmx.ajax('GET', data.redirect_url, {
-                            target: '#conversation-messages',
-                            swap: 'innerHTML'
+                    
+                    // IMPORTANTE: Dispara o polling da lista de usuários via HTMX
+                    // Isso garante que o contador de mensagens não lidas seja atualizado
+                    const userList = document.getElementById('user-list');
+                    if (userList) {
+                         // Simula um trigger para o HTMX recarregar a lista (hx-trigger="every 4s")
+                         // Pode ser feito usando HTMX.trigger(userList, 'refresh'); se você tiver o HTMX globalmente, 
+                         // ou aguardando o próximo ciclo de 4s
+                         // Se quiser forçar a atualização imediata:
+                         userList.dispatchEvent(new Event('load')); 
+                    }
+                }
+            }
+        };
+        
+        chatSocket.onclose = function(e) {
+            console.log('WebSocket desconectado');
+        };
+        
+        chatSocket.onerror = function(e) {
+            console.error('Erro no WebSocket:', e);
+        };
+    }
+
+    // --- Função para enviar mensagem via WebSocket ---
+    function sendMessage(event) {
+        event.preventDefault();
+        
+        const input = event.target.querySelector('input[name="content"]');
+        const content = input.value.trim();
+        
+        if (!content || !chatSocket) {
+            return;
+        }
+        
+        // Envia a mensagem para o Consumer
+        chatSocket.send(JSON.stringify({
+            'type': 'chat_message',
+            'content': content
+        }));
+        
+        input.value = '';
+    }
+
+    // --- Função para iniciar/carregar conversa ---
+    function startConversation(userId) {
+        console.log('Iniciando conversa com usuário:', userId);
+        
+        // Remove a classe 'active' de todos os itens e adiciona ao item clicado
+        document.querySelectorAll('.user-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const clickedItem = document.querySelector(`.user-item[onclick="startConversation('${userId}')"]`);
+        if (clickedItem) {
+            clickedItem.classList.add('active');
+        }
+
+        // Mostrar loading
+        document.getElementById('conversation-messages').innerHTML = `
+            <div class="has-text-centered p-6">
+                <button class="button is-loading is-large is-ghost"></button>
+                <p class="mt-2">Carregando conversa...</p>
+            </div>
+        `;
+        
+        // Fazer requisição para obter/criar conversa
+        fetch(`/chat/conversation/${userId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.conversation_id) {
+                    // Carrega a conversa via AJAX (retorna chat_conversation.html)
+                    fetch(`/chat/${data.conversation_id}/`)
+                        .then(response => response.text())
+                        .then(html => {
+                            document.getElementById('conversation-messages').innerHTML = html;
+                            scrollToBottom();
+                            
+                            // Conecta ao WebSocket da conversa
+                            connectChatSocket(data.conversation_id);
+                            
+                            // Adiciona event listener ao form
+                            const form = document.querySelector('#conversation-messages form');
+                            if (form) {
+                                form.addEventListener('submit', sendMessage);
+                            }
+                            
+                            // Força a atualização da lista de usuários para limpar o badge de não lidas
+                            const userList = document.getElementById('user-list');
+                            if (userList) {
+                                userList.dispatchEvent(new Event('load')); 
+                            }
                         });
-                    } else if (data.error) {
-                        // Mostra notificação de erro
-                        document.getElementById('conversation-messages').innerHTML = `
-                            <div class="notification is-danger is-light">
-                                <button class="delete"></button>
-                                ${data.error}
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
+                } else if (data.error) {
                     document.getElementById('conversation-messages').innerHTML = `
                         <div class="notification is-danger is-light">
                             <button class="delete"></button>
-                            Erro ao iniciar conversa. Tente novamente.
+                            ${data.error}
                         </div>
                     `;
-                });
-        }
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                document.getElementById('conversation-messages').innerHTML = `
+                    <div class="notification is-danger is-light">
+                        <button class="delete"></button>
+                        Erro ao iniciar conversa. Tente novamente.
+                    </div>
+                `;
+            });
+    }
 
-        // Configurar HTMX para mostrar erros
-        document.body.addEventListener('htmx:responseError', function(evt) {
-            console.error('Erro HTMX:', evt.detail);
-            const notification = document.createElement('div');
-            notification.className = 'notification is-danger is-light';
-            notification.innerHTML = '<button class="delete"></button>Erro de comunicação com o servidor';
-            document.getElementById('conversation-messages').prepend(notification);
-        });
-    </script>
+    // --- Desconecta ao sair da página ---
+    window.addEventListener('beforeunload', function() {
+        if (chatSocket) chatSocket.close();
+    });
+</script>
 {% endblock %}

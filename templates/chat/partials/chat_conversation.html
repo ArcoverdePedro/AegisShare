@@ -11,15 +11,10 @@
         </h5>
     </div>
     
-    <!-- Mensagens com polling automático -->
+    <!-- Container de mensagens -->
     <div id="messages-container" 
          class="has-background p-4"
-         style="flex: 1; overflow-y: auto; max-height: 400px;"
-         hx-get="{% url 'check_new_messages' conversation.id %}"
-         hx-trigger="every 2s"
-         hx-swap="beforeend"
-         hx-vals='{"last_message_id": "{{ last_message_id }}"}'
-         data-last-message-id="{{ last_message_id }}">
+         style="flex: 1; overflow-y: auto; max-height: 400px;">
         {% for message in messages %}
             {% include 'chat/partials/chat_message.html' %}
         {% empty %}
@@ -27,17 +22,14 @@
                 <span class="icon is-large">
                     <i class="fas fa-envelope-open-text fa-2x"></i>
                 </span>
-                <p class="mt-3">Nenhuma mensagem ainda. Envie a primeira mensagem!</p>
+                <p class="mt-3">Nenhuma mensagem ainda.</p>
             </div>
         {% endfor %}
     </div>
     
     <!-- Formulário de mensagem -->
     <div class="has-background p-4" style="border-top: 1px solid #dbdbdb;">
-        <form hx-post="{% url 'send_message' conversation.id %}" 
-              hx-target="#messages-container" 
-              hx-swap="beforeend"
-              hx-on::after-request="this.reset(); updateLastMessageId(event)">
+        <form onsubmit="return false;">
             {% csrf_token %}
             <div class="field has-addons">
                 <div class="control is-expanded">
@@ -67,45 +59,5 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
     }
-
-    // Atualiza o ID da última mensagem após enviar ou receber
-    function updateLastMessageId(event) {
-        const messagesContainer = document.getElementById('messages-container');
-        if (!messagesContainer) return;
-        
-        const allMessages = messagesContainer.querySelectorAll('.message[data-message-id]');
-        if (allMessages.length > 0) {
-            const lastMessage = allMessages[allMessages.length - 1];
-            const lastId = lastMessage.getAttribute('data-message-id');
-            messagesContainer.setAttribute('data-last-message-id', lastId);
-            
-            // Atualiza o hx-vals com o novo ID
-            const currentVals = JSON.parse(messagesContainer.getAttribute('hx-vals') || '{}');
-            currentVals.last_message_id = lastId;
-            messagesContainer.setAttribute('hx-vals', JSON.stringify(currentVals));
-        }
-        
-        // Remove mensagem de "vazio" se existir
-        const emptyMessage = document.getElementById('empty-message');
-        if (emptyMessage) {
-            emptyMessage.remove();
-        }
-    }
-
-    // Executa no carregamento
-    document.addEventListener('DOMContentLoaded', function() {
-        scrollToBottom();
-        updateLastMessageId();
-    });
-    
-    // HTMX: após adicionar nova mensagem, rolar para baixo e atualizar ID
-    document.body.addEventListener('htmx:afterSwap', function(evt) {
-        if (evt.detail.target.id === 'messages-container') {
-            scrollToBottom();
-            updateLastMessageId(evt);
-        }
-    });
-    
-    // Rolar para baixo quando a conversa for carregada
     scrollToBottom();
 </script>

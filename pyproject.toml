@@ -49,5 +49,5 @@ exclude = [
 
 [tool.taskipy.tasks]
 fmt = 'isort . && ruff check --fix && ruff format'
-server = 'granian mysite.asgi:application  --interface asgi --reload --host 0.0.0.0 --port 8000'
+server = 'granian mysite.asgi:application  --interface asgi --host 0.0.0.0 --port 8000'
 migrate = 'uv run manage.py makemigrations && uv run manage.py migrate'

@@ -1,3 +1,4 @@
+# urls.py - HTMX para lista, WebSocket para mensagens
 from django.contrib.auth import views as auth_views
 from django.urls import path
 
@@ -16,9 +17,10 @@ urlpatterns = [
     path("buscar-cliente/", views.buscar_cliente, name="buscar_cliente"),
     path("buscar-funcionario/", views.buscar_funcionario, name="buscar_funcionario"),
     path("buscar_arquivo/", views.buscar_arquivo, name="buscar_arquivo"),
+    
     # Chat URLs
     path("chat/", views.chat_index, name="chat_index"),
-    path("chat/users/", views.user_list, name="user_list"),
+    path("chat/users/", views.user_list, name="user_list"),  # HTMX
     path(
         "chat/conversation/<uuid:user_id>/",
         views.get_or_create_conversation,
@@ -29,10 +31,8 @@ urlpatterns = [
         views.load_conversation,
         name="load_conversation",
     ),
-    path("chat/<uuid:conversation_id>/send/", views.send_message, name="send_message"),
-    path(
-        "chat/<uuid:conversation_id>/check/",
-        views.check_new_messages,
-        name="check_new_messages",
-    ),  # NOVA ROTA
+    
+    # Não precisa mais:
+    # - send_message (WebSocket)
+    # - check_new_messages (WebSocket)
 ]
