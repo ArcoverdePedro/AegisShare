@@ -17,10 +17,10 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
 -----
 
 ## Requisitos para funcionamento
-# DOT ENV
+### DOT ENV
 Altere o arquivo .env para oque é apropriado para cada projeto 
 
-# Dependências e inicio do servidor
+### Dependências e inicio do servidor
 Existem duas maneiras principais de iniciar o projeto: usando Docker Compose ou usando Ambiente de Desenvolvimento após a instalação das dependências.
 
 ### Opção 1: Com Docker Compose (Recomendado)
