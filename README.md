@@ -100,11 +100,19 @@ Se você escolheu a Opção 2, siga estes passos após instalar as dependências
 
 #### Pré-requisitos de Serviço
 
-1.  **IPFS Daemon:** O daemon do IPFS deve estar rodando e acessível.
+1.  **DOT ENV:** Crie um arquivo .env para salvar as variaveis do PINATA-API e do Django.
 
     ```bash
-    # Exemplo rodando IPFS via Docker
-    docker run -d --name ipfs_host -p 5001:5001 ipfs/go-ipfs
+    # Exemplo de .env
+    SECRET_KEY = "strong-key"
+
+    PINATA_API_KEY = "your-api-key"
+    
+    PINATA_API_SECRET = "your-secret"
+    
+    PINATA_GATEWAY = 'your-gateaway'
+    
+    PINATA_JWT_TOKEN = 'your-token'
     ```
 
 #### Configuração e Execução do Django
