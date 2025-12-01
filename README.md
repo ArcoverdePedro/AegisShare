@@ -17,8 +17,11 @@ Este é um projeto Django que implementa um sistema de compartilhamento de arqui
 -----
 
 ## Requisitos para funcionamento
+# DOT ENV
+Altere o arquivo .env para oque é apropriado para cada projeto 
 
-Você tem duas maneiras principais de iniciar o projeto: usando **Docker Compose** (recomendado) ou usando **IPFS no Docker** junto com **Granian** após a instalação das dependências.
+# Dependências e inicio do servidor
+Existem duas maneiras principais de iniciar o projeto: usando Docker Compose ou usando Ambiente de Desenvolvimento após a instalação das dependências.
 
 ### Opção 1: Com Docker Compose (Recomendado)
 
@@ -60,9 +63,13 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
     ```bash
     poetry install
     ```
-2.  **Rode comandos diretamente com Poetry:**
+2.  **Rode Migrations com Poetry:**
     ```bash
-    poetry run <comando>
+    poetry run task migrate
+    ```
+3.  **Rode o Servidor com Poetry:**
+    ```bash
+    poetry run task server
     ```
 
 ### Usando uv
@@ -71,9 +78,13 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
     ```bash
     uv sync
     ```
-2.  **Rode comandos diretamente com UV:**
+2.  **Rode Migrations com UV:**
     ```bash
-    uv run <comando>
+    uv run task migrate
+    ```
+3.  **Rode o Servidor com UV:**
+    ```bash
+    uv run task server
     ```
 
 ### Usando Pip Tradicional
@@ -97,23 +108,6 @@ O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenci
 ## Execução (Opção 2)
 
 Se você escolheu a Opção 2, siga estes passos após instalar as dependências.
-
-#### Pré-requisitos de Serviço
-
-1.  **DOT ENV:** Crie um arquivo .env para salvar as variaveis do PINATA-API e do Django.
-
-    ```bash
-    # Exemplo de .env
-    SECRET_KEY = "strong-key"
-
-    PINATA_API_KEY = "your-api-key"
-    
-    PINATA_API_SECRET = "your-secret"
-    
-    PINATA_GATEWAY = 'your-gateaway'
-    
-    PINATA_JWT_TOKEN = 'your-token'
-    ```
 
 #### Configuração e Execução do Django
 
