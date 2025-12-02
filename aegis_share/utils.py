@@ -15,9 +15,10 @@ load_dotenv()
 def uploadipfs(filepath):
     url = "https://uploads.pinata.cloud/v3/files"
     headers = {"Authorization": f"Bearer {os.getenv('PINATA_JWT_TOKEN')}"}
+    payload = {"network": "public"}
 
     with open(filepath, "rb") as file:
-        response = requests.post(url, files={"file": file}, headers=headers)
+        response = requests.post(url, files={"file": file}, headers=headers, data=payload)
 
         if response.status_code == 200:
             return response.json()
@@ -42,10 +43,7 @@ def arquivos_por_permissao(user):
         return IPFSFile.objects.filter(dono_arquivo=user).order_by("-data_adicionado")
 
 
-def limpar_strings(string_com_formatacao):
-    """
-    Remove todos os caracteres que não são dígitos.
-    """
+def clear_strings(string_com_formatacao):
     if not string_com_formatacao:
         return ""
 
@@ -53,9 +51,6 @@ def limpar_strings(string_com_formatacao):
 
 
 def imagem_para_base64(arquivo_imagem):
-    """
-    Conversão direta para AVIF base64
-    """
     img = Image.open(arquivo_imagem).convert("RGB")
 
     buffer = BytesIO()

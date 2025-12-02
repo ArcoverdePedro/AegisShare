@@ -2,12 +2,10 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
 from .models import CustomUser
-from .utils import limpar_strings
+from .utils import clear_strings
 
 
 class FirstUserForm(UserCreationForm):
-    """Form para criar o primeiro usuário (superusuário)."""
-
     email = forms.EmailField(
         label="Email",
         max_length=300,
@@ -43,7 +41,7 @@ class FirstUserForm(UserCreationForm):
 
     def clean_telefone(self):
         telefone_formatado = self.cleaned_data.get("telefone")
-        telefone_limpo = limpar_strings(telefone_formatado)
+        telefone_limpo = clear_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
             raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
@@ -63,7 +61,6 @@ class FirstUserForm(UserCreationForm):
 
 
 class FormUserADM(UserCreationForm):
-    """Form para administradores criarem novos usuários."""
 
     email = forms.EmailField(
         label="Email",
@@ -107,7 +104,7 @@ class FormUserADM(UserCreationForm):
 
     def clean_telefone(self):
         telefone_formatado = self.cleaned_data.get("telefone")
-        telefone_limpo = limpar_strings(telefone_formatado)
+        telefone_limpo = clear_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
             raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
@@ -128,7 +125,6 @@ class FormUserADM(UserCreationForm):
 
 
 class ClienteForm(UserCreationForm):
-    """Form para cadastro de clientes comuns."""
 
     email = forms.EmailField(
         label="Email",
@@ -166,7 +162,7 @@ class ClienteForm(UserCreationForm):
 
     def clean_telefone(self):
         telefone_formatado = self.cleaned_data.get("telefone")
-        telefone_limpo = limpar_strings(telefone_formatado)
+        telefone_limpo = clear_strings(telefone_formatado)
 
         if not (10 <= len(telefone_limpo) <= 11):
             raise forms.ValidationError("Telefone inválido (DDD + 8 ou 9 dígitos).")
@@ -220,7 +216,7 @@ class IPFSForm(forms.Form):
 
         try:
             UUID(cliente_id)
-        except ValueError:
+        except:
             raise forms.ValidationError("Identificador de cliente inválido.")
 
         if not CustomUser.objects.filter(id=cliente_id).exists():
@@ -232,14 +228,14 @@ class IPFSForm(forms.Form):
         arquivo = self.cleaned_data.get("arquivo")
 
         if arquivo:
-            max_size = 10 * 1024 * 1024  # 10MB
+            max_size = 10 * 1024 * 1024
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
 
-            allowed_types = ["application/pdf", "image/png", "image/jpeg"]
+            allowed_types = ["application/pdf", "image/png","image/jpeg","image/jpg","image/webp"]
             if arquivo.content_type not in allowed_types:
                 raise forms.ValidationError(
-                    "Tipo de arquivo não permitido. Apenas PDF, PNG e JPEG são aceitos."
+                    "Tipo de arquivo não permitido. Apenas PDF ou Imagens são aceitos."
                 )
 
         return arquivo
@@ -259,5 +255,11 @@ class FotoForm(forms.Form):
             max_size = 10 * 1024 * 1024
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
+            
+            allowed_types = ["image/png","image/jpeg","image/jpg","image/webp"]
+            if arquivo.content_type not in allowed_types:
+                raise forms.ValidationError(
+                    "Tipo de arquivo não permitido. Apenas Imagens são aceitas."
+                )
 
         return arquivo
