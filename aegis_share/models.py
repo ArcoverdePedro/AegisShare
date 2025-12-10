@@ -130,15 +130,6 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Campos opcionais para anexos
-    attachment = models.ForeignKey(
-        'IPFSFile',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='messages'
-    )
-
     class Meta:
         ordering = ['created_at']
 

@@ -38,8 +38,8 @@
                         <p class="mt-2">Buscando...</p>
                     </div>
                     
-                    <div id="user-list" 
-                        hx-get="{% url 'user_list' %}" 
+                    <div id="user-list"
+                        hx-get="{% url 'user_list' %}"
                         hx-trigger="load, every 4s"
                         hx-target="this"
                         hx-swap="innerHTML">
@@ -214,14 +214,8 @@
                         emptyMessage.remove();
                     }
                     
-                    // IMPORTANTE: Dispara o polling da lista de usuários via HTMX
-                    // Isso garante que o contador de mensagens não lidas seja atualizado
                     const userList = document.getElementById('user-list');
                     if (userList) {
-                         // Simula um trigger para o HTMX recarregar a lista (hx-trigger="every 4s")
-                         // Pode ser feito usando HTMX.trigger(userList, 'refresh'); se você tiver o HTMX globalmente, 
-                         // ou aguardando o próximo ciclo de 4s
-                         // Se quiser forçar a atualização imediata:
                          userList.dispatchEvent(new Event('load')); 
                     }
                 }

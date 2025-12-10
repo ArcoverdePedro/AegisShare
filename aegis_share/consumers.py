@@ -20,11 +20,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         
-        has_access = await self.check_conversation_access()
-        if not has_access:
-            await self.close()
-            return
-        
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -72,18 +67,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_id': event['message_id'],
             'sender_id': event['sender_id']
         }))
-    
-    @database_sync_to_async
-    def check_conversation_access(self):
-        """Verifica se o usuário tem acesso à conversa"""
-        try:
-            conversation = Conversation.objects.get(
-                id=self.conversation_id,
-                participants=self.user
-            )
-            return True
-        except Conversation.DoesNotExist:
-            return False
     
     @database_sync_to_async
     def save_message(self, content):

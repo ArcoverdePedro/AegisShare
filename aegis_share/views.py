@@ -327,55 +327,49 @@ def user_list(request):
 @login_required
 def get_or_create_conversation(request, user_id):
     """Obtém ou cria uma conversa com outro usuário"""
-    try:
-        other_user = get_object_or_404(CustomUser, id=user_id)
+    other_user = get_object_or_404(CustomUser, id=user_id)
 
-        if other_user == request.user:
-            return JsonResponse(
-                {"error": "Não é possível iniciar conversa consigo mesmo"}, status=400
-            )
-
-        # Busca conversa existente ou cria uma nova
-        conversation = (
-            Conversation.objects.filter(participants=request.user)
-            .filter(participants=other_user)
-            .distinct()
-            .first()
-        )
-
-        if not conversation:
-            conversation = Conversation.objects.create()
-            conversation.participants.add(request.user, other_user)
-
+    if other_user == request.user:
         return JsonResponse(
-            {
-                "conversation_id": str(conversation.id),
-                "redirect_url": f"/chat/{conversation.id}/",
-            }
+            {"error": "Não é possível iniciar conversa consigo mesmo"}, status=400
         )
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+
+    # Busca conversa existente ou cria uma nova
+    conversation = (
+        Conversation.objects.filter(participants=request.user)
+        .filter(participants=other_user)
+        .distinct()
+        .first()
+    )
+
+    if not conversation:
+        conversation = Conversation.objects.create()
+        conversation.participants.add(request.user, other_user)
+
+    return JsonResponse(
+        {
+            "conversation_id": str(conversation.id),
+            "redirect_url": f"/chat/{conversation.id}/",
+        }
+    )
+
 
 
 @login_required
 def load_conversation(request, conversation_id):
     """Carrega uma conversa específica (apenas carga inicial)"""
-    try:        
-        conversation = get_object_or_404(
-            Conversation, id=conversation_id, participants=request.user
-        )
+    conversation = get_object_or_404(
+        Conversation, id=conversation_id, participants=request.user
+    )
 
-        messages = conversation.messages.all().order_by("created_at")
+    messages = conversation.messages.all().order_by("created_at")
 
-        other_user = conversation.get_other_user(request.user)
+    other_user = conversation.get_other_user(request.user)
 
-        context = {
-            "conversation": conversation,
-            "messages": messages,
-            "other_user": other_user,
-        }
+    context = {
+        "conversation": conversation,
+        "messages": messages,
+        "other_user": other_user,
+    }
 
-        return render(request, "chat/partials/chat_conversation.html", context)
-
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+    return render(request, "chat/partials/chat_conversation.html", context)
