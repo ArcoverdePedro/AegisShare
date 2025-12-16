@@ -216,7 +216,7 @@ class IPFSForm(forms.Form):
 
         try:
             UUID(cliente_id)
-        except:
+        except Exception as e:
             raise forms.ValidationError("Identificador de cliente inválido.")
 
         if not CustomUser.objects.filter(id=cliente_id).exists():

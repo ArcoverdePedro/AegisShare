@@ -1,31 +1,13 @@
-{% if message.sender == request.user %}
-    <div class="message sent"
-        data-message-id="{{ message.id }}">
-        <div class="message-content">
-            {{ message.content }}
-        </div>
-        <div class="is-size-7 has-text-weight-light mt-1" 
-            style="opacity: 0.8; text-align: right;">
-            <span class="icon is-small">
-                <i class="far fa-clock"></i>
-            </span>
-            {{ message.created_at|date:"d/m/Y H:i" }}
-        </div>
+<div class="message {% if message.sender.id == user.id %}sent{% else %}received{% endif %}"
+     data-message-id="{{ message.id }}">
+    <div class="message-content">
+        {{ message.content }}
     </div>
-{% endif %}
-
-{% if message.sender != request.user %}
-    <div class="message received"
-        data-message-id="{{ message.id }}">
-        <div class="message-content">
-            {{ message.content }}
-        </div>
-        <div class="is-size-7 has-text-weight-light mt-1" 
-            style="opacity: 0.8; text-align: left;">
-            <span class="icon is-small">
-                <i class="far fa-clock"></i>
-            </span>
-            {{ message.created_at|date:"d/m/Y H:i" }}
-        </div>
+    <div class="is-size-7 has-text-weight-light mt-1" 
+         style="opacity: 0.8; text-align: {% if message.sender.id == user.id %}right{% else %}left{% endif %};">
+        <span class="icon is-small">
+            <i class="far fa-clock"></i>
+        </span>
+        {{ message.created_at|date:"d/m/Y H:i" }}
     </div>
-{% endif %}
+</div>

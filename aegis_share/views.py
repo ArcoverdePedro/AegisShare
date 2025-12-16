@@ -7,6 +7,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
+from django.db.models import Q, Count, Max
 
 from .forms import ClienteForm, FirstUserForm, FormUserADM, FotoForm, IPFSForm
 from .models import Conversation, CustomUser, IPFSFile, Message
@@ -260,8 +261,25 @@ def user(request):
 
 @login_required
 def chat_index(request):
-    """Página principal do chat"""
-    return render(request, "chat/chat_index.html")
+    """View principal do chat que lista usuários e conversas"""
+    # Busca todos os usuários exceto o atual
+    users = CustomUser.objects.exclude(id=request.user.id).order_by('username')
+    
+    # Busca conversas do usuário
+    conversations = Conversation.objects.filter(
+        participants=request.user
+    ).prefetch_related('participants', 'messages').annotate(
+        unread_count=Count(
+            'messages',
+            filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user)
+        ),
+        last_message_time=Max('messages__created_at')
+    ).order_by('-last_message_time')
+    
+    return render(request, 'chat/chat_index.html', {
+        'users': users,
+        'conversations': conversations,
+    })
 
 
 @login_required
@@ -328,12 +346,13 @@ def user_list(request):
 def get_or_create_conversation(request, user_id):
     """Obtém ou cria uma conversa com outro usuário"""
     other_user = get_object_or_404(CustomUser, id=user_id)
-
+    
     if other_user == request.user:
         return JsonResponse(
-            {"error": "Não é possível iniciar conversa consigo mesmo"}, status=400
+            {"error": "Não é possível iniciar conversa consigo mesmo"}, 
+            status=400
         )
-
+    
     # Busca conversa existente ou cria uma nova
     conversation = (
         Conversation.objects.filter(participants=request.user)
@@ -341,11 +360,11 @@ def get_or_create_conversation(request, user_id):
         .distinct()
         .first()
     )
-
+    
     if not conversation:
         conversation = Conversation.objects.create()
         conversation.participants.add(request.user, other_user)
-
+    
     return JsonResponse(
         {
             "conversation_id": str(conversation.id),
@@ -353,6 +372,35 @@ def get_or_create_conversation(request, user_id):
         }
     )
 
+
+@login_required
+def get_conversation(request, conversation_id):
+    """View que retorna o HTML da conversa"""
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    
+    # Verifica se o usuário é participante
+    if request.user not in conversation.participants.all():
+        return JsonResponse({'error': 'Acesso negado'}, status=403)
+    
+    # Pega o outro usuário da conversa
+    other_user = conversation.participants.exclude(id=request.user.id).first()
+    
+    # Pega as mensagens ordenadas
+    messages = conversation.messages.select_related('sender').order_by('created_at')
+    
+    # Marca mensagens como lidas (apenas as que não foram enviadas pelo usuário atual)
+    conversation.messages.filter(
+        is_read=False
+    ).exclude(
+        sender=request.user
+    ).update(is_read=True)
+    
+    return render(request, 'chat/chat_conversation.html', {
+        'conversation': conversation,
+        'other_user': other_user,
+        'messages': messages,
+        'user': request.user,
+    })
 
 
 @login_required

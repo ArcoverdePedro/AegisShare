@@ -1,10 +1,7 @@
-# consumers.py (crie este arquivo no app aegis_share)
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.template.loader import render_to_string
 from django.utils import timezone
-
 from .models import Conversation, Message
 
 
@@ -26,7 +23,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
         
         await self.accept()
-        
         await self.mark_messages_as_read()
     
     async def disconnect(self, close_code):
@@ -45,17 +41,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if not content:
                 return
-            message = await self.save_message(content)
-
-            message_html = await self.render_message(message)
             
+            message = await self.save_message(content)
+            
+            # Envia dados JSON em vez de HTML renderizado
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     'type': 'chat_message_handler',
-                    'message_html': message_html,
                     'message_id': str(message.id),
-                    'sender_id': str(self.user.id)
+                    'sender_id': str(message.sender.id),
+                    'sender_username': message.sender.username,
+                    'content': message.content,
+                    'created_at': message.created_at.strftime('%d/%m/%Y %H:%M')
                 }
             )
     
@@ -63,9 +61,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Handler para mensagens do grupo"""
         await self.send(text_data=json.dumps({
             'type': 'new_message',
-            'message_html': event['message_html'],
             'message_id': event['message_id'],
-            'sender_id': event['sender_id']
+            'sender_id': event['sender_id'],
+            'sender_username': event['sender_username'],
+            'content': event['content'],
+            'created_at': event['created_at']
         }))
     
     @database_sync_to_async
@@ -80,13 +80,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         conversation.updated_at = timezone.now()
         conversation.save(update_fields=['updated_at'])
         return message
-
-    @database_sync_to_async
-    def render_message(self, message):
-        return render_to_string(
-            'chat/partials/chat_message.html',
-            {'message': message, 'request': {'user': self.user}}
-        )
     
     @database_sync_to_async
     def mark_messages_as_read(self):

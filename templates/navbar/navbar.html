@@ -7,6 +7,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="user-id" content="{{ request.user.id }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Home - Aegis Share{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}">

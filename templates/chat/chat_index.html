@@ -165,162 +165,118 @@
     }
 </style>
 
-    <script>
+<script>
     let chatSocket = null;
-    let currentConversationId = null;
+    let currentUserId = null;
 
-    // Função para rolar para baixo (melhor definida antes de ser usada)
-    function scrollToBottom() {
-        const messagesContainer = document.getElementById('messages-container');
-        if (messagesContainer) {
-            // Rola para o final
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        currentUserId = document.querySelector('meta[name="user-id"]').content;
+    });
 
-    // --- WebSocket para conversa específica (mensagens em tempo real) ---
+    // Função para Conecta no Websocket
     function connectChatSocket(conversationId) {
-        // Desconecta do socket anterior se existir
-        if (chatSocket) {
-            chatSocket.close();
-        }
-        
-        currentConversationId = conversationId;
-        
-        // Define o protocolo wss: ou ws:
+        if (chatSocket) chatSocket.close(); // Fecha conexão anterior
+
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/chat/${conversationId}/`;
-        
-        chatSocket = new WebSocket(wsUrl);
-        
-        chatSocket.onopen = function(e) {
-            console.log('✅ WebSocket conectado à conversa:', conversationId);
+        chatSocket = new WebSocket(`${protocol}//${window.location.host}/ws/chat/${conversationId}/`);
+
+        chatSocket.onopen = () => {
+            scrollToBottom(); // Rola para o fim quando conecta
         };
-        
-        chatSocket.onmessage = function(e) {
+
+        chatSocket.onmessage = (e) => {
             const data = JSON.parse(e.data);
             
             if (data.type === 'new_message') {
-                const messagesContainer = document.getElementById('messages-container');
+                const isSent = data.sender_id === currentUserId;
                 
-                if (messagesContainer && currentConversationId === conversationId) {
-                    // Adiciona o HTML da nova mensagem
-                    messagesContainer.insertAdjacentHTML('beforeend', data.message_html);
-                    scrollToBottom();
-                    
-                    // Remove mensagem vazia se existir
-                    const emptyMessage = document.getElementById('empty-message');
-                    if (emptyMessage) {
-                        emptyMessage.remove();
-                    }
-                    
-                    const userList = document.getElementById('user-list');
-                    if (userList) {
-                         userList.dispatchEvent(new Event('load')); 
-                    }
-                }
+                // Formata o timestamp (dd/mm/yyyy HH:mm)
+                const date = new Date(data.created_at);
+                const formattedDate = date.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Adiciona mensagem na tela (igual ao template Django)
+                document.getElementById('messages-container').insertAdjacentHTML('beforeend', `
+                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${data.message_id}">
+                        <div class="message-content">
+                            ${escapeHtml(data.content)}
+                        </div>
+                        <div class="is-size-7 has-text-weight-light mt-1" 
+                            style="opacity: 0.8; text-align: ${isSent ? 'right' : 'left'};">
+                            <span class="icon is-small">
+                                <i class="far fa-clock"></i>
+                            </span>
+                            ${formattedDate}
+                        </div>
+                    </div>
+                `);
+                
+                scrollToBottom();
             }
-        };
-        
-        chatSocket.onclose = function(e) {
-            console.log('WebSocket desconectado');
-        };
-        
-        chatSocket.onerror = function(e) {
-            console.error('Erro no WebSocket:', e);
         };
     }
 
-    // --- Função para enviar mensagem via WebSocket ---
+    // Função para Enviar Mensagem
     function sendMessage(event) {
         event.preventDefault();
         
         const input = event.target.querySelector('input[name="content"]');
         const content = input.value.trim();
         
-        if (!content || !chatSocket) {
-            return;
+        if (content && chatSocket) {
+            chatSocket.send(JSON.stringify({
+                type: 'chat_message',
+                content: content
+            }));
+            input.value = '';
         }
-        
-        // Envia a mensagem para o Consumer
-        chatSocket.send(JSON.stringify({
-            'type': 'chat_message',
-            'content': content
-        }));
-        
-        input.value = '';
     }
 
-    // --- Função para iniciar/carregar conversa ---
+    // Função para Iniciar Conversa
     function startConversation(userId) {
-        console.log('Iniciando conversa com usuário:', userId);
-        
-        // Remove a classe 'active' de todos os itens e adiciona ao item clicado
-        document.querySelectorAll('.user-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        const clickedItem = document.querySelector(`.user-item[onclick="startConversation('${userId}')"]`);
-        if (clickedItem) {
-            clickedItem.classList.add('active');
-        }
-
-        // Mostrar loading
-        document.getElementById('conversation-messages').innerHTML = `
-            <div class="has-text-centered p-6">
-                <button class="button is-loading is-large is-ghost"></button>
-                <p class="mt-2">Carregando conversa...</p>
-            </div>
-        `;
-        
-        // Fazer requisição para obter/criar conversa
         fetch(`/chat/conversation/${userId}/`)
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.conversation_id) {
-                    // Carrega a conversa via AJAX (retorna chat_conversation.html)
+                    // Carrega o HTML da conversa
                     fetch(`/chat/${data.conversation_id}/`)
-                        .then(response => response.text())
+                        .then(res => res.text())
                         .then(html => {
                             document.getElementById('conversation-messages').innerHTML = html;
-                            scrollToBottom();
                             
-                            // Conecta ao WebSocket da conversa
+                            // Rola para o fim antes de conectar
+                            setTimeout(scrollToBottom, 100);
+                            
                             connectChatSocket(data.conversation_id);
                             
-                            // Adiciona event listener ao form
-                            const form = document.querySelector('#conversation-messages form');
-                            if (form) {
-                                form.addEventListener('submit', sendMessage);
-                            }
-                            
-                            // Força a atualização da lista de usuários para limpar o badge de não lidas
-                            const userList = document.getElementById('user-list');
-                            if (userList) {
-                                userList.dispatchEvent(new Event('load')); 
-                            }
+                            // Adiciona evento de envio
+                            document.querySelector('#conversation-messages form')
+                                .addEventListener('submit', sendMessage);
                         });
-                } else if (data.error) {
-                    document.getElementById('conversation-messages').innerHTML = `
-                        <div class="notification is-danger is-light">
-                            <button class="delete"></button>
-                            ${data.error}
-                        </div>
-                    `;
                 }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                document.getElementById('conversation-messages').innerHTML = `
-                    <div class="notification is-danger is-light">
-                        <button class="delete"></button>
-                        Erro ao iniciar conversa. Tente novamente.
-                    </div>
-                `;
             });
     }
 
-    // --- Desconecta ao sair da página ---
-    window.addEventListener('beforeunload', function() {
+    // Função para scrollar para baixo ao iniciar uma conversa
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        if (container) container.scrollTop = container.scrollHeight;
+    }
+
+    // Função para evitar XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Função para Fecha conexão ao sair
+    window.addEventListener('beforeunload', () => {
         if (chatSocket) chatSocket.close();
     });
 </script>
