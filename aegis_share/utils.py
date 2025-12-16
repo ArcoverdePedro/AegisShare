@@ -18,7 +18,9 @@ def uploadipfs(filepath):
     payload = {"network": "public"}
 
     with open(filepath, "rb") as file:
-        response = requests.post(url, files={"file": file}, headers=headers, data=payload)
+        response = requests.post(
+            url, files={"file": file}, headers=headers, data=payload
+        )
 
         if response.status_code == 200:
             return response.json()

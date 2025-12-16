@@ -17,7 +17,6 @@ urlpatterns = [
     path("buscar-cliente/", views.buscar_cliente, name="buscar_cliente"),
     path("buscar-funcionario/", views.buscar_funcionario, name="buscar_funcionario"),
     path("buscar_arquivo/", views.buscar_arquivo, name="buscar_arquivo"),
-    
     # Chat URLs
     path("chat/", views.chat_index, name="chat_index"),
     path("chat/users/", views.user_list, name="user_list"),  # HTMX
@@ -31,7 +30,6 @@ urlpatterns = [
         views.load_conversation,
         name="load_conversation",
     ),
-    
     # Não precisa mais:
     # - send_message (WebSocket)
     # - check_new_messages (WebSocket)

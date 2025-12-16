@@ -61,7 +61,6 @@ class FirstUserForm(UserCreationForm):
 
 
 class FormUserADM(UserCreationForm):
-
     email = forms.EmailField(
         label="Email",
         max_length=300,
@@ -125,7 +124,6 @@ class FormUserADM(UserCreationForm):
 
 
 class ClienteForm(UserCreationForm):
-
     email = forms.EmailField(
         label="Email",
         max_length=300,
@@ -216,7 +214,7 @@ class IPFSForm(forms.Form):
 
         try:
             UUID(cliente_id)
-        except Exception as e:
+        except Exception:
             raise forms.ValidationError("Identificador de cliente inválido.")
 
         if not CustomUser.objects.filter(id=cliente_id).exists():
@@ -232,7 +230,13 @@ class IPFSForm(forms.Form):
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
 
-            allowed_types = ["application/pdf", "image/png","image/jpeg","image/jpg","image/webp"]
+            allowed_types = [
+                "application/pdf",
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+                "image/webp",
+            ]
             if arquivo.content_type not in allowed_types:
                 raise forms.ValidationError(
                     "Tipo de arquivo não permitido. Apenas PDF ou Imagens são aceitos."
@@ -255,8 +259,8 @@ class FotoForm(forms.Form):
             max_size = 10 * 1024 * 1024
             if arquivo.size > max_size:
                 raise forms.ValidationError("O arquivo excede o limite de 10MB.")
-            
-            allowed_types = ["image/png","image/jpeg","image/jpg","image/webp"]
+
+            allowed_types = ["image/png", "image/jpeg", "image/jpg", "image/webp"]
             if arquivo.content_type not in allowed_types:
                 raise forms.ValidationError(
                     "Tipo de arquivo não permitido. Apenas Imagens são aceitas."
