@@ -10,6 +10,4 @@ uv run manage.py collectstatic --noinput --clear
 exec uv run granian mysite.asgi:application \
   --host 0.0.0.0 \
   --port $PORT \
-  --interface asgi \
-  --workers 1 \
-  --runtime-threads 1
+  --interface asgi
