@@ -60,6 +60,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def chat_message_handler(self, event):
+        # O grupo pode conter uma conexao aberta antes de um acesso ser revogado.
+        # Revalida antes de entregar novas mensagens ao socket.
+        if not await self.user_belongs_to_conversation():
+            await self.close(code=4403)
+            return
+
         await self.send(
             text_data=json.dumps(
                 {
@@ -73,20 +79,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         )
 
-    @database_sync_to_async
-    def user_belongs_to_conversation(self):
-        return Conversation.objects.filter(
-            id=self.conversation_id,
-            participants=self.user,
-        ).exists()
-
-    @database_sync_to_async
-    def save_message(self, content):
+    def _authorized_conversation(self):
         conversation = (
-            Conversation.objects.filter(id=self.conversation_id, participants=self.user)
+            Conversation.objects.filter(
+                id=self.conversation_id,
+                participants=self.user,
+            )
+            .select_related("file", "file__dono_arquivo", "file__workspace")
             .prefetch_related("participants")
             .first()
         )
+        if not conversation:
+            return None
+        if conversation.file_id and not conversation.file.user_tem_acesso(self.user):
+            return None
+        return conversation
+
+    @database_sync_to_async
+    def user_belongs_to_conversation(self):
+        return self._authorized_conversation() is not None
+
+    @database_sync_to_async
+    def save_message(self, content):
+        conversation = self._authorized_conversation()
         if not conversation:
             return None
 
@@ -117,7 +132,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def mark_messages_as_read(self):
-        Conversation.objects.filter(
-            id=self.conversation_id,
-            participants=self.user,
-        ).first().messages.filter(is_read=False).exclude(sender=self.user).update(is_read=True)
+        conversation = self._authorized_conversation()
+        if not conversation:
+            return 0
+        return (
+            conversation.messages.filter(is_read=False)
+            .exclude(sender=self.user)
+            .update(is_read=True)
+        )
