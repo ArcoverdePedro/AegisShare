@@ -2,6 +2,7 @@ import base64
 
 import pyotp
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from aegis_share.services.security import (
     authenticate_api_token,
@@ -10,9 +11,7 @@ from aegis_share.services.security import (
     create_api_token,
     enable_totp,
 )
-
-from .helpers import make_user
-
+from aegis_share.tests.helpers import make_user
 
 TEST_KEY = base64.urlsafe_b64encode(b"s" * 32).decode()
 
@@ -51,8 +50,6 @@ class SecurityServiceTests(TestCase):
 
     def test_revoked_api_token_is_rejected(self):
         token, raw = create_api_token(self.user, name="Revogado")
-        from django.utils import timezone
-
         token.revoked_at = timezone.now()
         token.save(update_fields=["revoked_at"])
         self.assertIsNone(authenticate_api_token(raw))
