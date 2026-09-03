@@ -25,7 +25,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.16.5",
-    "granian[reload]>=2.5.4",
+    "granian[reload]>=2.8.2",
     "taskipy>=1.14.1",
     "isort>=9.0.1",
 ]
