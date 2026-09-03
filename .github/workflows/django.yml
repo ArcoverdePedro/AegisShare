@@ -1,72 +1,59 @@
-name: Sincronizar master com Branches de Clientes
+name: CI
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
-    types: [closed]
+  push:
+    branches:
+      - master
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  sync-branches:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+  django:
+    name: Django checks
+    runs-on: ubuntu-latest
+
+    env:
+      SECRET_KEY: ci-only-secret-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Instalar uv
+        run: python -m pip install --disable-pip-version-check uv
+
+      - name: Sincronizar dependencias exatamente pelo lockfile
+        run: uv sync --frozen --dev
+
+      - name: Validar configuracao do Django
+        run: uv run manage.py check
+
+      - name: Executar testes Django
+        run: uv run manage.py test --verbosity 2
+
+      - name: Validar compilacao dos modulos Python
+        run: uv run python -m compileall -q aegis_share mysite
+
+  docker:
+    name: Docker build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do repositório
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configurar Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Formatar Django e Aplicar Migrações
-        run: |
-          # 1. Configuração e Sincronização
-          git checkout master
-          git pull origin master
-
-          # Instala gerenciador e pacote
-          pip install uv
-          uv sync --dev
-
-          # 2. Executar Formatação e Migrações
-          # Comando de formatação
-          uv run task fmt
-
-          # Comandos de migração (pode gerar novos arquivos .py)
-          uv run manage.py makemigrations 
-          uv run manage.py migrate
-
-          # 3. Preparar para Commit
-
-          # Adiciona todos os arquivos modificados/novos (incluindo migrações e formatação)
-          git add .
-
-          # Verifica se há alterações para commitar
-          if ! git diff-index --quiet HEAD --; then
-            # Se houver alterações, commita com a mensagem automática
-            git commit -m "GHA(ci): Formatação e Migrações automáticas"
-            
-            # 4. Envio de volta ao Github
-            echo "Alterações encontradas e commitadas. Enviando para o GitHub..."
-            git push origin master
-          else
-            echo "Nenhuma alteração encontrada após formatação e migrações. O push será ignorado."
-          fi
-
-      - name: Notificar resultado
-        if: always()
-        run: |
-          echo "Sincronização concluída!"
+      - name: Construir imagem de producao
+        run: docker build --pull -f dockerfile -t aegisshare:ci .
