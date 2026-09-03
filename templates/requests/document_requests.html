@@ -1,0 +1,19 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Solicitacoes - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4"><div class="container is-fluid">
+<div class="mb-5"><p class="heading">Fluxo documental</p><h1 class="title is-3">Solicitacoes de documentos</h1><p class="muted">Acompanhe o que foi solicitado, enviado e ainda esta pendente.</p></div>
+<div class="columns">
+    <div class="column {% if form %}is-8{% else %}is-12{% endif %}">
+        {% for req in requests %}<div class="box aegis-card mb-4">
+            <div class="level"><div class="level-left"><div><h2 class="title is-5 mb-1">{{ req.title }}</h2><p class="is-size-7 muted">Cliente: {{ req.recipient.username }} · Criada em {{ req.created_at|date:'d/m/Y H:i' }}{% if req.due_at %} · Prazo {{ req.due_at|date:'d/m/Y H:i' }}{% endif %}</p></div></div><div class="level-right"><span class="tag {% if req.status == 'DONE' %}is-success{% elif req.status == 'PARTIAL' %}is-warning{% elif req.status == 'CANCELLED' %}is-dark{% else %}is-link{% endif %} is-light">{{ req.get_status_display }}</span></div></div>
+            {% if req.description %}<p class="mb-4">{{ req.description }}</p>{% endif %}
+            {% for item in req.items.all %}<div class="level is-mobile py-2" style="border-top:1px solid #eef0f4"><div class="level-left"><span class="icon mr-2 {% if item.completed_at %}has-text-success{% else %}has-text-grey{% endif %}">{% if item.completed_at %}{% icon 'check-circle' %}{% else %}{% icon 'circle' %}{% endif %}</span><div><strong>{{ item.label }}</strong>{% if item.fulfilled_by_file %}<br><a class="is-size-7" href="{% url 'file_detail' item.fulfilled_by_file.id %}">Abrir arquivo enviado</a>{% endif %}</div></div>
+                <div class="level-right">{% if user == req.recipient and not item.completed_at %}<form method="post" enctype="multipart/form-data" action="{% url 'fulfill_request_item' item.id %}" class="is-flex" style="gap:.5rem">{% csrf_token %}<input class="input is-small" type="file" name="arquivo" required><button class="button is-small is-link" type="submit">Enviar</button></form>{% elif item.completed_at %}<span class="tag is-success is-light">Enviado</span>{% endif %}</div></div>{% endfor %}
+        </div>{% empty %}<div class="notification is-light">Nenhuma solicitacao.</div>{% endfor %}
+    </div>
+    {% if form %}<div class="column is-4"><div class="box aegis-card"><h2 class="title is-5">Nova solicitacao</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button is-link is-fullwidth" type="submit">Enviar solicitacao</button></form></div></div>{% endif %}
+</div>
+</div></section>
+{% endblock %}
