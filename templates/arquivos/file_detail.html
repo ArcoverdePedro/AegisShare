@@ -26,10 +26,12 @@
                 <div class="column"><p class="heading">Proprietario</p><p>{{ arquivo.dono_arquivo.username }}</p></div>
             </div>
             {% if arquivo.description %}<hr><p>{{ arquivo.description }}</p>{% endif %}
+            <hr><p class="heading">Tags</p><div class="mb-3">{% for tag in arquivo.tags.all %}<span class="tag is-link is-light mr-1">{{ tag.name }}</span>{% empty %}<span class="muted is-size-7">Sem tags.</span>{% endfor %}</div>
+            {% if can_edit %}<form method="post" action="{% url 'update_file_tags' arquivo.id %}">{% csrf_token %}<div class="field has-addons"><div class="control is-expanded"><input class="input" name="tags" value="{% for tag in arquivo.tags.all %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}" placeholder="contrato, 2026, cliente-a"></div><div class="control"><button class="button" type="submit">Salvar tags</button></div></div></form>{% endif %}
         </div>
 
         <div class="box aegis-card">
-            <div class="level"><div class="level-left"><h2 class="title is-5">Versoes</h2></div>{% if arquivo.user_pode_alterar %}<div class="level-right"></div>{% endif %}</div>
+            <div class="level"><div class="level-left"><h2 class="title is-5">Versoes</h2></div></div>
             <div class="table-container"><table class="table is-fullwidth"><thead><tr><th>Versao</th><th>Data</th><th>Enviado por</th><th>SHA-256</th><th></th></tr></thead><tbody>
             {% for version in versions %}<tr><td><strong>v{{ version.version_number }}</strong>{% if forloop.first %} <span class="tag is-link is-light">Atual</span>{% endif %}</td><td>{{ version.created_at|date:'d/m/Y H:i' }}</td><td>{{ version.uploaded_by|default:'Legado' }}</td><td class="mono is-size-7">{{ version.sha256|slice:':12' }}{% if version.sha256 %}...{% endif %}</td><td class="has-text-right"><a class="button is-small" target="_blank" href="{% url 'file_version_preview' arquivo.id version.id %}">Ver</a> <a class="button is-small" href="{% url 'file_version_download' arquivo.id version.id %}">Baixar</a></td></tr>{% empty %}<tr><td colspan="5">Sem versoes registradas.</td></tr>{% endfor %}
             </tbody></table></div>
