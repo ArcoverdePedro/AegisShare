@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# `docker compose run aegis_share <comando>` deve executar o comando solicitado
+# sem iniciar o servidor/migrations automaticamente.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
+
 PORT="${PORT:-8000}"
 RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
 COLLECT_STATIC="${COLLECT_STATIC:-true}"
