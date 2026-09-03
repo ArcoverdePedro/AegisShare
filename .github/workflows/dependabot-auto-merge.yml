@@ -26,11 +26,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
           TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          TESTED_BASE_SHA: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
         run: |
           set -euo pipefail
 
-          if [ -z "${PR_NUMBER:-}" ]; then
-            echo "Nao foi possivel identificar o Pull Request associado ao workflow."
+          if [ -z "${PR_NUMBER:-}" ] || [ -z "${TESTED_BASE_SHA:-}" ]; then
+            echo "Nao foi possivel identificar o PR ou a master usada pela CI."
             exit 1
           fi
 
@@ -41,6 +42,7 @@ jobs:
           BASE_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.base.ref')"
           HEAD_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.head.ref')"
           CURRENT_SHA="$(printf '%s' "$PR_JSON" | jq -r '.head.sha')"
+          CURRENT_BASE_SHA="$(printf '%s' "$PR_JSON" | jq -r '.base.sha')"
 
           if [ "$AUTHOR" != "dependabot[bot]" ]; then
             echo "PR #${PR_NUMBER} nao pertence ao Dependabot. Merge cancelado."
@@ -67,11 +69,16 @@ jobs:
 
           if [ "$CURRENT_SHA" != "$TESTED_SHA" ]; then
             echo "O PR mudou depois da CI. O SHA atual nao e o mesmo SHA testado."
-            echo "Merge cancelado para evitar integrar codigo nao validado."
             exit 1
           fi
 
-          echo "CI aprovada para o SHA ${TESTED_SHA}. Mesclando PR #${PR_NUMBER}..."
+          if [ "$CURRENT_BASE_SHA" != "$TESTED_BASE_SHA" ]; then
+            echo "A master mudou depois da CI. O PR precisa ser testado novamente."
+            exit 1
+          fi
+
+          echo "CI aprovou exatamente o PR ${TESTED_SHA} sobre a master ${TESTED_BASE_SHA}."
+          echo "Mesclando PR #${PR_NUMBER}..."
 
           gh api \
             --method PUT \
