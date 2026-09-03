@@ -18,6 +18,7 @@ jobs:
     env:
       DEBUG: "true"
       SECRET_KEY: branch-scaffold-only
+
     steps:
       - uses: actions/checkout@v7
         with:
@@ -34,6 +35,9 @@ jobs:
         run: |
           uv lock
           uv sync --frozen --dev
+
+      - name: Validate Django before migration generation
+        run: uv run manage.py check
 
       - name: Generate migrations
         run: uv run manage.py makemigrations aegis_share --noinput
