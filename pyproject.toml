@@ -6,25 +6,25 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "argon2-cffi>=25.1.0",
-    "channels>=4.3.1",
+    "channels>=4.3.2",
     "channels-redis>=4.3.0",
     "crispy-bulma>=0.12.0",
     "django>=5.2.6",
-    "django-crispy-forms>=2.4",
+    "django-crispy-forms>=2.7",
     "django-feather>=0.3.0",
-    "django-htmx>=1.26.0",
+    "django-htmx>=1.29.0",
     "django-simple-bulma>=2.7.1",
-    "granian>=2.5.4",
-    "pillow>=12.0.0",
-    "pillow-avif-plugin>=1.5.2",
-    "python-dotenv>=1.1.1",
-    "requests>=2.32.5",
-    "whitenoise>=6.11.0",
+    "granian>=2.8.2",
+    "pillow>=12.3.0",
+    "pillow-avif-plugin>=1.6.0",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+    "whitenoise>=6.12.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.13.2",
+    "ruff>=0.16.5",
     "granian[reload]>=2.5.4",
     "taskipy>=1.14.1",
     "isort>=7.0.0",
