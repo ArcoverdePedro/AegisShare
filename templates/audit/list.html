@@ -1,0 +1,101 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Auditoria - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+<div class="container is-fluid">
+    <div class="level mb-4">
+        <div class="level-left">
+            <div>
+                <p class="heading">Governanca</p>
+                <h1 class="title is-3 mb-1">Auditoria</h1>
+                <p class="subtitle is-6 muted">Alteracoes e acessos registrados pelo django-auditlog.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="box aegis-card">
+        <form method="get" class="columns is-multiline is-align-items-end">
+            <div class="column is-3">
+                <label class="label">Usuario</label>
+                <input class="input" type="text" name="actor" value="{{ filters.actor }}" placeholder="username">
+            </div>
+            <div class="column is-3">
+                <label class="label">Modelo</label>
+                <input class="input" type="text" name="model" value="{{ filters.model }}" placeholder="ipfsfile, sharedlink...">
+            </div>
+            <div class="column is-3">
+                <label class="label">Acao</label>
+                <div class="select is-fullwidth">
+                    <select name="action">
+                        <option value="">Todas</option>
+                        {% for value, label in action_choices %}
+                        <option value="{{ value }}" {% if filters.action == value|stringformat:'s' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="buttons">
+                    <button class="button is-link" type="submit">{% icon 'filter' %}<span>Filtrar</span></button>
+                    <a class="button" href="{% url 'audit_log' %}">Limpar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="box aegis-card">
+        <div class="table-container">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Ator</th>
+                        <th>Acao</th>
+                        <th>Modelo</th>
+                        <th>Objeto</th>
+                        <th>IP</th>
+                        <th>Alteracoes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in page.object_list %}
+                    <tr>
+                        <td>{{ entry.timestamp|date:'d/m/Y H:i:s' }}</td>
+                        <td>{{ entry.actor|default:'Sistema' }}</td>
+                        <td><span class="tag is-light">{{ entry.get_action_display }}</span></td>
+                        <td class="mono">{{ entry.content_type.app_label }}.{{ entry.content_type.model }}</td>
+                        <td>{{ entry.object_repr|truncatechars:60 }}</td>
+                        <td class="mono">{{ entry.remote_addr|default:'-' }}</td>
+                        <td>
+                            {% if entry.changes_display_dict %}
+                            <details>
+                                <summary>Ver</summary>
+                                <pre class="is-size-7" style="white-space:pre-wrap;max-width:42rem">{{ entry.changes_display_dict }}</pre>
+                            </details>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="has-text-centered muted">Nenhum evento encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page.paginator.num_pages > 1 %}
+        <nav class="pagination is-centered mt-4" role="navigation">
+            {% if page.has_previous %}
+            <a class="pagination-previous" href="?page={{ page.previous_page_number }}&actor={{ filters.actor|urlencode }}&model={{ filters.model|urlencode }}&action={{ filters.action|urlencode }}">Anterior</a>
+            {% else %}<a class="pagination-previous" disabled>Anterior</a>{% endif %}
+            {% if page.has_next %}
+            <a class="pagination-next" href="?page={{ page.next_page_number }}&actor={{ filters.actor|urlencode }}&model={{ filters.model|urlencode }}&action={{ filters.action|urlencode }}">Proxima</a>
+            {% else %}<a class="pagination-next" disabled>Proxima</a>{% endif %}
+            <ul class="pagination-list"><li><span class="pagination-link is-current">{{ page.number }} / {{ page.paginator.num_pages }}</span></li></ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+</section>
+{% endblock %}
