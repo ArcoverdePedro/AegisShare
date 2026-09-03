@@ -1,43 +1,52 @@
 {% load icon %}
 
 <div data-conversation-id="{{ conversation.id }}" style="height: 100%; display: flex; flex-direction: column;">
-    <!-- Cabeçalho da conversa -->
     <div id="conversation-header" class="has-background p-4" style="border-bottom: 1px solid #dbdbdb;">
-        <h5 class="title is-6 mb-0">
-            Conversa com <strong class="has-text-link">{{ other_user.username }}</strong>
-            {% if other_user.nivel_permissao %}
-                <span class="tag is-link is-small ml-2">{{ other_user.get_nivel_permissao_display }}</span>
-            {% endif %}
-        </h5>
+        <div class="level is-mobile mb-0">
+            <div class="level-left">
+                <div>
+                    <h5 class="title is-6 mb-1">
+                        Conversa com <strong class="has-text-link">{{ other_user.username }}</strong>
+                        {% if other_user.nivel_permissao %}
+                            <span class="tag is-link is-small ml-2">{{ other_user.get_nivel_permissao_display }}</span>
+                        {% endif %}
+                    </h5>
+                    {% if conversation.file %}
+                    <p class="is-size-7 muted">
+                        {% icon 'file-text' %}
+                        Documento: <a href="{% url 'file_detail' conversation.file.id %}"><strong>{{ conversation.file.nome_arquivo }}</strong></a>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Container de mensagens -->
-    <div id="messages-container" 
+
+    <div id="messages-container"
          class="has-background p-4"
          style="flex: 1; overflow-y: auto; max-height: 400px;">
         {% for message in messages %}
             {% include 'chat/partials/chat_message.html' %}
         {% empty %}
+            {% if conversation.file %}<p class="has-text-centered muted is-size-7">Conversa iniciada sobre {{ conversation.file.nome_arquivo }}.</p>{% endif %}
         {% endfor %}
     </div>
-    
-    <!-- Formulário de mensagem -->
+
     <div class="has-background p-4" style="border-top: 1px solid #dbdbdb;">
         <form onsubmit="return false;">
             {% csrf_token %}
             <div class="field has-addons">
                 <div class="control is-expanded">
-                    <input class="input is-rounded" 
-                           type="text" 
-                           name="content" 
+                    <input class="input is-rounded"
+                           type="text"
+                           name="content"
+                           maxlength="4000"
                            placeholder="Digite sua mensagem..."
                            required>
                 </div>
                 <div class="control">
                     <button class="button is-link is-rounded" type="submit">
-                        <span class="icon">
-                            {% icon "send" %}
-                        </span>
+                        <span class="icon">{% icon "send" %}</span>
                     </button>
                 </div>
             </div>
@@ -46,7 +55,6 @@
 </div>
 
 <script>
-    // Rolagem automática para a última mensagem
     function scrollToBottom() {
         const messagesContainer = document.getElementById('messages-container');
         if (messagesContainer) {
