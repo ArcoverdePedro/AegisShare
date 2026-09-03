@@ -4,6 +4,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from aegis_share.models import Conversation, CustomUser
+from aegis_share.services.collaboration import file_chat_users
 from aegis_share.services.selectors import get_accessible_file
 
 
@@ -12,27 +13,6 @@ def _chat_users(user):
     if user.is_client():
         qs = qs.exclude(nivel_permissao="CLI")
     return qs.order_by("username")
-
-
-def _file_chat_users(file, current_user):
-    """Usuarios que realmente colaboram no documento e podem participar do chat dele."""
-    candidates = CustomUser.objects.filter(is_active=True).exclude(id=current_user.id)
-
-    ids = {file.dono_arquivo_id}
-    ids.update(file.access_grants.values_list("user_id", flat=True))
-    if file.workspace_id:
-        ids.add(file.workspace.cliente_id)
-        ids.update(file.workspace.members.values_list("id", flat=True))
-
-    # Administradores podem participar quando ja estiverem envolvidos na acao atual.
-    if current_user.is_admin():
-        ids.update(
-            CustomUser.objects.filter(nivel_permissao="ADM", is_active=True)
-            .exclude(id=current_user.id)
-            .values_list("id", flat=True)
-        )
-
-    return candidates.filter(id__in=ids).order_by("username")
 
 
 @login_required
@@ -127,7 +107,7 @@ def get_or_create_file_conversation(request, file_id, user_id):
     if not file:
         raise Http404
 
-    other_user = get_object_or_404(_file_chat_users(file, request.user), id=user_id)
+    other_user = get_object_or_404(file_chat_users(file, request.user), id=user_id)
     if not file.user_tem_acesso(other_user) and not other_user.is_admin():
         raise Http404
 
