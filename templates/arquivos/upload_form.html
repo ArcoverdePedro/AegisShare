@@ -1,95 +1,89 @@
-{% block extra_css %}
-<style>
-    .file-input {
-        opacity: 0;
-        position: absolute;
-        pointer-events: none;
-    }
-</style>
-{% endblock %}
-
-<form method="post" enctype="multipart/form-data" id="uploadForm" class="mb-4">
+<form method="post" enctype="multipart/form-data" id="uploadForm">
     {% csrf_token %}
-    <!-- Campo Cliente -->
     <div class="field">
-        <label class="label" for="{{ form.cliente.id_for_label }}">
-            {{ form.cliente.label }}
-        </label>
-
-        <div class="control">{{ form.cliente }}</div>
-
-        {% if form.cliente.errors %}
-        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
-            {% for error in form.cliente.errors %} {{ error }} {% endfor %}
-        </div>
-        cliente_id {% endif %} {% if form.cliente_id.errors %}
-        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
-            {% for error in form.cliente_id.errors %} {{ error }} {% endfor %}
-        </div>
-        {% endif %}
+        <label class="label">Cliente</label>
+        <div class="control"><input class="input" id="cliente_input" name="cliente" value="{{ form.cliente.value|default:'' }}" autocomplete="off" list="cliente_options" placeholder="Digite ao menos 2 letras" required></div>
+        <datalist id="cliente_options"></datalist>
+        <input type="hidden" name="cliente_id" id="cliente_id" value="{{ form.cliente_id.value|default:'' }}">
+        {% for error in form.cliente.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+        {% for error in form.cliente_id.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
     </div>
 
-    <!-- Campo Arquivo com estilo Bulma -->
+    {% if form.workspace.field.queryset %}
+    <div class="columns">
+        <div class="column"><div class="field"><label class="label">Workspace <span class="has-text-weight-normal muted">(opcional)</span></label><div class="select is-fullwidth">{{ form.workspace }}</div>{% for error in form.workspace.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}</div></div>
+        <div class="column"><div class="field"><label class="label">Pasta <span class="has-text-weight-normal muted">(opcional)</span></label><div class="select is-fullwidth">{{ form.folder }}</div>{% for error in form.folder.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}</div></div>
+    </div>
+    {% endif %}
+
+    <div class="field"><label class="label">Descricao <span class="has-text-weight-normal muted">(opcional)</span></label>{{ form.description }}</div>
+
     <div class="field">
-        <label class="label"> {{ form.arquivo.label }} </label>
-        <div class="control">
-            <div class="file has-name is-fullwidth">
-                <label class="file-label">
-                    {{ form.arquivo }}
-                    <span class="file-cta">
-                        <span class="file-icon">
-                            <i class="fas fa-upload"></i>
-                        </span>
-                        <span class="file-label"> Selecionar Arquivo… </span>
-                    </span>
-                    <span class="file-name" id="file-name-display">
-                        Sem arquivo
-                    </span>
-                </label>
-            </div>
+        <label class="label">Arquivo</label>
+        <div class="drop-zone" id="dropZone">
+            <div class="mb-3"><span class="icon is-large has-text-link">↥</span></div>
+            <p class="has-text-weight-semibold">Arraste o arquivo aqui</p>
+            <p class="is-size-7 muted mb-4">ou clique para selecionar · limite {{ FILE_MAX_UPLOAD_MB|default:'configurado no servidor' }} MB</p>
+            <button class="button is-link is-light" type="button" id="chooseFile">Selecionar arquivo</button>
+            <p id="fileName" class="mt-3 mono is-size-7">Nenhum arquivo selecionado</p>
+            <div style="display:none">{{ form.arquivo }}</div>
         </div>
-
-        {% if form.arquivo.errors %}
-        <div class="notification is-danger is-light mt-1 auto-dismiss-up">
-            {% for error in form.arquivo.errors %} {{ error }} {% endfor %}
-        </div>
-        {% endif %}
+        {% for error in form.arquivo.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
     </div>
 
-    <input type="hidden" name="cliente_id" id="cliente_id" />
-
-    <div class="field mt-5">
-        <div id="div_upload" class="control has-text-right">
-            <button
-                type="submit"
-                id="btn_upload"
-                name="upload_arquivo"
-                class="button is-link"
-            >
-                <span>Upload para IPFS</span>
-            </button>
-        </div>
+    <div id="uploadStatus" class="notification is-info is-light" hidden>
+        <progress class="progress is-link is-small" max="100">Processando</progress>
+        <strong>Protegendo o arquivo...</strong><br><small>Validacao, antivirus (quando habilitado), AES-256-GCM e envio ao armazenamento.</small>
     </div>
+
+    <div class="field mt-5"><button class="button is-link is-fullwidth is-medium" id="btnUpload" type="submit">Criptografar e enviar</button></div>
 </form>
-{% block scripts %}
-<script>
-    const fileInput = document.querySelector("#id_arquivo");
-    const fileNameDisplay = document.querySelector("#file-name-display");
-
-    if (fileInput && fileNameDisplay) {
-        fileInput.addEventListener("change", function () {
-            if (this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
-            } else {
-                fileNameDisplay.textContent = "No file chosen";
-            }
-        });
-    }
-</script>
 
 <script>
-    $(function () {
-        initAutocompleteCliente("cliente_input", "cliente_id", "cliente");
+(() => {
+    const input = document.getElementById('id_arquivo');
+    const zone = document.getElementById('dropZone');
+    const choose = document.getElementById('chooseFile');
+    const name = document.getElementById('fileName');
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('uploadStatus');
+    const button = document.getElementById('btnUpload');
+    const clientInput = document.getElementById('cliente_input');
+    const clientId = document.getElementById('cliente_id');
+    const options = document.getElementById('cliente_options');
+    let clients = [];
+    let timer;
+
+    function showFile(file) { name.textContent = file ? `${file.name} · ${(file.size/1024/1024).toFixed(2)} MB` : 'Nenhum arquivo selecionado'; }
+    choose.addEventListener('click', () => input.click());
+    zone.addEventListener('click', (e) => { if (e.target === zone) input.click(); });
+    input.addEventListener('change', () => showFile(input.files[0]));
+    ['dragenter','dragover'].forEach(type => zone.addEventListener(type, e => { e.preventDefault(); zone.classList.add('is-dragging'); }));
+    ['dragleave','drop'].forEach(type => zone.addEventListener(type, e => { e.preventDefault(); zone.classList.remove('is-dragging'); }));
+    zone.addEventListener('drop', e => { if (e.dataTransfer.files.length) { input.files = e.dataTransfer.files; showFile(input.files[0]); } });
+
+    clientInput.addEventListener('input', () => {
+        clientId.value = '';
+        const exact = clients.find(item => item.nome === clientInput.value);
+        if (exact) clientId.value = exact.id;
+        clearTimeout(timer);
+        if (clientInput.value.length < 2) return;
+        timer = setTimeout(async () => {
+            const response = await fetch(`{% url 'buscar_cliente' %}?term=${encodeURIComponent(clientInput.value)}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+            if (!response.ok) return;
+            clients = await response.json();
+            options.innerHTML = clients.map(item => `<option value="${item.nome.replaceAll('&','&amp;').replaceAll('"','&quot;')}"></option>`).join('');
+            const exactNow = clients.find(item => item.nome === clientInput.value);
+            if (exactNow) clientId.value = exactNow.id;
+        }, 250);
     });
+    clientInput.addEventListener('change', () => { const exact = clients.find(item => item.nome === clientInput.value); clientId.value = exact ? exact.id : ''; });
+
+    form.addEventListener('submit', e => {
+        const exact = clients.find(item => item.nome === clientInput.value);
+        if (exact) clientId.value = exact.id;
+        if (!clientId.value) { e.preventDefault(); alert('Selecione um cliente valido da lista.'); return; }
+        status.hidden = false; button.classList.add('is-loading'); button.disabled = true;
+    });
+})();
 </script>
-{% endblock scripts %}
