@@ -6,6 +6,7 @@ on:
       - feat/production-hardening
     paths:
       - pyproject.toml
+      - .github/workflows/branch-lock-refresh.yml
 
 permissions:
   contents: write
