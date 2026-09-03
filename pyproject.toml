@@ -27,7 +27,7 @@ dev = [
     "ruff>=0.16.5",
     "granian[reload]>=2.5.4",
     "taskipy>=1.14.1",
-    "isort>=7.0.0",
+    "isort>=9.0.1",
 ]
 
 [tool.ruff]
