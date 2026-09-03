@@ -9,7 +9,7 @@ from django.views.decorators.http import require_http_methods
 
 from aegis_share.file_policy import FilePolicyError
 from aegis_share.models import CustomUser
-from aegis_share.services.antivirus import AntivirusError
+from aegis_share.services.antivirus import AntivirusUnavailable, MalwareDetected
 from aegis_share.services.files import create_file_from_upload, get_version_content
 from aegis_share.services.pinata import PinataError
 from aegis_share.services.security import authenticate_api_token
@@ -93,8 +93,11 @@ def files_api(request):
             },
             status=400,
         )
-    except AntivirusError:
+    except MalwareDetected:
         return JsonResponse({"error": "file_rejected"}, status=400)
+    except AntivirusUnavailable:
+        logger.warning("api_upload_antivirus_unavailable", exc_info=True)
+        return JsonResponse({"error": "antivirus_unavailable"}, status=503)
     except PinataError:
         logger.warning("api_upload_storage_unavailable", exc_info=True)
         return JsonResponse({"error": "storage_unavailable"}, status=503)
