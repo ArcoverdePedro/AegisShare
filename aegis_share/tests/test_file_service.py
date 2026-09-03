@@ -7,9 +7,7 @@ from django.test import TestCase, override_settings
 from aegis_share.file_policy import FilePolicyError
 from aegis_share.models import FileAccess, FileVersion
 from aegis_share.services.files import create_file_from_upload, create_new_version
-
-from .helpers import make_user
-
+from aegis_share.tests.helpers import make_user
 
 TEST_KEY = base64.urlsafe_b64encode(b"f" * 32).decode()
 
