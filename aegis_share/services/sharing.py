@@ -13,7 +13,7 @@ class SharedLinkError(ValueError):
     pass
 
 
-def _token_hash(token: str) -> str:
+def token_hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
@@ -38,7 +38,7 @@ def create_shared_link(
     link = SharedLink.objects.create(
         file=file,
         token_prefix=token[:12],
-        token_hash=_token_hash(token),
+        token_hash=token_hash(token),
         password_hash=make_password(password) if password else "",
         expires_at=expires_at,
         max_downloads=max_downloads or None,
@@ -49,15 +49,15 @@ def create_shared_link(
     return link, token
 
 
-def resolve_shared_link(token: str, *, password=None, for_download=False):
+def resolve_shared_link(token: str, *, password=None, for_download=False, password_verified=False):
     link = (
         SharedLink.objects.select_related("file", "file__dono_arquivo")
-        .filter(token_hash=_token_hash(token))
+        .filter(token_hash=token_hash(token))
         .first()
     )
     if not link or not link.is_active or link.file.deleted_at:
         raise SharedLinkError("Link invalido, expirado ou revogado.")
-    if link.password_hash and not check_password(password or "", link.password_hash):
+    if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
         raise SharedLinkError("Senha do link invalida.")
     if for_download and not link.allow_download:
         raise SharedLinkError("Este link nao permite download.")
@@ -66,17 +66,17 @@ def resolve_shared_link(token: str, *, password=None, for_download=False):
     return link
 
 
-def consume_download(token: str, *, password=None):
+def consume_download(token: str, *, password=None, password_verified=False):
     with transaction.atomic():
         link = (
             SharedLink.objects.select_for_update()
             .select_related("file", "file__dono_arquivo")
-            .filter(token_hash=_token_hash(token))
+            .filter(token_hash=token_hash(token))
             .first()
         )
         if not link or not link.is_active or link.file.deleted_at:
             raise SharedLinkError("Link invalido, expirado ou sem downloads disponiveis.")
-        if link.password_hash and not check_password(password or "", link.password_hash):
+        if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
             raise SharedLinkError("Senha do link invalida.")
         if not link.allow_download:
             raise SharedLinkError("Este link nao permite download.")
