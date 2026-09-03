@@ -1,0 +1,72 @@
+name: Dependabot Auto Merge
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    name: Merge Dependabot apos CI
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validar PR e realizar squash merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PR_NUMBER:-}" ]; then
+            echo "Nao foi possivel identificar o Pull Request associado ao workflow."
+            exit 1
+          fi
+
+          PR_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+
+          AUTHOR="$(printf '%s' "$PR_JSON" | jq -r '.user.login')"
+          STATE="$(printf '%s' "$PR_JSON" | jq -r '.state')"
+          BASE_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.base.ref')"
+          CURRENT_SHA="$(printf '%s' "$PR_JSON" | jq -r '.head.sha')"
+
+          if [ "$AUTHOR" != "dependabot[bot]" ]; then
+            echo "PR #${PR_NUMBER} nao pertence ao Dependabot. Merge cancelado."
+            exit 1
+          fi
+
+          if [ "$STATE" != "open" ]; then
+            echo "PR #${PR_NUMBER} nao esta aberto. Nada a fazer."
+            exit 0
+          fi
+
+          if [ "$BASE_BRANCH" != "master" ]; then
+            echo "PR #${PR_NUMBER} nao aponta para master. Merge cancelado."
+            exit 1
+          fi
+
+          if [ "$CURRENT_SHA" != "$TESTED_SHA" ]; then
+            echo "O PR mudou depois da CI. O SHA atual nao e o mesmo SHA testado."
+            echo "Merge cancelado para evitar integrar codigo nao validado."
+            exit 1
+          fi
+
+          echo "CI aprovada para o SHA ${TESTED_SHA}. Mesclando PR #${PR_NUMBER}..."
+
+          gh api \
+            --method PUT \
+            "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/merge" \
+            -f merge_method=squash \
+            -f sha="$TESTED_SHA"
