@@ -1,11 +1,9 @@
-import json
 import logging
 from functools import wraps
 from io import BytesIO
 
 from auditlog.signals import accessed
 from django.http import FileResponse, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -69,8 +67,16 @@ def files_api(request):
     if user.is_client():
         owner = user
     else:
-        owner_id = request.POST.get("owner_id")
-        owner = get_object_or_404(CustomUser, id=owner_id, nivel_permissao="CLI")
+        owner_id = request.POST.get("owner_id", "").strip()
+        if not owner_id:
+            return JsonResponse({"error": "owner_required"}, status=400)
+        owner = CustomUser.objects.filter(
+            id=owner_id,
+            nivel_permissao="CLI",
+            is_active=True,
+        ).first()
+        if not owner:
+            return JsonResponse({"error": "invalid_owner"}, status=400)
 
     try:
         file = create_file_from_upload(
@@ -79,10 +85,12 @@ def files_api(request):
             actor=user,
             description=request.POST.get("description", ""),
         )
-    except FilePolicyError as exc:
-        # A mensagem vem de uma politica controlada pelo servidor, nao da stack interna.
+    except FilePolicyError:
         return JsonResponse(
-            {"error": "invalid_file", "detail": str(exc)},
+            {
+                "error": "invalid_file",
+                "detail": "O arquivo nao atende a politica de upload do servidor.",
+            },
             status=400,
         )
     except AntivirusError:
