@@ -17,7 +17,6 @@ jobs:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
       startsWith(github.event.workflow_run.head_branch, 'dependabot/')
     runs-on: ubuntu-latest
 
@@ -40,12 +39,21 @@ jobs:
           AUTHOR="$(printf '%s' "$PR_JSON" | jq -r '.user.login')"
           STATE="$(printf '%s' "$PR_JSON" | jq -r '.state')"
           BASE_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.base.ref')"
+          HEAD_BRANCH="$(printf '%s' "$PR_JSON" | jq -r '.head.ref')"
           CURRENT_SHA="$(printf '%s' "$PR_JSON" | jq -r '.head.sha')"
 
           if [ "$AUTHOR" != "dependabot[bot]" ]; then
             echo "PR #${PR_NUMBER} nao pertence ao Dependabot. Merge cancelado."
             exit 1
           fi
+
+          case "$HEAD_BRANCH" in
+            dependabot/*) ;;
+            *)
+              echo "Branch do PR nao e uma branch do Dependabot. Merge cancelado."
+              exit 1
+              ;;
+          esac
 
           if [ "$STATE" != "open" ]; then
             echo "PR #${PR_NUMBER} nao esta aberto. Nada a fazer."
