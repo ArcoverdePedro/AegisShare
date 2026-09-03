@@ -1,3 +1,5 @@
+import base64
+import binascii
 import os
 from pathlib import Path
 
@@ -35,6 +37,11 @@ if not SECRET_KEY:
     else:
         raise ImproperlyConfigured("SECRET_KEY e obrigatoria quando DEBUG=False.")
 
+if not DEBUG and (len(SECRET_KEY) < 50 or SECRET_KEY.startswith("CHANGE_ME")):
+    raise ImproperlyConfigured(
+        "SECRET_KEY de producao deve possuir pelo menos 50 caracteres e nao pode ser placeholder."
+    )
+
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
 
@@ -51,7 +58,9 @@ CSRF_COOKIE_SAMESITE = "Lax"
 
 if not DEBUG:
     SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000)
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
+        "SECURE_HSTS_INCLUDE_SUBDOMAINS", default=True
+    )
     SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=True)
 
 INSTALLED_APPS = [
@@ -110,11 +119,11 @@ ASGI_APPLICATION = "mysite.asgi.application"
 DATABASE_URL = env.str("DATABASE_URL", default="")
 if DATABASE_URL:
     DATABASES = {"default": env.db_url("DATABASE_URL", conn_max_age=60)}
+elif not DEBUG:
+    raise ImproperlyConfigured(
+        "DATABASE_URL e obrigatoria em producao. Use PostgreSQL interno ou um host externo."
+    )
 else:
-    if not DEBUG:
-        raise ImproperlyConfigured(
-            "DATABASE_URL e obrigatoria em producao. Use PostgreSQL interno ou um host externo."
-        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -140,7 +149,9 @@ if REDIS_URL:
         }
     }
 else:
-    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}
+    }
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
@@ -184,6 +195,7 @@ STATICFILES_FINDERS = [
     "django_simple_bulma.finders.SimpleBulmaFinder",
 ]
 STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
@@ -193,16 +205,34 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 FILE_MAX_UPLOAD_MB = env.int("FILE_MAX_UPLOAD_MB")
 FILE_RETENTION_DAYS = env.int("FILE_RETENTION_DAYS")
+FILE_UPLOAD_MAX_MEMORY_SIZE = min(FILE_MAX_UPLOAD_MB * 1024 * 1024, 5 * 1024 * 1024)
+DATA_UPLOAD_MAX_MEMORY_SIZE = FILE_MAX_UPLOAD_MB * 1024 * 1024 + 1024 * 1024
+
 FILE_ENCRYPTION_KEY = env.str("FILE_ENCRYPTION_KEY", default="")
-if not FILE_ENCRYPTION_KEY and not DEBUG:
+if not FILE_ENCRYPTION_KEY and DEBUG:
+    FILE_ENCRYPTION_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+if not FILE_ENCRYPTION_KEY:
+    raise ImproperlyConfigured("FILE_ENCRYPTION_KEY e obrigatoria em producao.")
+
+try:
+    _decoded_file_key = base64.urlsafe_b64decode(FILE_ENCRYPTION_KEY.encode("ascii"))
+except (ValueError, UnicodeEncodeError, binascii.Error) as exc:
     raise ImproperlyConfigured(
-        "FILE_ENCRYPTION_KEY e obrigatoria em producao. Gere com: "
-        "python -c \"import base64,secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())\""
+        "FILE_ENCRYPTION_KEY deve ser base64 URL-safe representando exatamente 32 bytes."
+    ) from exc
+if len(_decoded_file_key) != 32:
+    raise ImproperlyConfigured(
+        "FILE_ENCRYPTION_KEY deve representar exatamente 32 bytes."
     )
+del _decoded_file_key
 
 PINATA_JWT_TOKEN = env.str("PINATA_JWT_TOKEN", default="")
+if not PINATA_JWT_TOKEN and not DEBUG:
+    raise ImproperlyConfigured("PINATA_JWT_TOKEN e obrigatorio em producao.")
 PINATA_GATEWAY_URL = env.str(
-    "PINATA_GATEWAY_URL", default="https://gateway.pinata.cloud/ipfs/{cid}"
+    "PINATA_GATEWAY_URL",
+    default="https://gateway.pinata.cloud/ipfs/{cid}",
 )
 PINATA_TIMEOUT_SECONDS = env.int("PINATA_TIMEOUT_SECONDS")
 
@@ -231,10 +261,20 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {"json": {"()": "mysite.logging.JsonFormatter"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "json"}},
+    "handlers": {
+        "console": {"class": "logging.StreamHandler", "formatter": "json"}
+    },
     "root": {"handlers": ["console"], "level": LOG_LEVEL},
     "loggers": {
-        "django.request": {"handlers": ["console"], "level": "WARNING", "propagate": False},
-        "aegis_share": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "aegis_share": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
     },
 }
