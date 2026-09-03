@@ -1,47 +1,20 @@
 from uuid import UUID
 
 from django import forms
-from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 
+from .file_policy import FilePolicyError, validate_uploaded_file
 from .models import CustomUser, Folder, Workspace
 from .utils import clear_strings
-
-
-SAFE_FILE_TYPES = {
-    "application/pdf",
-    "image/png",
-    "image/jpeg",
-    "image/webp",
-    "image/gif",
-    "text/plain",
-    "text/csv",
-    "application/zip",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    "application/msword",
-    "application/vnd.ms-excel",
-    "application/vnd.ms-powerpoint",
-    "audio/mpeg",
-    "audio/ogg",
-    "video/mp4",
-    "video/webm",
-}
 
 
 def validate_business_file(arquivo):
     if not arquivo:
         return arquivo
-    max_size = settings.FILE_MAX_UPLOAD_MB * 1024 * 1024
-    if arquivo.size > max_size:
-        raise forms.ValidationError(
-            f"O arquivo excede o limite de {settings.FILE_MAX_UPLOAD_MB} MB."
-        )
-    if arquivo.content_type not in SAFE_FILE_TYPES:
-        raise forms.ValidationError(
-            "Tipo de arquivo nao permitido. Envie documentos, imagens, ZIP, audio ou video suportados."
-        )
+    try:
+        validate_uploaded_file(arquivo)
+    except FilePolicyError as exc:
+        raise forms.ValidationError(str(exc)) from exc
     return arquivo
 
 
@@ -55,11 +28,24 @@ class PhoneUserCreationMixin:
 
 class FirstUserForm(PhoneUserCreationMixin, UserCreationForm):
     email = forms.EmailField(label="Email", max_length=300, required=True)
-    telefone = forms.CharField(label="Telefone", max_length=15, required=True, widget=forms.TextInput(attrs={"class": "tel"}))
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "tel"}),
+    )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("first_name", "last_name", "username", "email", "telefone", "password1", "password2")
+        fields = (
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "telefone",
+            "password1",
+            "password2",
+        )
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -75,16 +61,29 @@ class FirstUserForm(PhoneUserCreationMixin, UserCreationForm):
 
 class FormUserADM(PhoneUserCreationMixin, UserCreationForm):
     email = forms.EmailField(label="Email", max_length=300, required=True)
-    telefone = forms.CharField(label="Telefone", max_length=15, required=True, widget=forms.TextInput(attrs={"class": "tel"}))
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "tel"}),
+    )
     nivel_permissao = forms.ChoiceField(
-        label="Nivel de Permissao", choices=CustomUser.NIVEL_PERMISSAO_CHOICES, initial="CLI"
+        label="Nivel de Permissao",
+        choices=CustomUser.NIVEL_PERMISSAO_CHOICES,
+        initial="CLI",
     )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
         fields = (
-            "first_name", "last_name", "username", "email", "telefone",
-            "nivel_permissao", "password1", "password2",
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "telefone",
+            "nivel_permissao",
+            "password1",
+            "password2",
         )
 
     def save(self, commit=True):
@@ -101,11 +100,24 @@ class FormUserADM(PhoneUserCreationMixin, UserCreationForm):
 
 class ClienteForm(PhoneUserCreationMixin, UserCreationForm):
     email = forms.EmailField(label="Email", max_length=300, required=True)
-    telefone = forms.CharField(label="Telefone", max_length=15, required=True, widget=forms.TextInput(attrs={"class": "tel"}))
+    telefone = forms.CharField(
+        label="Telefone",
+        max_length=15,
+        required=True,
+        widget=forms.TextInput(attrs={"class": "tel"}),
+    )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser
-        fields = ("first_name", "last_name", "username", "email", "telefone", "password1", "password2")
+        fields = (
+            "first_name",
+            "last_name",
+            "username",
+            "email",
+            "telefone",
+            "password1",
+            "password2",
+        )
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -121,15 +133,28 @@ class IPFSForm(forms.Form):
     cliente = forms.CharField(
         label="Buscar cliente",
         required=True,
-        widget=forms.TextInput(attrs={"placeholder": "Buscar Cliente", "id": "cliente_input", "class": "input"}),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Buscar Cliente",
+                "id": "cliente_input",
+                "class": "input",
+            }
+        ),
     )
-    cliente_id = forms.CharField(required=True, widget=forms.HiddenInput(attrs={"id": "cliente_id"}))
+    cliente_id = forms.CharField(
+        required=True,
+        widget=forms.HiddenInput(attrs={"id": "cliente_id"}),
+    )
     arquivo = forms.FileField(
         label="Selecione o arquivo",
         required=True,
         widget=forms.FileInput(attrs={"id": "id_arquivo", "class": "file-input"}),
     )
-    description = forms.CharField(label="Descricao", required=False, widget=forms.Textarea(attrs={"rows": 2}))
+    description = forms.CharField(
+        label="Descricao",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 2}),
+    )
     workspace = forms.ModelChoiceField(queryset=Workspace.objects.none(), required=False)
     folder = forms.ModelChoiceField(queryset=Folder.objects.none(), required=False)
 
@@ -148,7 +173,7 @@ class IPFSForm(forms.Form):
         cliente_id = self.cleaned_data.get("cliente_id")
         try:
             UUID(cliente_id)
-        except Exception as exc:
+        except (TypeError, ValueError, AttributeError) as exc:
             raise forms.ValidationError("Identificador de cliente invalido.") from exc
         if not CustomUser.objects.filter(id=cliente_id, nivel_permissao="CLI").exists():
             raise forms.ValidationError("Cliente inexistente.")
@@ -174,42 +199,80 @@ class VersionUploadForm(forms.Form):
 
 
 class SharedLinkForm(forms.Form):
-    EXPIRATION_CHOICES = [
+    EXPIRATION_CHOICES = (
         ("1", "1 hora"),
         ("24", "24 horas"),
         ("168", "7 dias"),
         ("720", "30 dias"),
         ("", "Sem expiracao"),
-    ]
-    expires_in_hours = forms.ChoiceField(label="Validade", choices=EXPIRATION_CHOICES, required=False, initial="24")
-    password = forms.CharField(label="Senha opcional", required=False, widget=forms.PasswordInput(render_value=True))
-    max_downloads = forms.IntegerField(label="Maximo de downloads", min_value=1, required=False)
-    allow_preview = forms.BooleanField(label="Permitir visualizacao", required=False, initial=True)
-    allow_download = forms.BooleanField(label="Permitir download", required=False, initial=True)
+    )
+    expires_in_hours = forms.ChoiceField(
+        label="Validade",
+        choices=EXPIRATION_CHOICES,
+        required=False,
+        initial="24",
+    )
+    password = forms.CharField(
+        label="Senha opcional",
+        required=False,
+        widget=forms.PasswordInput(render_value=True),
+    )
+    max_downloads = forms.IntegerField(
+        label="Maximo de downloads",
+        min_value=1,
+        required=False,
+    )
+    allow_preview = forms.BooleanField(
+        label="Permitir visualizacao",
+        required=False,
+        initial=True,
+    )
+    allow_download = forms.BooleanField(
+        label="Permitir download",
+        required=False,
+        initial=True,
+    )
 
 
 class FileCommentForm(forms.Form):
-    content = forms.CharField(label="Comentario", max_length=4000, widget=forms.Textarea(attrs={"rows": 3}))
+    content = forms.CharField(
+        label="Comentario",
+        max_length=4000,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
 
 
 class DocumentRequestForm(forms.Form):
     title = forms.CharField(label="Titulo", max_length=180)
     recipient = forms.ModelChoiceField(
-        label="Cliente", queryset=CustomUser.objects.filter(nivel_permissao="CLI").order_by("username")
+        label="Cliente",
+        queryset=CustomUser.objects.filter(nivel_permissao="CLI").order_by("username"),
     )
     due_at = forms.DateTimeField(
-        label="Prazo", required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
+        label="Prazo",
+        required=False,
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
         input_formats=["%Y-%m-%dT%H:%M"],
     )
-    description = forms.CharField(label="Descricao", required=False, widget=forms.Textarea(attrs={"rows": 3}))
+    description = forms.CharField(
+        label="Descricao",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
     items = forms.CharField(
         label="Documentos solicitados",
         help_text="Um documento por linha.",
-        widget=forms.Textarea(attrs={"rows": 6, "placeholder": "RG\nCPF\nComprovante de residencia"}),
+        widget=forms.Textarea(
+            attrs={"rows": 6, "placeholder": "RG\nCPF\nComprovante de residencia"}
+        ),
     )
 
     def clean_items(self):
-        items = [line.strip() for line in self.cleaned_data["items"].splitlines() if line.strip()]
+        items = [
+            line.strip()
+            for line in self.cleaned_data["items"].splitlines()
+            if line.strip()
+        ]
         if not items:
             raise forms.ValidationError("Informe ao menos um documento.")
         if len(items) > 50:
@@ -223,7 +286,12 @@ class TOTPCodeForm(forms.Form):
 
 class APITokenForm(forms.Form):
     name = forms.CharField(label="Nome do token", max_length=100)
-    expires_days = forms.IntegerField(label="Validade em dias", min_value=1, max_value=3650, required=False)
+    expires_days = forms.IntegerField(
+        label="Validade em dias",
+        min_value=1,
+        max_value=3650,
+        required=False,
+    )
 
 
 class WorkspaceForm(forms.Form):
@@ -254,6 +322,10 @@ class FotoForm(forms.Form):
         arquivo = self.cleaned_data.get("arquivo")
         if arquivo and arquivo.size > 5 * 1024 * 1024:
             raise forms.ValidationError("A foto excede o limite de 5 MB.")
-        if arquivo and arquivo.content_type not in {"image/png", "image/jpeg", "image/webp"}:
+        if arquivo and arquivo.content_type not in {
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+        }:
             raise forms.ValidationError("Use PNG, JPEG ou WEBP.")
         return arquivo
