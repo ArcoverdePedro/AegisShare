@@ -1,8 +1,10 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
+{% load aegis_collaboration %}
 {% block title %}{{ arquivo.nome_arquivo }} - AegisShare{% endblock %}
 
 {% block page_content %}
+{% document_chat_users arquivo request.user as chat_candidates %}
 <section class="section pt-4"><div class="container is-fluid">
 <div class="level mb-4">
     <div class="level-left"><div><p class="heading"><a href="{% url 'arquivos' %}">Arquivos</a> / Detalhes</p><h1 class="title is-3 mb-1">{{ arquivo.nome_arquivo }}</h1><p class="muted">{{ arquivo.mime_type }} · {{ arquivo.tamanho_arquivo|filesizeformat }}</p></div></div>
@@ -46,6 +48,19 @@
     </div>
 
     <div class="column is-4-desktop">
+        {% if chat_candidates %}
+        <div class="box aegis-card">
+            <h2 class="title is-5">Conversa sobre este documento</h2>
+            <p class="is-size-7 muted mb-3">A conversa fica vinculada a este arquivo e usa as mesmas regras de acesso.</p>
+            {% for collaborator in chat_candidates %}
+            <div class="level is-mobile mb-2">
+                <div class="level-left"><div><strong>{{ collaborator.username }}</strong><br><small class="muted">{{ collaborator.get_nivel_permissao_display }}</small></div></div>
+                <div class="level-right"><a class="button is-small is-link is-light" href="{% url 'get_file_conversation' arquivo.id collaborator.id %}">{% icon 'message-circle' %}<span>Conversar</span></a></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% if can_share %}
         <div class="box aegis-card"><h2 class="title is-5">Compartilhar com usuario</h2>
             <form method="post" action="{% url 'share_file_access' arquivo.id %}">{% csrf_token %}
