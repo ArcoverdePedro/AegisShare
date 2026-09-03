@@ -1,9 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Max, Q
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.http import Http404, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 
 from aegis_share.models import Conversation, CustomUser
+from aegis_share.services.selectors import get_accessible_file
 
 
 def _chat_users(user):
@@ -13,10 +14,32 @@ def _chat_users(user):
     return qs.order_by("username")
 
 
+def _file_chat_users(file, current_user):
+    """Usuarios que realmente colaboram no documento e podem participar do chat dele."""
+    candidates = CustomUser.objects.filter(is_active=True).exclude(id=current_user.id)
+
+    ids = {file.dono_arquivo_id}
+    ids.update(file.access_grants.values_list("user_id", flat=True))
+    if file.workspace_id:
+        ids.add(file.workspace.cliente_id)
+        ids.update(file.workspace.members.values_list("id", flat=True))
+
+    # Administradores podem participar quando ja estiverem envolvidos na acao atual.
+    if current_user.is_admin():
+        ids.update(
+            CustomUser.objects.filter(nivel_permissao="ADM", is_active=True)
+            .exclude(id=current_user.id)
+            .values_list("id", flat=True)
+        )
+
+    return candidates.filter(id__in=ids).order_by("username")
+
+
 @login_required
 def chat_index(request):
     conversations = (
         Conversation.objects.filter(participants=request.user)
+        .select_related("file")
         .prefetch_related("participants")
         .annotate(
             unread_count=Count(
@@ -41,10 +64,13 @@ def user_list(request):
     if search:
         users = users.filter(username__icontains=search)
 
+    # A lista lateral representa conversas gerais; conversas de documento
+    # continuam acessiveis pelo detalhe do arquivo e nao substituem a conversa geral.
     conversations = {
         str(other.id): conversation
-        for conversation in Conversation.objects.filter(participants=request.user)
-        .prefetch_related("participants", "messages__sender")
+        for conversation in Conversation.objects.filter(
+            participants=request.user, file__isnull=True
+        ).prefetch_related("participants", "messages__sender")
         for other in conversation.participants.all()
         if other.id != request.user.id
     }
@@ -96,13 +122,41 @@ def get_or_create_conversation(request, user_id):
 
 
 @login_required
+def get_or_create_file_conversation(request, file_id, user_id):
+    file = get_accessible_file(request.user, file_id)
+    if not file:
+        raise Http404
+
+    other_user = get_object_or_404(_file_chat_users(file, request.user), id=user_id)
+    if not file.user_tem_acesso(other_user) and not other_user.is_admin():
+        raise Http404
+
+    conversation = (
+        Conversation.objects.filter(file=file, participants=request.user)
+        .filter(participants=other_user)
+        .distinct()
+        .first()
+    )
+    if not conversation:
+        conversation = Conversation.objects.create(file=file)
+        conversation.participants.add(request.user, other_user)
+
+    return redirect("load_conversation", conversation_id=conversation.id)
+
+
+@login_required
 def load_conversation(request, conversation_id):
     conversation = get_object_or_404(
-        Conversation.objects.prefetch_related("participants"),
+        Conversation.objects.select_related("file").prefetch_related("participants"),
         id=conversation_id,
         participants=request.user,
     )
-    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    if conversation.file_id and not conversation.file.user_tem_acesso(request.user):
+        raise Http404
+
+    conversation.messages.filter(is_read=False).exclude(sender=request.user).update(
+        is_read=True
+    )
     messages = conversation.messages.select_related("sender").order_by("created_at")
     return render(
         request,
