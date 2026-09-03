@@ -7,443 +7,133 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="user-id" content="{{ request.user.id }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Home - Aegis Share{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="{% static "images/favicon.ico" %}">
-    <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}AegisShare{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     {% htmx_script %}
-    
     <style>
-        
-        .search-input {
-            max-width: 70%;
-        }
-
-        .date-search-input {
-            max-width: 25%;
-        }
-
-        .date-filters {
-            display: flex;
-            gap: 3px;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .content-wrapper {
-            flex-grow: 1;
-            margin-top: 0;
-            padding-top: 10px; 
-        }
-
-        .auto-dismiss-down {
-            animation: autoDismissDown 1s ease-in-out 2s forwards;
-            transform-origin: top;
-        }
-
-        @keyframes autoDismissDown {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-                max-height: 200px;
-                margin-bottom: 1rem;
-            }
-            70% {
-                opacity: 0;
-                transform: translateY(20px); /* desliza para baixo */
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(40px); /* vai ainda mais para baixo */
-                max-height: 0;
-                margin-bottom: 0;
-                padding-top: 0;
-                padding-bottom: 0;
-                overflow: hidden;
-            }
-        }
-
-        .auto-dismiss-up {
-            animation: autoDismissUp 1s ease-in-out 2s forwards;
-            transform-origin: bottom;
-        }
-
-        @keyframes autoDismissUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0);
-                max-height: 200px;
-                margin-bottom: 1rem;
-            }
-            70% {
-                opacity: 0;
-                transform: translateY(-20px); /* sobe */
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-40px); /* sobe mais */
-                max-height: 0;
-                margin-bottom: 0;
-                padding-top: 0;
-                padding-bottom: 0;
-                overflow: hidden;
-            }
-        }
-
+        :root { --aegis-bg: #f5f7fb; --aegis-border: #e8ecf3; }
+        html, body { min-height: 100%; background: var(--aegis-bg); }
+        body { display: flex; flex-direction: column; min-height: 100vh; }
+        .content-wrapper { flex: 1; padding-top: 5rem; padding-bottom: 3rem; }
+        .navbar { box-shadow: 0 2px 14px rgba(10, 10, 10, .08); }
+        .navbar-item .icon { margin-right: .35rem; }
+        .aegis-card { border: 1px solid var(--aegis-border); border-radius: 14px; box-shadow: 0 8px 28px rgba(20, 35, 70, .06); }
+        .metric { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+        .muted { color: #7a7a7a; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .notification-stack { position: fixed; right: 1rem; bottom: 1rem; z-index: 1000; width: min(420px, calc(100vw - 2rem)); }
+        .notification-dot { display: inline-flex; min-width: 1.3rem; height: 1.3rem; padding: 0 .3rem; align-items: center; justify-content: center; border-radius: 999px; font-size: .72rem; font-weight: 700; background: #ff3860; color: #fff; }
+        .drop-zone { border: 2px dashed #b7c4dc; border-radius: 14px; padding: 2rem; text-align: center; transition: .2s ease; background: #fafcff; }
+        .drop-zone.is-dragging { border-color: #485fc7; background: #f0f3ff; }
+        .table td, .table th { vertical-align: middle; }
+        @media (max-width: 768px) { .content-wrapper { padding-top: 4.5rem; } }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
-
 <body>
-    <nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="main navigation">
-        <div class="container">
-            <div class="navbar-brand">
-                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" id="burgerButton">
-                    <span aria-hidden="true"></span>
-                    <span aria-hidden="true"></span>
-                    <span aria-hidden="true"></span>
-                </a>
+<nav class="navbar is-dark is-fixed-top" role="navigation" aria-label="navegacao principal">
+    <div class="container is-fluid px-4">
+        <div class="navbar-brand">
+            <a class="navbar-item has-text-weight-bold" href="{% url 'home' %}">
+                <span class="icon">{% icon 'shield' %}</span><span>AegisShare</span>
+            </a>
+            <button class="navbar-burger" id="burgerButton" type="button" aria-label="menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+
+        <div class="navbar-menu" id="navbarMenu">
+            <div class="navbar-start">
+                <a class="navbar-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'home' %}">{% icon 'home' %} Inicio</a>
+                {% if user.is_authenticated %}
+                    <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
+                    {% if not user.is_client %}
+                        <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" href="{% url 'upload' %}">{% icon 'upload' %} Enviar</a>
+                    {% endif %}
+                    <a class="navbar-item {% if request.resolver_match.url_name == 'workspaces' %}is-active{% endif %}" href="{% url 'workspaces' %}">{% icon 'layers' %} Workspaces</a>
+                    <a class="navbar-item {% if request.resolver_match.url_name == 'document_requests' %}is-active{% endif %}" href="{% url 'document_requests' %}">{% icon 'clipboard' %} Solicitacoes</a>
+                    <a class="navbar-item {% if 'chat' in request.resolver_match.url_name %}is-active{% endif %}" href="{% url 'chat_index' %}">{% icon 'message-square' %} Chat</a>
+                {% else %}
+                    <a class="navbar-item {% if request.resolver_match.url_name == 'sobre' %}is-active{% endif %}" href="{% url 'sobre' %}">{% icon 'info' %} Sobre</a>
+                {% endif %}
             </div>
 
-            <div id="navbarMenu" class="navbar-menu">
-                <div class="navbar-start">
-                    <a class="navbar-item {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" 
-                       href="{% url 'home' %}">
-                        {% icon "home" style="width: 18px; height: 18px;" %} Home
+            <div class="navbar-end">
+                {% if user.is_authenticated %}
+                    <a class="navbar-item" href="{% url 'notifications' %}" title="Notificacoes">
+                        {% icon 'bell' %}
+                        {% if unread_notifications_count %}<span class="notification-dot">{{ unread_notifications_count }}</span>{% endif %}
                     </a>
-
-                    {% if user.is_authenticated %}
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" 
-                           href="{% url 'arquivos' %}">
-                            {% icon "package" style="width: 18px; height: 18px;" %} Arquivos
-                        </a>
-                                                
-                        {% if user.nivel_permissao != "CLI" %}
-                            <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" 
-                                href="{% url 'upload' %}">
-                                {% icon "upload" style="width: 18px; height: 18px;" %} Upload
-                            </a>    
-
-                            <a class="navbar-item {% if request.resolver_match.url_name == 'chat_index' %}is-active{% endif %}" 
-                               href="{% url 'chat_index' %}">
-                                {% icon "message-square" style="width: 18px; height: 18px;" %} Chat
-                            </a>
-
-                        {% endif %}
-                    {% else %}
-                        <a class="navbar-item {% if request.resolver_match.url_name == 'sobre' %}is-active{% endif %}" 
-                           href="{% url 'sobre' %}">
-                            {% icon "info" style="width: 18px; height: 18px;" %} Sobre
-                        </a>
-                    {% endif %}
-                </div>
-                
-                <div class="navbar-end">
-                    {% if user.is_authenticated %}
-                        <button id="userclickDropdown" class="navbar-link is-flex is-align-items-center">
+                    <div class="navbar-item has-dropdown" id="userDropdown">
+                        <button class="navbar-link button is-ghost has-text-light" id="userDropdownButton" type="button">
                             {% if user.foto_perfil %}
-                                <figure class="image is-32x32 mr-2">
-                                    <img class="is-rounded" 
-                                        src="{{ user.foto_perfil }}" 
-                                        alt="{{ user.username }}">
-                                </figure>
-                            {% else %}
-                                <span class="icon mr-2">
-                                    {% icon "user" %}
-                                </span>
-                            {% endif %}
-                            <span>{{ user.username }}</span>
+                                <figure class="image is-24x24 mr-2"><img class="is-rounded" src="{{ user.foto_perfil }}" alt=""></figure>
+                            {% else %}{% icon 'user' %}{% endif %}
+                            {{ user.username }}
                         </button>
-
-                        <div class="navbar-item has-dropdown" id="userDropdown">
-                            <div class="navbar-dropdown is-right">
-
-                                <a href="{% url "user" %}" class="navbar-item {% if request.resolver_match.url_name == 'user' %}is-active{% endif %}">
-                                    {% icon "user" %} Meu Perfil
-                                </a>
-
-                                {% if user.nivel_permissao != "CLI" %}
-                                    <a href="{% url 'cadastro' %}" class="navbar-item {% if request.resolver_match.url_name == 'cadastro' %}is-active{% endif %}">
-                                        {% icon "user-plus" style="width: 18px; height: 18px;" %} Cadastrar
-                                    </a>
-                                {% endif %}
-
-                                <hr class="navbar-divider">
-
-                                <a id="openLogoutModal" class="navbar-item">
-                                    {% icon "log-out" %} Sair
-                                </a>
-
-                            </div>
+                        <div class="navbar-dropdown is-right">
+                            <a href="{% url 'user' %}" class="navbar-item">{% icon 'user' %} Meu perfil</a>
+                            <a href="{% url 'security_settings' %}" class="navbar-item">{% icon 'lock' %} Seguranca</a>
+                            <a href="{% url 'trash' %}" class="navbar-item">{% icon 'trash-2' %} Lixeira</a>
+                            {% if not user.is_client %}
+                                <a href="{% url 'cadastro' %}" class="navbar-item">{% icon 'user-plus' %} Cadastrar usuario</a>
+                            {% endif %}
+                            {% if user.is_admin %}
+                                <a href="/aegis-admin/" class="navbar-item">{% icon 'settings' %} Administracao</a>
+                            {% endif %}
+                            <hr class="navbar-divider">
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button class="navbar-item button is-white is-fullwidth has-text-left" type="submit">{% icon 'log-out' %} Sair</button>
+                            </form>
                         </div>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="navbar-item {% if request.resolver_match.url_name == 'login' %}is-active{% endif %}">
-                            {% icon "log-in" style="width: 18px; height: 18px;" %} Entrar
-                        </a>
-                    {% endif %}
-                </div>
-
+                    </div>
+                {% else %}
+                    <a href="{% url 'login' %}" class="navbar-item">{% icon 'log-in' %} Entrar</a>
+                {% endif %}
             </div>
         </div>
-    </nav>
-
-    <div class="content-wrapper" style="padding-top: 52px;">
-        {% block page_content %}
-        {% endblock %}
     </div>
-    
-    {% if messages %}
-        {% for message in messages %}
-            {% if message.tags == "success" %}
-                <div class="notification is-{{ message.tags }} has-text-white is-dismissible auto-dismiss-down" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
-                    {{ message }}
-                </div>   
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-    
+</nav>
 
-    <div class="modal" id="logoutModal">
-        <div class="modal-background"></div>
-        <div class="modal-card">
-            <header class="modal-card-head">
-                <p class="modal-card-title">Confirmar Logout</p>
-                <button class="delete" aria-label="close" id="closeButtonTop"></button>
-            </header>
-            <footer class="buttons modal-card-foot is-justify-content-flex-end">
-                <form method="post" action="{% url 'logout' %}" class="is-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="button is-danger has-text-light">Sair</button>
-                </form>
-                <button class="button" id="cancelButton">Cancelar</button>
-            </footer>
+<main class="content-wrapper">
+    {% block page_content %}{% endblock %}
+</main>
+
+{% if messages %}
+<div class="notification-stack">
+    {% for message in messages %}
+        <div class="notification is-{{ message.tags|default:'info' }} is-light mb-2">
+            <button class="delete" type="button" aria-label="fechar"></button>
+            {{ message }}
         </div>
-    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
+<script>
+(() => {
+    const burger = document.getElementById('burgerButton');
+    const menu = document.getElementById('navbarMenu');
+    if (burger && menu) burger.addEventListener('click', () => {
+        burger.classList.toggle('is-active'); menu.classList.toggle('is-active');
+        burger.setAttribute('aria-expanded', burger.classList.contains('is-active'));
+    });
 
+    const dropdown = document.getElementById('userDropdown');
+    const button = document.getElementById('userDropdownButton');
+    if (dropdown && button) {
+        button.addEventListener('click', (event) => { event.stopPropagation(); dropdown.classList.toggle('is-active'); });
+        document.addEventListener('click', () => dropdown.classList.remove('is-active'));
+    }
 
-    {% block scripts %}
-    {% endblock %}
-
-    <!--JavaScript para mascaras-->
-    <script>
-        $(document).ready(function(){
-            var SPMaskBehavior = function (val) {
-            return val.replace(/\D/g, '').length === 11 ? '(00) 00000-0000' : '(00) 0000-00009';
-            },
-            spOptions = {
-            onKeyPress: function (val, e, field, options) {
-                field.mask(SPMaskBehavior.apply({}, arguments), options);
-            }
-            };
-
-            $('.tel').mask(SPMaskBehavior, spOptions); 
-
-            $('.data').mask('00/00/0000', {
-                placeholder: 'dd/mm/aaaa',
-                clearIfNotMatch: true,
-                onKeyPress: function(value, event, currentField) {
-
-                    var day = value.substring(0,2);
-                    var month = value.substring(3,5);
-                    
-                    if (day > 31) currentField.val('31/' + month + value.substring(5));
-                    if (month > 12) currentField.val(day + '/12' + value.substring(5));
-                }
-            });
-        });
-    </script>
-
-    <!--JavaScript para não dar erro de resubmit-->
-    <script>
-        function limparURLDoHistorico() {
-            if (window.history.replaceState) {
-                window.history.replaceState(null, null, window.location.href);
-            }
-        }
-        function resetarTodosOsFormularios() {
-            const forms = document.querySelectorAll('form');
-            
-            forms.forEach(form => {
-                form.reset();
-            });
-        }
-        limparURLDoHistorico();
-        window.addEventListener('load', resetarTodosOsFormularios);
-    </script>
-
-    <!--JavaScript para Modais-->
-    <script>
-            function initStaticModalToggle(modalId, openButtonSelector, closeButtonSelector) {
-                const modal = document.getElementById(modalId);
-
-                if (!modal) {
-                    console.error(`Modal com ID '${modalId}' não encontrado.`);
-                    return;
-                }
-                const openButtons = document.querySelectorAll(openButtonSelector);
-                const closeButtons = modal.querySelectorAll(closeButtonSelector); 
-                const openModal = () => {
-                    modal.classList.add('is-active');
-                };
-                const closeModal = () => {
-                    modal.classList.remove('is-active');
-                };
-                openButtons.forEach(button => {
-                    button.addEventListener('click', openModal);
-                });
-                closeButtons.forEach(button => {
-                    button.addEventListener('click', closeModal);
-                });
-            }
-            // Uso:
-            document.addEventListener('DOMContentLoaded', () => {
-                initStaticModalToggle(
-                    'logoutModal',                 // ID do Modal
-                    '#openLogoutModal',            // Seletor(es) do botão que abre
-                    '.delete, #cancelButton'       // Seletor(es) do botão que fecha (X, Cancelar, etc.)
-                );
-            });
-    </script>
-
-    <!--JavaScript para Dropdowns-->
-    <script>
-        function initDropdown(buttonId, dropdownId) {
-            const button = document.getElementById(buttonId);
-            const dropdown = document.getElementById(dropdownId);
-            
-            if (!button || !dropdown) {
-                console.warn(`Dropdown não encontrado: ${buttonId} ou ${dropdownId}`);
-                return;
-            }
-            
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                dropdown.classList.toggle('is-active');
-            });
-            
-            document.addEventListener('click', function(e) {
-                if (!dropdown.contains(e.target) && !button.contains(e.target)) {
-                    dropdown.classList.remove('is-active');
-                }
-            });
-            
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && dropdown.classList.contains('is-active')) {
-                    dropdown.classList.remove('is-active');
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            initDropdown('userclickDropdown', 'userDropdown');
-        });
-    </script>
-
-    <!--JavaScript para autocomplete-->
-    <script>
-        function initAutocompleteCliente(inputPrefix, hiddenPrefix, type) {
-            $("input[id^='" + inputPrefix + "']").each(function() {
-                var $input = $(this);
-                var itemId = $input.attr("id").replace(inputPrefix, "");
-                var $hidden = $("#" + hiddenPrefix + itemId);
-
-                $input.autocomplete({
-                    source: function(request, response) {
-                        $.ajax({
-                            url: "{% url 'buscar_cliente' %}",
-                            dataType: "json",
-                            data: {
-                                type: type,
-                                term: request.term
-                            },
-                            success: function(data) {
-                                response($.map(data, function(item) {
-                                    return {
-                                        label: item.nome,
-                                        value: item.nome,
-                                        id: item.id
-                                    };
-                                }));
-                            }
-                        });
-                    },
-                    minLength: 2,
-                    select: function(event, ui) {
-                        $hidden.val(ui.item.id);
-                    }
-                });
-            });
-        }
-
-        function initAutocompleteFuncionario(inputPrefix, hiddenPrefix, type) {
-            $("input[id^='" + inputPrefix + "']").each(function() {
-                var $input = $(this);
-                var itemId = $input.attr("id").replace(inputPrefix, "");
-                var $hidden = $("#" + hiddenPrefix + itemId);
-
-                $input.autocomplete({
-                    source: function(request, response) {
-                        $.ajax({
-                            url: "{% url 'buscar_funcionario' %}",
-                            dataType: "json",
-                            data: {
-                                type: type,
-                                term: request.term
-                            },
-                            success: function(data) {
-                                response($.map(data, function(item) {
-                                    return {
-                                        label: item.nome,
-                                        value: item.nome,
-                                        id: item.id
-                                    };
-                                }));
-                            }
-                        });
-                    },
-                    minLength: 2,
-                    select: function(event, ui) {
-                        $hidden.val(ui.item.id);
-                    }
-                });
-            });
-        }
-
-        // Inicializar 
-        //$(function() {
-        //    initAutocompleteCliente("id-input-visivel", "id-input-oculto", "oque-sera-enviado-pelo-type");
-        //});
-    </script>
-
-    <!--JavaScript para o botão burger-->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const $burger = document.getElementById('burgerButton');
-
-            if ($burger) {
-                const $target = document.getElementById('navbarMenu');
-
-                if ($target) {
-                    $burger.addEventListener('click', () => {
-                        $burger.classList.toggle('is-active');
-                        $target.classList.toggle('is-active');
-                        let isExpanded = $burger.classList.contains('is-active');
-                        $burger.setAttribute('aria-expanded', isExpanded);
-                    });
-                }
-            }
-        });
-    </script>
+    document.querySelectorAll('.notification .delete').forEach((button) => {
+        button.addEventListener('click', () => button.parentElement.remove());
+    });
+})();
+</script>
+{% block scripts %}{% endblock %}
 </body>
-
 </html>
