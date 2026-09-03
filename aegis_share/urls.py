@@ -89,6 +89,11 @@ urlpatterns = [
         chat.get_or_create_conversation,
         name="get_conversation",
     ),
+    path(
+        "chat/file/<int:file_id>/<uuid:user_id>/",
+        chat.get_or_create_file_conversation,
+        name="get_file_conversation",
+    ),
     path("chat/<uuid:conversation_id>/", chat.load_conversation, name="load_conversation"),
 
     path("seguranca/", security.security_settings, name="security_settings"),
