@@ -16,7 +16,7 @@ if [ "$RUN_MIGRATIONS" = "true" ]; then
   attempt=1
   max_attempts="${DB_STARTUP_ATTEMPTS:-30}"
 
-  until uv run python - <<'PY'
+  until python - <<'PY'
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 import django
@@ -35,16 +35,16 @@ PY
   done
 
   echo "Aplicando migrations..."
-  uv run manage.py migrate --noinput
+  python manage.py migrate --noinput
 fi
 
 if [ "$COLLECT_STATIC" = "true" ]; then
   echo "Coletando arquivos estaticos..."
-  uv run manage.py collectstatic --noinput
+  python manage.py collectstatic --noinput
 fi
 
 echo "Iniciando AegisShare na porta ${PORT} com ${WEB_WORKERS} worker(s)..."
-exec uv run granian mysite.asgi:application \
+exec granian mysite.asgi:application \
   --host 0.0.0.0 \
   --port "$PORT" \
   --interface asgi \
