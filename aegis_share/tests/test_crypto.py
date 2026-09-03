@@ -12,7 +12,6 @@ from aegis_share.services.crypto import (
     sha256_hex,
 )
 
-
 TEST_KEY = base64.urlsafe_b64encode(b"k" * 32).decode()
 
 
