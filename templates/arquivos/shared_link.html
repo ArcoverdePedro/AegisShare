@@ -1,0 +1,24 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Compartilhamento seguro - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container"><div class="columns is-centered"><div class="column is-6-desktop">
+<div class="box aegis-card has-text-centered">
+    <span class="icon is-large has-text-link mb-3">{% icon 'shield' %}</span>
+    <h1 class="title is-3">Compartilhamento seguro</h1>
+    {% if error %}<div class="notification is-danger is-light">{{ error }}</div>{% endif %}
+    {% if needs_password %}
+        <p class="mb-4">Este arquivo e protegido por senha.</p>
+        <form method="post">{% csrf_token %}<div class="field"><div class="control"><input class="input" type="password" name="password" placeholder="Senha do link" required autofocus></div></div><button class="button is-link is-fullwidth" type="submit">Continuar</button></form>
+    {% elif link and authorized %}
+        <div class="has-text-left mb-5"><p class="heading">Arquivo</p><h2 class="title is-5 mb-2">{{ link.file.nome_arquivo }}</h2><p class="muted">{{ link.file.mime_type }} · {{ link.file.tamanho_arquivo|filesizeformat }}</p>
+        {% if link.expires_at %}<p class="is-size-7 mt-2">Expira em {{ link.expires_at|date:'d/m/Y H:i' }}</p>{% endif %}</div>
+        <div class="buttons is-centered">
+            {% if link.allow_preview %}<a class="button" target="_blank" href="{% url 'shared_link_preview' token %}">{% icon 'eye' %}<span>Visualizar</span></a>{% endif %}
+            {% if link.allow_download %}<a class="button is-link" href="{% url 'shared_link_download' token %}">{% icon 'download' %}<span>Baixar</span></a>{% endif %}
+        </div>
+        {% if link.max_downloads %}<p class="is-size-7 muted mt-3">{{ link.download_count }} de {{ link.max_downloads }} downloads utilizados.</p>{% endif %}
+    {% else %}<p class="muted">O link nao esta disponivel.</p>{% endif %}
+</div>
+</div></div></div></section>
+{% endblock %}
