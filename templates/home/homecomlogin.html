@@ -13,11 +13,16 @@
                 <p class="subtitle is-6 muted">Seus documentos e atividades em um unico lugar.</p>
             </div>
         </div>
-        {% if not user.is_client %}
         <div class="level-right">
-            <a class="button is-link" href="{% url 'upload' %}">{% icon 'upload' %}<span>Enviar arquivo</span></a>
+            <div class="buttons">
+                {% if user.is_admin %}
+                <a class="button" href="{% url 'audit_log' %}">{% icon 'activity' %}<span>Auditoria</span></a>
+                {% endif %}
+                {% if not user.is_client %}
+                <a class="button is-link" href="{% url 'upload' %}">{% icon 'upload' %}<span>Enviar arquivo</span></a>
+                {% endif %}
+            </div>
         </div>
-        {% endif %}
     </div>
 
     <div class="columns is-multiline">
@@ -45,7 +50,7 @@
         </div>
         <div class="column is-5">
             <div class="box aegis-card">
-                <h2 class="title is-5">Atividade recente</h2>
+                <div class="level"><div class="level-left"><h2 class="title is-5">Atividade recente</h2></div>{% if user.is_admin %}<div class="level-right"><a href="{% url 'audit_log' %}">Ver auditoria</a></div>{% endif %}</div>
                 {% for entry in activity %}
                     <article class="media py-2">
                         <div class="media-left"><span class="icon has-text-link">{% icon 'activity' %}</span></div>
