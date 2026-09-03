@@ -1,0 +1,33 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Seguranca - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4"><div class="container is-fluid">
+<div class="mb-5"><p class="heading">Conta</p><h1 class="title is-3">Seguranca</h1><p class="muted">2FA, sessoes ativas e credenciais da API.</p></div>
+<div class="columns is-multiline">
+    <div class="column is-6"><div class="box aegis-card">
+        <div class="level"><div class="level-left"><h2 class="title is-5">Autenticacao em dois fatores</h2></div><div class="level-right">{% if security.totp_enabled %}<span class="tag is-success">Ativo</span>{% else %}<span class="tag is-warning is-light">Inativo</span>{% endif %}</div></div>
+        {% if not security.totp_enabled %}
+            <p class="mb-4">Use um aplicativo TOTP como 1Password, Bitwarden, Google ou Microsoft Authenticator.</p>
+            {% if totp_secret %}<div class="notification is-info is-light"><p><strong>Segredo:</strong> <span class="mono">{{ totp_secret }}</span></p><details class="mt-2"><summary>URI de provisionamento</summary><p class="mono is-size-7 mt-2" style="word-break:break-all">{{ totp_uri }}</p></details></div>
+            <form method="post" action="{% url 'enable_2fa' %}">{% csrf_token %}{{ totp_form.as_p }}<button class="button is-success is-fullwidth" type="submit">Confirmar e ativar 2FA</button></form>
+            {% else %}<form method="post" action="{% url 'begin_2fa' %}">{% csrf_token %}<button class="button is-link" type="submit">Configurar 2FA</button></form>{% endif %}
+        {% else %}
+            <p class="mb-4">O segundo fator sera solicitado apos a senha.</p>
+            <form method="post" action="{% url 'disable_2fa' %}">{% csrf_token %}<div class="field"><label class="label">Senha atual para desativar</label><input class="input" name="password" type="password" required></div><button class="button is-danger is-light" type="submit">Desativar 2FA</button></form>
+        {% endif %}
+        {% if recovery_codes %}<hr><div class="notification is-warning is-light"><strong>Guarde agora os codigos de recuperacao.</strong><div class="columns is-multiline mt-2">{% for code in recovery_codes %}<div class="column is-half py-1"><span class="mono">{{ code }}</span></div>{% endfor %}</div><small>Eles nao serao exibidos novamente.</small></div>{% endif %}
+    </div></div>
+
+    <div class="column is-6"><div class="box aegis-card">
+        <div class="level"><div class="level-left"><h2 class="title is-5">Sessoes ativas</h2></div><div class="level-right"><form method="post" action="{% url 'revoke_other_sessions' %}">{% csrf_token %}<button class="button is-small is-danger is-light">Encerrar outras</button></form></div></div>
+        {% for session in sessions %}<div class="level is-mobile py-2" style="border-top:1px solid #eef0f4"><div class="level-left"><div><strong>{% if session.session_key == current_session_key %}Esta sessao{% else %}Sessao{% endif %}</strong><br><small class="muted">{{ session.ip_address|default:'IP desconhecido' }} · {{ session.user_agent|truncatechars:65 }}<br>Ultima atividade {{ session.last_seen_at|date:'d/m/Y H:i' }}</small></div></div><div class="level-right">{% if session.session_key != current_session_key %}<form method="post" action="{% url 'revoke_session' session.id %}">{% csrf_token %}<button class="button is-small">Encerrar</button></form>{% else %}<span class="tag is-success is-light">Atual</span>{% endif %}</div></div>{% empty %}<p class="muted">Nenhuma sessao rastreada ainda.</p>{% endfor %}
+    </div></div>
+
+    <div class="column is-12"><div class="box aegis-card"><h2 class="title is-5">Tokens de API</h2>
+        {% if new_api_token %}<div class="notification is-success is-light"><strong>Copie o token agora. Ele nao sera exibido novamente.</strong><div class="field has-addons mt-2"><div class="control is-expanded"><input id="apiToken" class="input mono" readonly value="{{ new_api_token }}"></div><div class="control"><button class="button is-success" type="button" onclick="navigator.clipboard.writeText(document.getElementById('apiToken').value)">Copiar</button></div></div></div>{% endif %}
+        <div class="columns"><div class="column is-5"><form method="post" action="{% url 'create_api_token' %}">{% csrf_token %}{{ api_token_form.as_p }}<button class="button is-link" type="submit">Criar token</button></form></div><div class="column is-7"><div class="table-container"><table class="table is-fullwidth"><thead><tr><th>Nome</th><th>Prefixo</th><th>Criado</th><th>Ultimo uso</th><th></th></tr></thead><tbody>{% for token in api_tokens %}<tr><td>{{ token.name }}</td><td class="mono">{{ token.prefix }}...</td><td>{{ token.created_at|date:'d/m/Y' }}</td><td>{{ token.last_used_at|date:'d/m/Y H:i'|default:'Nunca' }}</td><td><form method="post" action="{% url 'revoke_api_token' token.id %}">{% csrf_token %}<button class="button is-small is-danger is-light">Revogar</button></form></td></tr>{% empty %}<tr><td colspan="5" class="muted">Nenhum token.</td></tr>{% endfor %}</tbody></table></div></div></div>
+    </div></div>
+</div>
+</div></section>
+{% endblock %}
