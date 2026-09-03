@@ -1,0 +1,67 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}{{ arquivo.nome_arquivo }} - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4"><div class="container is-fluid">
+<div class="level mb-4">
+    <div class="level-left"><div><p class="heading"><a href="{% url 'arquivos' %}">Arquivos</a> / Detalhes</p><h1 class="title is-3 mb-1">{{ arquivo.nome_arquivo }}</h1><p class="muted">{{ arquivo.mime_type }} · {{ arquivo.tamanho_arquivo|filesizeformat }}</p></div></div>
+    <div class="level-right"><div class="buttons">
+        <a class="button" href="{% url 'file_preview' arquivo.id %}" target="_blank">{% icon 'eye' %}<span>Visualizar</span></a>
+        <a class="button is-link" href="{% url 'file_download' arquivo.id %}">{% icon 'download' %}<span>Baixar</span></a>
+    </div></div>
+</div>
+
+{% if new_shared_link %}
+<div class="notification is-success is-light"><strong>Copie este link agora:</strong><div class="field has-addons mt-2"><div class="control is-expanded"><input id="newSharedLink" class="input mono" readonly value="{{ new_shared_link }}"></div><div class="control"><button class="button is-success" type="button" data-copy="#newSharedLink">Copiar</button></div></div><small>Por seguranca, o token completo nao e armazenado no banco.</small></div>
+{% endif %}
+
+<div class="columns is-multiline">
+    <div class="column is-8-desktop">
+        <div class="box aegis-card">
+            <h2 class="title is-5">Seguranca e integridade</h2>
+            <div class="columns">
+                <div class="column"><p class="heading">Protecao</p>{% if arquivo.is_encrypted %}<span class="tag is-success is-medium">{% icon 'lock' %}&nbsp; AES-256-GCM</span>{% else %}<span class="tag is-warning is-medium">Arquivo legado</span>{% endif %}</div>
+                <div class="column"><p class="heading">SHA-256</p><p class="mono is-size-7" style="word-break:break-all">{{ arquivo.sha256|default:'Nao disponivel para arquivo legado' }}</p></div>
+                <div class="column"><p class="heading">Proprietario</p><p>{{ arquivo.dono_arquivo.username }}</p></div>
+            </div>
+            {% if arquivo.description %}<hr><p>{{ arquivo.description }}</p>{% endif %}
+        </div>
+
+        <div class="box aegis-card">
+            <div class="level"><div class="level-left"><h2 class="title is-5">Versoes</h2></div>{% if arquivo.user_pode_alterar %}<div class="level-right"></div>{% endif %}</div>
+            <div class="table-container"><table class="table is-fullwidth"><thead><tr><th>Versao</th><th>Data</th><th>Enviado por</th><th>SHA-256</th><th></th></tr></thead><tbody>
+            {% for version in versions %}<tr><td><strong>v{{ version.version_number }}</strong>{% if forloop.first %} <span class="tag is-link is-light">Atual</span>{% endif %}</td><td>{{ version.created_at|date:'d/m/Y H:i' }}</td><td>{{ version.uploaded_by|default:'Legado' }}</td><td class="mono is-size-7">{{ version.sha256|slice:':12' }}{% if version.sha256 %}...{% endif %}</td><td class="has-text-right"><a class="button is-small" target="_blank" href="{% url 'file_version_preview' arquivo.id version.id %}">Ver</a> <a class="button is-small" href="{% url 'file_version_download' arquivo.id version.id %}">Baixar</a></td></tr>{% empty %}<tr><td colspan="5">Sem versoes registradas.</td></tr>{% endfor %}
+            </tbody></table></div>
+            {% if can_edit %}<hr><form method="post" enctype="multipart/form-data" action="{% url 'add_file_version' arquivo.id %}" class="is-flex is-align-items-center" style="gap:.75rem">{% csrf_token %}{{ version_form.arquivo }}<button class="button is-link is-light" type="submit">Nova versao</button></form>{% endif %}
+        </div>
+
+        <div class="box aegis-card">
+            <h2 class="title is-5">Comentarios</h2>
+            {% for comment in comments %}<article class="media py-2"><div class="media-content"><p><strong>{{ comment.user.username }}</strong> <small class="muted">{{ comment.created_at|date:'d/m/Y H:i' }}</small></p><p>{{ comment.content|linebreaksbr }}</p></div></article>{% empty %}<p class="muted">Nenhum comentario.</p>{% endfor %}
+            <hr><form method="post" action="{% url 'add_file_comment' arquivo.id %}">{% csrf_token %}<div class="field">{{ comment_form.content }}</div><button class="button is-link is-light" type="submit">Comentar</button></form>
+        </div>
+    </div>
+
+    <div class="column is-4-desktop">
+        {% if can_share %}
+        <div class="box aegis-card"><h2 class="title is-5">Compartilhar com usuario</h2>
+            <form method="post" action="{% url 'share_file_access' arquivo.id %}">{% csrf_token %}
+                <div class="field"><label class="label">Usuario</label><div class="select is-fullwidth"><select name="usuario_id" required><option value="">Selecione</option>{% for candidate in share_candidates %}<option value="{{ candidate.id }}">{{ candidate.username }} ({{ candidate.get_nivel_permissao_display }})</option>{% endfor %}</select></div></div>
+                <button class="button is-link is-fullwidth" type="submit">Conceder acesso</button>
+            </form>
+            {% if arquivo.access_grants.all %}<hr><p class="heading">Acessos diretos</p>{% for grant in arquivo.access_grants.all %}<div class="level is-mobile mb-2"><div class="level-left"><span>{{ grant.user.username }}</span></div><div class="level-right"><form method="post" action="{% url 'revoke_file_access' arquivo.id grant.user.id %}">{% csrf_token %}<button class="button is-small is-danger is-light">Revogar</button></form></div></div>{% endfor %}{% endif %}
+        </div>
+
+        <div class="box aegis-card"><h2 class="title is-5">Link temporario</h2><form method="post" action="{% url 'create_file_link' arquivo.id %}">{% csrf_token %}{{ shared_link_form.as_p }}<button class="button is-link is-fullwidth" type="submit">Criar link seguro</button></form>
+            {% if shared_links %}<hr><p class="heading">Links ativos</p>{% for link in shared_links %}<div class="level is-mobile"><div class="level-left"><div><strong>{{ link.token_prefix }}...</strong><br><small>{{ link.download_count }} downloads{% if link.max_downloads %} / {{ link.max_downloads }}{% endif %}</small></div></div><div class="level-right"><form method="post" action="{% url 'revoke_file_link' link.id %}">{% csrf_token %}<button class="button is-small is-danger is-light">Revogar</button></form></div></div>{% endfor %}{% endif %}
+        </div>
+        {% endif %}
+
+        {% if can_edit %}<div class="box aegis-card"><h2 class="title is-5 has-text-danger">Zona de risco</h2><p class="is-size-7 mb-3">O arquivo vai para a lixeira antes da remocao definitiva.</p><form method="post" action="{% url 'delete_file' arquivo.id %}">{% csrf_token %}<button class="button is-danger is-light is-fullwidth" type="submit">Mover para lixeira</button></form></div>{% endif %}
+    </div>
+</div>
+</div></section>
+{% endblock %}
+
+{% block scripts %}<script>document.querySelectorAll('[data-copy]').forEach(btn=>btn.addEventListener('click',()=>{const el=document.querySelector(btn.dataset.copy);navigator.clipboard.writeText(el.value);btn.textContent='Copiado';}));</script>{% endblock %}
