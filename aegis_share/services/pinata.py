@@ -38,7 +38,7 @@ class PinataClient:
             response.raise_for_status()
             payload = response.json().get("data") or {}
         except (requests.RequestException, ValueError) as exc:
-            logger.exception("pinata_upload_failed", extra={"filename": filename})
+            logger.exception("pinata_upload_failed", extra={"upload_filename": filename})
             raise PinataError("Falha ao enviar arquivo para a Pinata.") from exc
 
         if not payload.get("id") or not payload.get("cid"):
