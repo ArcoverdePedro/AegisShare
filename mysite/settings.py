@@ -118,9 +118,7 @@ ASGI_APPLICATION = "mysite.asgi.application"
 
 DATABASE_URL = env.str("DATABASE_URL", default="")
 if DATABASE_URL:
-    DATABASES = {
-        "default": env.db_url_config(DATABASE_URL, conn_max_age=60)
-    }
+    DATABASES = {"default": env.db_url_config(DATABASE_URL)}
 elif not DEBUG:
     raise ImproperlyConfigured(
         "DATABASE_URL e obrigatoria em producao. Use PostgreSQL interno ou um host externo."
@@ -133,6 +131,8 @@ else:
         }
     }
 
+# A aplicacao e ASGI; conexoes persistentes devem permanecer desativadas.
+DATABASES["default"]["CONN_MAX_AGE"] = 0
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 REDIS_URL = env.str("REDIS_URL", default="")
