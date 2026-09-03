@@ -57,6 +57,7 @@ Redis é usado por Channels e cache. Sem Redis, esses componentes usam memória 
 ## Requisitos
 
 - Docker e Docker Compose para o deploy recomendado.
+- Python 3 disponível no host apenas para o gerador independente de segredos, se desejar usá-lo.
 - Token JWT da Pinata.
 - `SECRET_KEY` e `FILE_ENCRYPTION_KEY` fortes.
 - HTTPS/reverse proxy em produção.
@@ -72,11 +73,10 @@ cp .env-example .env
 Antes de iniciar o Django, gere os dois segredos com o script independente de settings:
 
 ```bash
-docker compose build aegis_share
-docker compose run --rm --no-deps aegis_share python scripts/generate_secrets.py
+python3 scripts/generate_secrets.py
 ```
 
-Copie os dois valores exibidos para `.env` e configure pelo menos:
+O script cria `.secrets.generated.env` no diretório atual com permissão `0600` e **não imprime os segredos no terminal**. Copie os valores desse arquivo para o seu gerenciador de segredos ou para `.env`, configure os demais campos e depois remova o arquivo temporário:
 
 ```env
 SECRET_KEY=...
@@ -86,6 +86,12 @@ POSTGRES_PASSWORD=...
 ALLOWED_HOSTS=files.exemplo.com
 CSRF_TRUSTED_ORIGINS=https://files.exemplo.com
 ```
+
+```bash
+rm .secrets.generated.env
+```
+
+O arquivo temporário também consta no `.gitignore`, mas não deve ser mantido além do necessário.
 
 Para produção atrás de HTTPS mantenha:
 
@@ -115,6 +121,8 @@ docker compose up -d --build
 ```
 
 PostgreSQL e Redis ficam somente na rede Docker. Apenas a aplicação publica porta no host.
+
+A stack atual usa PostgreSQL 18 e monta o volume em `/var/lib/postgresql`, conforme o layout das imagens oficiais 18+. **Não conecte diretamente um volume criado por PostgreSQL 17 ou anterior a uma imagem PostgreSQL 18.** Faça backup/restauração ou um procedimento de `pg_upgrade` apropriado antes de uma mudança de versão principal.
 
 ### 2. Django + Redis + PostgreSQL externo
 
