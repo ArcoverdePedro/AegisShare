@@ -69,10 +69,11 @@ Copie o exemplo:
 cp .env-example .env
 ```
 
-Gere as chaves:
+Antes de iniciar o Django, gere os dois segredos com o script independente de settings:
 
 ```bash
-docker compose run --rm --no-deps aegis_share python manage.py generate_secrets
+docker compose build aegis_share
+docker compose run --rm --no-deps aegis_share python scripts/generate_secrets.py
 ```
 
 Copie os dois valores exibidos para `.env` e configure pelo menos:
@@ -164,14 +165,16 @@ EXTERNAL_REDIS_URL=redis://host:6379/0
 
 ## Inicialização do container
 
-O entrypoint:
+O entrypoint normal:
 
 1. aguarda o banco responder;
 2. executa `python manage.py migrate --noinput`;
 3. executa `python manage.py collectstatic --noinput`;
 4. inicia Granian/ASGI.
 
-As opções podem ser controladas por:
+Quando um comando é fornecido explicitamente com `docker compose run aegis_share <comando>`, o entrypoint executa somente esse comando. Isso permite usar `manage.py`, scripts e rotinas administrativas sem iniciar o servidor.
+
+As opções do processo web podem ser controladas por:
 
 ```env
 RUN_MIGRATIONS=true
@@ -279,6 +282,7 @@ Validações:
 
 ```bash
 uv run ruff check aegis_share mysite
+uv run ruff format --check aegis_share mysite
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 uv run python manage.py test --verbosity 2
@@ -289,14 +293,14 @@ uv run python manage.py test --verbosity 2
 Expurgo da lixeira:
 
 ```bash
-python manage.py purge_trash
+docker compose run --rm aegis_share python manage.py purge_trash
 ```
 
 O Dependabot mantém dependências Python, GitHub Actions e imagens Docker sob atualização automática; os PRs passam pela CI antes de qualquer merge automático.
 
 ## Segurança
 
-Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet.
+Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet. Para alterações no código, consulte também [CONTRIBUTING.md](CONTRIBUTING.md) e [CHANGELOG.md](CHANGELOG.md).
 
 ## Licença
 
