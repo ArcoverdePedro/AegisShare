@@ -1,4 +1,5 @@
 import json
+import logging
 from functools import wraps
 from io import BytesIO
 
@@ -8,10 +9,15 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+from aegis_share.file_policy import FilePolicyError
 from aegis_share.models import CustomUser
+from aegis_share.services.antivirus import AntivirusError
 from aegis_share.services.files import create_file_from_upload, get_version_content
+from aegis_share.services.pinata import PinataError
 from aegis_share.services.security import authenticate_api_token
 from aegis_share.services.selectors import files_for_user, get_accessible_file
+
+logger = logging.getLogger(__name__)
 
 
 def api_auth(view):
@@ -30,6 +36,7 @@ def api_auth(view):
 
 
 def _serialize_file(file):
+    current_version = file.current_version
     return {
         "id": file.id,
         "name": file.nome_arquivo,
@@ -39,7 +46,7 @@ def _serialize_file(file):
         "encrypted": file.is_encrypted,
         "owner": str(file.dono_arquivo_id),
         "created_at": file.data_adicionado.isoformat(),
-        "version": file.current_version.version_number if file.current_version else None,
+        "version": current_version.version_number if current_version else None,
     }
 
 
@@ -72,8 +79,21 @@ def files_api(request):
             actor=user,
             description=request.POST.get("description", ""),
         )
-    except Exception as exc:
-        return JsonResponse({"error": "upload_failed", "detail": str(exc)}, status=400)
+    except FilePolicyError as exc:
+        # A mensagem vem de uma politica controlada pelo servidor, nao da stack interna.
+        return JsonResponse(
+            {"error": "invalid_file", "detail": str(exc)},
+            status=400,
+        )
+    except AntivirusError:
+        return JsonResponse({"error": "file_rejected"}, status=400)
+    except PinataError:
+        logger.warning("api_upload_storage_unavailable", exc_info=True)
+        return JsonResponse({"error": "storage_unavailable"}, status=503)
+    except Exception:
+        logger.exception("api_upload_failed")
+        return JsonResponse({"error": "upload_failed"}, status=500)
+
     return JsonResponse(_serialize_file(file), status=201)
 
 
@@ -107,9 +127,11 @@ def file_download_api(request, file_id):
         return JsonResponse({"error": "not_found"}, status=404)
     accessed.send(file.__class__, instance=file)
     content = get_version_content(file.current_version)
-    return FileResponse(
+    response = FileResponse(
         BytesIO(content),
         as_attachment=True,
         filename=file.nome_arquivo,
         content_type=file.mime_type or "application/octet-stream",
     )
+    response["Cache-Control"] = "private, no-store"
+    return response
