@@ -4,7 +4,6 @@ from auditlog.registry import auditlog
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Q
 from django.utils import timezone
 
 
@@ -63,7 +62,9 @@ class Workspace(models.Model):
     class Meta:
         ordering = ["name"]
         constraints = [
-            models.UniqueConstraint(fields=["cliente", "name"], name="uniq_workspace_client_name")
+            models.UniqueConstraint(
+                fields=["cliente", "name"], name="uniq_workspace_client_name"
+            )
         ]
 
     def user_has_access(self, user):
@@ -84,13 +85,17 @@ class WorkspaceMember(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["workspace", "user"], name="uniq_workspace_member")
+            models.UniqueConstraint(
+                fields=["workspace", "user"], name="uniq_workspace_member"
+            )
         ]
 
 
 class Folder(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name="folders")
+    workspace = models.ForeignKey(
+        Workspace, on_delete=models.CASCADE, related_name="folders"
+    )
     parent = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.CASCADE, related_name="children"
     )
@@ -102,7 +107,8 @@ class Folder(models.Model):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["workspace", "parent", "name"], name="uniq_folder_parent_name"
+                fields=["workspace", "parent", "name"],
+                name="uniq_folder_parent_name",
             )
         ]
 
@@ -122,8 +128,12 @@ class Tag(models.Model):
 
 
 class IPFSFile(models.Model):
-    pinata_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="ID do Pinata")
-    cid = models.CharField(max_length=255, unique=True, verbose_name="IPFS Content ID")
+    pinata_id = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="ID do Pinata"
+    )
+    cid = models.CharField(
+        max_length=255, unique=True, verbose_name="IPFS Content ID"
+    )
     nome_arquivo = models.CharField(max_length=255)
     mime_type = models.CharField(max_length=100, null=True, blank=True)
     tamanho_arquivo = models.BigIntegerField()
@@ -131,10 +141,18 @@ class IPFSFile(models.Model):
     is_encrypted = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     workspace = models.ForeignKey(
-        Workspace, null=True, blank=True, on_delete=models.SET_NULL, related_name="files"
+        Workspace,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="files",
     )
     folder = models.ForeignKey(
-        Folder, null=True, blank=True, on_delete=models.SET_NULL, related_name="files"
+        Folder,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="files",
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name="files")
     dono_arquivo = models.ForeignKey(
@@ -155,6 +173,7 @@ class IPFSFile(models.Model):
     usuarios_permitidos = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through="FileAccess",
+        through_fields=("arquivo", "user"),
         related_name="accessible_ipfs_files",
     )
 
@@ -241,7 +260,9 @@ class FileVersion(models.Model):
     class Meta:
         ordering = ["-version_number"]
         constraints = [
-            models.UniqueConstraint(fields=["file", "version_number"], name="uniq_file_version")
+            models.UniqueConstraint(
+                fields=["file", "version_number"], name="uniq_file_version"
+            )
         ]
 
     def __str__(self):
@@ -249,9 +270,13 @@ class FileVersion(models.Model):
 
 
 class FileAccess(models.Model):
-    arquivo = models.ForeignKey(IPFSFile, on_delete=models.CASCADE, related_name="access_grants")
+    arquivo = models.ForeignKey(
+        IPFSFile, on_delete=models.CASCADE, related_name="access_grants"
+    )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="file_access_grants"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="file_access_grants",
     )
     granted_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -273,7 +298,9 @@ class FileAccess(models.Model):
 
 class SharedLink(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    file = models.ForeignKey(IPFSFile, on_delete=models.CASCADE, related_name="shared_links")
+    file = models.ForeignKey(
+        IPFSFile, on_delete=models.CASCADE, related_name="shared_links"
+    )
     token_prefix = models.CharField(max_length=12, db_index=True)
     token_hash = models.CharField(max_length=64, unique=True)
     password_hash = models.CharField(max_length=128, blank=True)
@@ -283,7 +310,9 @@ class SharedLink(models.Model):
     allow_preview = models.BooleanField(default=True)
     allow_download = models.BooleanField(default=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_shared_links"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_shared_links",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     last_accessed_at = models.DateTimeField(null=True, blank=True)
@@ -348,18 +377,26 @@ class DocumentRequest(models.Model):
         if not items:
             return
         completed = sum(bool(item.completed_at) for item in items)
-        new_status = "DONE" if completed == len(items) else "PARTIAL" if completed else "OPEN"
+        new_status = (
+            "DONE" if completed == len(items) else "PARTIAL" if completed else "OPEN"
+        )
         if self.status != new_status and self.status != "CANCELLED":
             self.status = new_status
             self.save(update_fields=["status", "updated_at"])
 
 
 class DocumentRequestItem(models.Model):
-    request = models.ForeignKey(DocumentRequest, on_delete=models.CASCADE, related_name="items")
+    request = models.ForeignKey(
+        DocumentRequest, on_delete=models.CASCADE, related_name="items"
+    )
     label = models.CharField(max_length=180)
     required = models.BooleanField(default=True)
     fulfilled_by_file = models.ForeignKey(
-        IPFSFile, null=True, blank=True, on_delete=models.SET_NULL, related_name="request_items"
+        IPFSFile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="request_items",
     )
     completed_at = models.DateTimeField(null=True, blank=True)
 
@@ -375,7 +412,9 @@ class Notification(models.Model):
     ]
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
     )
     kind = models.CharField(max_length=12, choices=KIND_CHOICES, default="SYSTEM")
     title = models.CharField(max_length=180)
@@ -391,7 +430,9 @@ class Notification(models.Model):
 
 class UserSecuritySettings(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="security_settings"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="security_settings",
     )
     totp_secret_encrypted = models.TextField(blank=True)
     totp_enabled = models.BooleanField(default=False)
@@ -401,7 +442,9 @@ class UserSecuritySettings(models.Model):
 
 class TrackedSession(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tracked_sessions"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tracked_sessions",
     )
     session_key = models.CharField(max_length=64, unique=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -416,7 +459,9 @@ class TrackedSession(models.Model):
 
 class APIToken(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="api_tokens")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="api_tokens"
+    )
     name = models.CharField(max_length=100)
     prefix = models.CharField(max_length=12, db_index=True)
     token_hash = models.CharField(max_length=64, unique=True)
@@ -430,14 +475,22 @@ class APIToken(models.Model):
 
     @property
     def is_active(self):
-        return not self.revoked_at and (not self.expires_at or self.expires_at > timezone.now())
+        return not self.revoked_at and (
+            not self.expires_at or self.expires_at > timezone.now()
+        )
 
 
 class Conversation(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="conversations")
+    participants = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="conversations"
+    )
     file = models.ForeignKey(
-        IPFSFile, null=True, blank=True, on_delete=models.SET_NULL, related_name="conversations"
+        IPFSFile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="conversations",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -460,9 +513,13 @@ class Conversation(models.Model):
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
+    conversation = models.ForeignKey(
+        Conversation, on_delete=models.CASCADE, related_name="messages"
+    )
     sender = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_messages"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sent_messages",
     )
     content = models.TextField(max_length=4000)
     is_read = models.BooleanField(default=False)
@@ -482,7 +539,6 @@ class Message(models.Model):
             self.save(update_fields=["is_read"])
 
 
-# Registro centralizado: alteracoes e acessos ficam no django-auditlog.
 auditlog.register(
     CustomUser,
     exclude_fields=["password", "last_login", "foto_perfil"],
