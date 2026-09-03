@@ -885,7 +885,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "granian", extras = ["reload"], specifier = ">=2.5.4" },
+    { name = "granian", extras = ["reload"], specifier = ">=2.8.2" },
     { name = "isort", specifier = ">=9.0.1" },
     { name = "ruff", specifier = ">=0.16.5" },
     { name = "taskipy", specifier = ">=1.14.1" },
