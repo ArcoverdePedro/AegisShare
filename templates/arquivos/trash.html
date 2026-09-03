@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Lixeira - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4"><div class="container is-fluid">
+<div class="mb-4"><p class="heading">Retencao</p><h1 class="title is-3">Lixeira</h1><p class="muted">Arquivos permanecem aqui ate a politica de retencao remove-los definitivamente.</p></div>
+<div class="box aegis-card"><div class="table-container"><table class="table is-fullwidth"><thead><tr><th>Arquivo</th><th>Proprietario</th><th>Excluido em</th><th>Excluido por</th><th></th></tr></thead><tbody>
+{% for arquivo in arquivos %}<tr><td><strong>{{ arquivo.nome_arquivo }}</strong></td><td>{{ arquivo.dono_arquivo.username }}</td><td>{{ arquivo.deleted_at|date:'d/m/Y H:i' }}</td><td>{{ arquivo.deleted_by|default:'-' }}</td><td class="has-text-right"><form method="post" action="{% url 'restore_file' arquivo.id %}">{% csrf_token %}<button class="button is-small is-success is-light" type="submit">{% icon 'rotate-ccw' %}<span>Restaurar</span></button></form></td></tr>
+{% empty %}<tr><td colspan="5" class="has-text-centered py-6 muted">A lixeira esta vazia.</td></tr>{% endfor %}
+</tbody></table></div></div>
+</div></section>
+{% endblock %}
