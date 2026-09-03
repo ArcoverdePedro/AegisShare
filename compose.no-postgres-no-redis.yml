@@ -1,0 +1,28 @@
+name: aegisshare
+
+services:
+  aegis_share:
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${EXTERNAL_DATABASE_URL:?Defina EXTERNAL_DATABASE_URL no arquivo .env}
+      REDIS_URL: ${EXTERNAL_REDIS_URL:-}
+      PORT: ${PORT:-8000}
+    ports:
+      - "${APP_PORT:-8000}:${PORT:-8000}"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:${PORT:-8000}/health/live', timeout=2).read()"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    stop_grace_period: 30s
