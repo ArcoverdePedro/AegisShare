@@ -1,13 +1,57 @@
 #!/bin/sh
-set -e
+set -eu
 
-uv run manage.py shell -c 'from django.core.cache import cache; cache.clear()' --verbosity 0
+# `docker compose run aegis_share <comando>` deve executar o comando solicitado
+# sem iniciar o servidor/migrations automaticamente.
+if [ "$#" -gt 0 ]; then
+  exec "$@"
+fi
 
-uv run manage.py migrate
+PORT="${PORT:-8000}"
+RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}"
+COLLECT_STATIC="${COLLECT_STATIC:-true}"
+WEB_WORKERS="${WEB_WORKERS:-1}"
 
-uv run manage.py collectstatic --noinput --clear
+if [ -z "${REDIS_URL:-}" ] && [ "$WEB_WORKERS" != "1" ]; then
+  echo "REDIS_URL nao configurada; WEB_WORKERS foi reduzido para 1 para manter WebSockets consistentes."
+  WEB_WORKERS=1
+fi
 
-exec uv run granian mysite.asgi:application \
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+  echo "Aguardando banco de dados..."
+  attempt=1
+  max_attempts="${DB_STARTUP_ATTEMPTS:-30}"
+
+  until python - <<'PY'
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
+import django
+django.setup()
+from django.db import connection
+connection.ensure_connection()
+connection.close()
+PY
+  do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      echo "Banco de dados indisponivel apos ${max_attempts} tentativas."
+      exit 1
+    fi
+    attempt=$((attempt + 1))
+    sleep 2
+  done
+
+  echo "Aplicando migrations..."
+  python manage.py migrate --noinput
+fi
+
+if [ "$COLLECT_STATIC" = "true" ]; then
+  echo "Coletando arquivos estaticos..."
+  python manage.py collectstatic --noinput
+fi
+
+echo "Iniciando AegisShare na porta ${PORT} com ${WEB_WORKERS} worker(s)..."
+exec granian mysite.asgi:application \
   --host 0.0.0.0 \
-  --port $PORT \
-  --interface asgi
+  --port "$PORT" \
+  --interface asgi \
+  --workers "$WEB_WORKERS"

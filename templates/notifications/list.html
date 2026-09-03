@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Notificacoes - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4"><div class="container is-max-desktop">
+<div class="level mb-4"><div class="level-left"><div><p class="heading">Atividade</p><h1 class="title is-3">Notificacoes</h1></div></div><div class="level-right"><form method="post" action="{% url 'mark_notifications_read' %}">{% csrf_token %}<button class="button is-small" type="submit">Marcar todas como lidas</button></form></div></div>
+<div class="box aegis-card p-0" style="overflow:hidden">
+{% for notification in notifications %}<a {% if notification.link %}href="{{ notification.link }}"{% endif %} class="media p-4 {% if not notification.read_at %}has-background-link-light{% endif %}" style="border-bottom:1px solid #eef0f4;color:inherit">
+    <div class="media-left"><span class="icon {% if not notification.read_at %}has-text-link{% else %}has-text-grey{% endif %}">{% icon 'bell' %}</span></div><div class="media-content"><p><strong>{{ notification.title }}</strong></p>{% if notification.body %}<p class="is-size-7">{{ notification.body }}</p>{% endif %}<p class="is-size-7 muted mt-1">{{ notification.created_at|date:'d/m/Y H:i' }}</p></div>
+</a>{% empty %}<div class="p-6 has-text-centered muted">Nenhuma notificacao.</div>{% endfor %}
+</div>
+</div></section>
+{% endblock %}

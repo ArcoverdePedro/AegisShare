@@ -1,0 +1,23 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+{% block title %}Workspaces - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4"><div class="container is-fluid">
+<div class="mb-5"><p class="heading">Organizacao</p><h1 class="title is-3">Workspaces</h1><p class="muted">Separe documentos por cliente e estrutura de pastas.</p></div>
+<div class="columns">
+    <div class="column is-8">
+        <div class="columns is-multiline">
+        {% for workspace in workspaces %}<div class="column is-6"><div class="box aegis-card">
+            <div class="level is-mobile"><div class="level-left"><div><p class="heading">Cliente</p><h2 class="title is-5">{{ workspace.name }}</h2><p class="muted">{{ workspace.cliente.username }}</p></div></div><div class="level-right"><span class="icon has-text-link">{% icon 'layers' %}</span></div></div>
+            <hr><p class="heading">Pastas</p>{% for folder in workspace.folders.all %}<span class="tag is-light mr-1 mb-1">{% icon 'folder' %}&nbsp;{{ folder.name }}</span>{% empty %}<span class="muted is-size-7">Sem pastas.</span>{% endfor %}
+            <p class="mt-4 is-size-7"><strong>{{ workspace.files.count }}</strong> arquivos no workspace</p>
+        </div></div>{% empty %}<div class="column"><div class="notification is-light">Nenhum workspace disponivel.</div></div>{% endfor %}
+        </div>
+    </div>
+    {% if workspace_form %}<div class="column is-4">
+        <div class="box aegis-card"><h2 class="title is-5">Novo workspace</h2><form method="post">{% csrf_token %}{{ workspace_form.as_p }}<button class="button is-link is-fullwidth" name="create_workspace" type="submit">Criar workspace</button></form></div>
+        <div class="box aegis-card"><h2 class="title is-5">Nova pasta</h2><form method="post">{% csrf_token %}{{ folder_form.as_p }}<button class="button is-link is-light is-fullwidth" name="create_folder" type="submit">Criar pasta</button></form></div>
+    </div>{% endif %}
+</div>
+</div></section>
+{% endblock %}

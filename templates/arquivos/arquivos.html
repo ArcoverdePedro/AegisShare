@@ -1,165 +1,46 @@
 {% extends 'navbar/navbar.html' %}
-{% load crispy_forms_tags %}
-{% load static %}
 {% load icon %}
-
-{% block title %}Arquivos - Aegis Share{% endblock %}
+{% block title %}Arquivos - AegisShare{% endblock %}
 
 {% block page_content %}
-
-<div class="container mt-5">
-  <div class="columns">
-    <div class="column is-full">
-      <div class="box has-shadow">
-        <div class="box has-background-link p-4 mb-3"> 
-            <nav class="level is-mobile mb-0">
-              <div class="level-left">
-                  <div class="level-item">
-                      <h5 class="title has-text-light is-5 mb-0">
-                          {% if request.user.nivel_permissao == "CLI" %}Meus {% endif %}Arquivos
-                      </h5>
-                  </div>
-              </div>
-
-              <div class="level-right">
-                  <div class="level-item">
-                      <a href="{% url 'buscar_arquivo' %}" class="button is-small is-light is-inverted">
-                          <span class="icon is-small">
-                              {% icon "x" %}
-                          </span>
-                          <span>Remover Filtros</span>
-                      </a>
-                  </div>
-              </div>
-            </nav>
-        </div>
-
-        <div class="p-0">
-          {% if arquivos %}
-            <div class="table-container">
-              <table class="table is-hoverable is-fullwidth mb-0">
-                <thead>
-                  <tr>
-                    <form id="form_filtros">
-                      <th>
-                        <div>Nome</div>
-                        <input type="text" class="input is-small search-input" value="{{request.GET.nome}}" name="nome"
-                            hx-get="{% url "buscar_arquivo" %}"
-                            title="Selecione o Nome do arquivo"
-                            hx-trigger="keyup changed delay:200ms"
-                            hx-target="#table-body"
-                            hx-push-url="true"
-                            hx-include="#form_filtros"
-                            placeholder="Filtrar nome...">
-                      </th>
-
-                      {% if request.user.nivel_permissao != "CLI" %}
-                        <th>
-                            <div>Dono</div>
-                            <input type="text" class="input is-small search-input" value="{{request.GET.dono}}" name="dono"
-                                hx-get="{% url "buscar_arquivo" %}"
-                                title="Selecione o dono"
-                                hx-trigger="keyup changed delay:200ms"
-                                hx-target="#table-body"
-                                hx-push-url="true"
-                                hx-include="#form_filtros"
-                                placeholder="Filtrar dono...">
-                        </th>
-                      {% endif %}
-
-                      <th>
-                          <div>Data (Completa)</div>
-                          <div class="date-filters">
-                              <input type="text" class="input is-small date-search-input data" value="{{request.GET.data_min}}" name="data_min"
-                                    hx-get="{% url "buscar_arquivo" %}"
-                                    title="Data Inicial"
-                                    hx-trigger="keyup changed delay:500ms"
-                                    hx-target="#table-body"
-                                    hx-push-url="true"
-                                    hx-include="#form_filtros"
-                                    placeholder="dd/mm/aaaa"
-                                    maxlength="10">
-
-                              <input type="text" class="input is-small date-search-input data" value="{{request.GET.data_max}}" name="data_max"
-                                    hx-get="{% url "buscar_arquivo" %}"
-                                    title="Data Limite"
-                                    hx-trigger="keyup changed delay:500ms"
-                                    hx-target="#table-body"
-                                    hx-push-url="true"
-                                    hx-include="#form_filtros"
-                                    placeholder="dd/mm/aaaa"
-                                    maxlength="10">
-                          </div>
-                      </th>
-                    
-                      <th
-                        hx-get="{% url 'buscar_arquivo' %}"
-                        hx-trigger="change"
-                        hx-target="#table-body"
-                        hx-push-url="true"
-                        hx-include="#form_filtros"
-                      >
-                        <div>Tamanho</div>
-                        <label class="radio">
-                          <input type="radio" name="ordenar" value="tamano_menor" {% if request.GET.ordenar == "tamano_menor" %} checked {% endif %} />
-                          <span class="icon">{% icon "arrow-up" %}</span>
-                        </label>
-                        <label class="radio">
-                          <input type="radio" name="ordenar" value="tamano_maior" {% if request.GET.ordenar == "tamano_maior" %} checked {% endif %} />
-                          <span class="icon">{% icon "arrow-down" %}</span>
-                        </label>
-                      </th>
-                      
-                      <th>
-                        CID
-                      </th>
-
-                      <th>
-                        Arquivo
-                      </th>
-                    </form>
-                  </tr>
-                </thead>
-                <tbody id="table-body">
-                  
-                  {% include "arquivos/htmx_arquivos.html" %}
-
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="p-4">
-              {% if user.nivel_permissao == "FUNC" %}
-                <p class=" mb-0">Sem nenhum arquivo registrado ou compartilhado com você.</p>
-              {% else %}
-                <p class=" mb-0">Sem arquivos.</p>
-              {% endif %}
-            </div>
-          {% endif %}
-        </div>
-      </div>
+<section class="section pt-4"><div class="container is-fluid">
+<div class="level mb-4">
+    <div class="level-left"><div><p class="heading">Documentos</p><h1 class="title is-3">Arquivos</h1></div></div>
+    <div class="level-right">
+        <a class="button mr-2" href="{% url 'trash' %}">{% icon 'trash-2' %}<span>Lixeira</span></a>
+        {% if not user.is_client %}<a class="button is-link" href="{% url 'upload' %}">{% icon 'upload' %}<span>Enviar</span></a>{% endif %}
     </div>
-  </div>
 </div>
 
-<script>
-  function copiarCID(cid) {
-      navigator.clipboard.writeText(cid).then(() => {
-          mostrarNotificacao('CID copiado!', 'success');
-      }).catch(err => {
-          console.error('Erro ao copiar: ', err);
-          mostrarNotificacao('Erro ao copiar CID', 'danger');
-      });
-  }
+<div class="box aegis-card">
+<form id="form_filtros" class="mb-4">
+    <div class="columns is-multiline">
+        <div class="column is-3"><label class="label is-small">Nome</label><input class="input" name="nome" value="{{ request.GET.nome }}" placeholder="Buscar arquivo"
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:300ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-2"><label class="label is-small">Proprietario</label><input class="input" name="dono" value="{{ request.GET.dono }}" placeholder="Usuario"
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:300ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-2"><label class="label is-small">Tipo/MIME</label><input class="input" name="tipo" value="{{ request.GET.tipo }}" placeholder="pdf, image..."
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:300ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-2"><label class="label is-small">Tag</label><input class="input" name="tag" value="{{ request.GET.tag }}" placeholder="Tag"
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:300ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-3"><label class="label is-small">Escopo</label><div class="select is-fullwidth"><select name="escopo" hx-get="{% url 'buscar_arquivo' %}" hx-trigger="change" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true">
+            <option value="">Todos acessiveis</option><option value="meus" {% if request.GET.escopo == 'meus' %}selected{% endif %}>Meus arquivos</option><option value="compartilhados" {% if request.GET.escopo == 'compartilhados' %}selected{% endif %}>Compartilhados comigo</option>
+        </select></div></div>
+        <div class="column is-2"><label class="label is-small">De</label><input class="input" name="data_min" value="{{ request.GET.data_min }}" placeholder="dd/mm/aaaa"
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:500ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-2"><label class="label is-small">Ate</label><input class="input" name="data_max" value="{{ request.GET.data_max }}" placeholder="dd/mm/aaaa"
+            hx-get="{% url 'buscar_arquivo' %}" hx-trigger="keyup changed delay:500ms" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true"></div>
+        <div class="column is-3"><label class="label is-small">Ordenar</label><div class="select is-fullwidth"><select name="ordenar" hx-get="{% url 'buscar_arquivo' %}" hx-trigger="change" hx-target="#table-body" hx-include="#form_filtros" hx-push-url="true">
+            <option value="">Mais recentes</option><option value="nome" {% if request.GET.ordenar == 'nome' %}selected{% endif %}>Nome</option><option value="tamanho_menor" {% if request.GET.ordenar == 'tamanho_menor' %}selected{% endif %}>Menor tamanho</option><option value="tamanho_maior" {% if request.GET.ordenar == 'tamanho_maior' %}selected{% endif %}>Maior tamanho</option>
+        </select></div></div>
+        <div class="column is-2 is-flex is-align-items-flex-end"><a class="button is-fullwidth" href="{% url 'arquivos' %}">{% icon 'x' %}<span>Limpar</span></a></div>
+    </div>
+</form>
 
-  function mostrarNotificacao(mensagem, tipo) {
-      const notificationHTML = `
-          <div class="notification is-${tipo} has-text-white is-dismissible auto-dismiss-down" style="position: fixed; bottom: 1rem; right: 1rem; z-index: 999;">
-              ${mensagem}
-          </div>
-      `;
-      
-      document.body.insertAdjacentHTML('beforeend', notificationHTML);
-  }
-</script>
+<div class="table-container"><table class="table is-fullwidth is-hoverable">
+<thead><tr><th>Arquivo</th><th>Proprietario</th><th>Data</th><th>Tamanho</th><th>Integridade</th><th></th></tr></thead>
+<tbody id="table-body">{% include 'arquivos/htmx_arquivos.html' %}</tbody>
+</table></div>
+</div>
+</div></section>
 {% endblock %}

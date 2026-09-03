@@ -17,43 +17,143 @@ concurrency:
 
 jobs:
   django:
-    name: Django checks
+    name: Django + PostgreSQL + Redis
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: aegisshare_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aegisshare_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     env:
-      SECRET_KEY: ci-only-secret-key
+      DEBUG: "false"
+      ENVIRONMENT: ci
+      SECRET_KEY: ci-only-secret-key-ci-only-secret-key-ci-only-secret-key-123
+      FILE_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/aegisshare_ci
+      REDIS_URL: redis://127.0.0.1:6379/0
+      ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      CSRF_TRUSTED_ORIGINS: http://localhost,http://testserver
+      SECURE_SSL_REDIRECT: "false"
+      SESSION_COOKIE_SECURE: "false"
+      CSRF_COOKIE_SECURE: "false"
+      PINATA_JWT_TOKEN: ci-placeholder
+      CLAMAV_ENABLED: "false"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Configurar Python 3.13
+      - name: Configurar Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
 
       - name: Instalar uv
         run: python -m pip install --disable-pip-version-check uv
 
-      - name: Sincronizar dependencias exatamente pelo lockfile
+      - name: Sincronizar dependencias pelo lockfile
         run: uv sync --frozen --dev
 
-      - name: Validar configuracao do Django
+      - name: Ruff
+        run: uv run ruff check aegis_share mysite
+
+      - name: Django system check
         run: uv run manage.py check
 
-      - name: Executar testes Django
+      - name: Garantir migrations versionadas
+        run: uv run manage.py makemigrations --check --dry-run
+
+      - name: Aplicar migrations no PostgreSQL
+        run: uv run manage.py migrate --noinput
+
+      - name: Executar testes
         run: uv run manage.py test --verbosity 2
 
-      - name: Validar compilacao dos modulos Python
+      - name: Validar arquivos estaticos
+        run: uv run manage.py collectstatic --noinput
+
+      - name: Validar compilacao Python
         run: uv run python -m compileall -q aegis_share mysite
 
   docker:
-    name: Docker build
+    name: Docker Compose production smoke test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Construir imagem de producao
-        run: docker build --pull -f dockerfile -t aegisshare:ci .
+      - name: Criar ambiente de CI
+        run: |
+          cat > .env <<'EOF'
+          DEBUG=false
+          ENVIRONMENT=ci-compose
+          SECRET_KEY=ci-compose-secret-key-ci-compose-secret-key-ci-compose-123456
+          FILE_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          ALLOWED_HOSTS=localhost,127.0.0.1
+          CSRF_TRUSTED_ORIGINS=http://localhost:8000
+          SECURE_SSL_REDIRECT=false
+          SESSION_COOKIE_SECURE=false
+          CSRF_COOKIE_SECURE=false
+          POSTGRES_DB=aegisshare
+          POSTGRES_USER=aegisshare
+          POSTGRES_PASSWORD=ci-postgres-password
+          PINATA_JWT_TOKEN=ci-placeholder
+          WEB_WORKERS=1
+          APP_PORT=8000
+          PORT=8000
+          EOF
+
+      - name: Validar os quatro arquivos Compose
+        run: |
+          docker compose -f compose.yml config --quiet
+          EXTERNAL_DATABASE_URL='postgresql://user:pass@db.example:5432/aegisshare' \
+            docker compose -f compose.no-postgres.yml config --quiet
+          EXTERNAL_REDIS_URL='redis://redis.example:6379/0' \
+            docker compose -f compose.no-redis.yml config --quiet
+          EXTERNAL_DATABASE_URL='postgresql://user:pass@db.example:5432/aegisshare' \
+          EXTERNAL_REDIS_URL='redis://redis.example:6379/0' \
+            docker compose -f compose.no-postgres-no-redis.yml config --quiet
+
+      - name: Subir stack completa
+        run: docker compose -f compose.yml up -d --build
+
+      - name: Aguardar readiness
+        run: |
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8000/health/ready >/dev/null; then
+              echo "AegisShare pronto."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "A aplicacao nao ficou pronta."
+          exit 1
+
+      - name: Logs em caso de falha
+        if: failure()
+        run: docker compose -f compose.yml logs --no-color --tail=300
+
+      - name: Encerrar stack
+        if: always()
+        run: docker compose -f compose.yml down -v --remove-orphans

@@ -1,0 +1,8 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Verificacao em duas etapas - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container"><div class="columns is-centered"><div class="column is-5-desktop">
+<div class="box aegis-card"><p class="heading">Seguranca</p><h1 class="title is-3">Verificacao em duas etapas</h1><p class="muted mb-5">Digite o codigo de 6 digitos do seu autenticador ou um codigo de recuperacao.</p>
+<form method="post">{% csrf_token %}<div class="field"><label class="label">Codigo</label><div class="control">{{ form.code }}</div>{% for error in form.code.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}</div><button class="button is-link is-fullwidth is-medium" type="submit">Verificar</button></form>
+</div></div></div></div></section>
+{% endblock %}

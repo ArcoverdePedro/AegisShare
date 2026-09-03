@@ -125,3 +125,4 @@ instance/
 .webassets-cache
 
 .env
+.secrets.generated.env

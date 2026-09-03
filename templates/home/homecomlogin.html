@@ -1,55 +1,68 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
-
-{% block title %}Inicio - Aegis Share{% endblock %}
+{% block title %}Dashboard - AegisShare{% endblock %}
 
 {% block page_content %}
-<div class="columns is-centered mt-5">
-    <div class="column is-8-tablet is-6-desktop">
-        <section class="box has-background-link is-bold">
-            <div class="container has-text-centered">
-                <h1 class="title is-2 has-text-white has-text-weight-bold">Bem-vindo {{ user.username }}</h1>
-
-                {% if user.nivel_permissao != 'CLI' %}
-                    <p class="subtitle has-text-white is-5">O que deseja fazer?</p>
-                    <a href="{% url "upload" %}" class="button is-light is-large mt-4">
-                        <span class="icon">{% icon "upload" style="width: 18px; height: 18px;" %}</span>
-                        <span>Upload de Arquivo</span>
-                    </a>
-                {% endif %}
-
-                <a href="{% url "arquivos" %}" class="button is-light is-large mt-4">
-                    <span class="icon">{% icon "search" style="width: 18px; height: 18px;" %}</span>
-                    <span>Procurar um Arquivo</span>
-                </a>
+<section class="section pt-4">
+<div class="container is-fluid">
+    <div class="level mb-5">
+        <div class="level-left">
+            <div>
+                <p class="heading">Visao geral</p>
+                <h1 class="title is-3 mb-1">Ola, {{ user.first_name|default:user.username }}</h1>
+                <p class="subtitle is-6 muted">Seus documentos e atividades em um unico lugar.</p>
             </div>
-        </section>
+        </div>
+        <div class="level-right">
+            <div class="buttons">
+                {% if user.is_admin %}
+                <a class="button" href="{% url 'audit_log' %}">{% icon 'activity' %}<span>Auditoria</span></a>
+                {% endif %}
+                {% if not user.is_client %}
+                <a class="button is-link" href="{% url 'upload' %}">{% icon 'upload' %}<span>Enviar arquivo</span></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="columns is-multiline">
+        <div class="column is-3-desktop is-6-tablet"><div class="box aegis-card"><p class="heading">Arquivos acessiveis</p><p class="metric">{{ file_count }}</p></div></div>
+        <div class="column is-3-desktop is-6-tablet"><div class="box aegis-card"><p class="heading">Armazenamento logico</p><p class="metric">{{ total_bytes|filesizeformat }}</p></div></div>
+        {% if user.is_admin %}<div class="column is-3-desktop is-6-tablet"><div class="box aegis-card"><p class="heading">Clientes</p><p class="metric">{{ client_count }}</p></div></div>{% endif %}
+        <div class="column is-3-desktop is-6-tablet"><div class="box aegis-card"><p class="heading">Solicitacoes abertas</p><p class="metric">{{ request_count }}</p></div></div>
+    </div>
+
+    <div class="columns mt-2">
+        <div class="column is-7">
+            <div class="box aegis-card">
+                <div class="level"><div class="level-left"><h2 class="title is-5">Arquivos recentes</h2></div><div class="level-right"><a href="{% url 'arquivos' %}">Ver todos</a></div></div>
+                {% if recent_files %}
+                <div class="table-container"><table class="table is-fullwidth is-hoverable">
+                    <thead><tr><th>Arquivo</th><th>Proprietario</th><th>Tamanho</th><th></th></tr></thead>
+                    <tbody>{% for arquivo in recent_files %}<tr>
+                        <td><strong>{{ arquivo.nome_arquivo }}</strong><br><small class="muted">{{ arquivo.mime_type }}</small></td>
+                        <td>{{ arquivo.dono_arquivo.username }}</td><td>{{ arquivo.tamanho_arquivo|filesizeformat }}</td>
+                        <td class="has-text-right"><a class="button is-small" href="{% url 'file_detail' arquivo.id %}">Abrir</a></td>
+                    </tr>{% endfor %}</tbody>
+                </table></div>
+                {% else %}<p class="muted">Nenhum arquivo disponivel.</p>{% endif %}
+            </div>
+        </div>
+        <div class="column is-5">
+            <div class="box aegis-card">
+                <div class="level"><div class="level-left"><h2 class="title is-5">Atividade recente</h2></div>{% if user.is_admin %}<div class="level-right"><a href="{% url 'audit_log' %}">Ver auditoria</a></div>{% endif %}</div>
+                {% for entry in activity %}
+                    <article class="media py-2">
+                        <div class="media-left"><span class="icon has-text-link">{% icon 'activity' %}</span></div>
+                        <div class="media-content">
+                            <p><strong>{{ entry.actor|default:'Sistema' }}</strong> · {{ entry.get_action_display|lower }}</p>
+                            <p class="is-size-7 muted">{{ entry.object_repr|truncatechars:55 }} · {{ entry.timestamp|date:'d/m/Y H:i' }}</p>
+                        </div>
+                    </article>
+                {% empty %}<p class="muted">Ainda nao ha atividade registrada.</p>{% endfor %}
+            </div>
+        </div>
     </div>
 </div>
-
-
-{% if messages %}
-    {% for message in messages %}
-        {% if message.tags != "success" %}
-            <div class="modal is-active" id="djangoMessagesModal">
-                <div class="modal-background"></div>
-                <div class="modal-card">
-                    <header class="modal-card-head">
-                        <p class="modal-card-title">ATENÇÃO</p>
-                        <button class="delete" aria-label="close" onclick="document.getElementById('djangoMessagesModal').classList.remove('is-active')"></button>
-                    </header>
-                    <section class="modal-card-body has-text-centered">
-                        <p class="has-text is-size-6">{{ message }}</p>
-                    </section>
-                    <footer class="modal-card-foot is-justify-content-center">
-                        <button class="button is-{{ message.tags }} is-fullwidth" onclick="document.getElementById('djangoMessagesModal').classList.remove('is-active')">
-                            OK
-                        </button>
-                    </footer>
-                </div>
-            </div>
-        {% endif %}
-    {% endfor %}
-{% endif %}
-
+</section>
 {% endblock %}

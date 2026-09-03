@@ -1,126 +1,315 @@
-# Aegis Share - Compartilhamento de Arquivos Descentralizado
-![IPFS Badge](https://img.shields.io/badge/IPFS-65C2CB?logo=ipfs&logoColor=fff&style=for-the-badge) ![Django Badge](https://img.shields.io/badge/Django-092E20?logo=django&logoColor=fff&style=for-the-badge) ![Bulma Badge](https://img.shields.io/badge/Bulma-00D1B2?logo=bulma&logoColor=fff&style=for-the-badge) ![htmx Badge](https://img.shields.io/badge/htmx-36C?logo=htmx&logoColor=fff&style=for-the-badge)
-![uv Badge](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=fff&style=for-the-badge) ![Redis Badge](https://img.shields.io/badge/Redis-FF4438?logo=redis&logoColor=fff&style=for-the-badge)
-![Docker Badge](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff&style=for-the-badge)
+# AegisShare
 
-Este é um projeto Django que implementa um sistema de compartilhamento de arquivos utilizando **IPFS (InterPlanetary File System)** para armazenamento descentralizado e **WebSockets** (através de Django Channels) para notificação em tempo real sobre o status dos arquivos.
+**Portal seguro para troca, organização, rastreabilidade e colaboração de documentos entre equipes e clientes.**
 
-## Tecnologias Principais
+AegisShare é uma aplicação Django/ASGI com armazenamento no IPFS via Pinata, criptografia antes do envio, versionamento, auditoria, workspaces por cliente, links temporários, solicitações de documentos, chat em tempo real e API.
 
-  * **Django:** Framework web principal.
-  * **IPFS:** Usado para armazenamento e recuperação de arquivos.
-  * **Django Channels:** Habilita a funcionalidade de WebSockets.
-  * **Redis:** Necessário como *channel layer* para os WebSockets.
-  * **Docker/Docker Compose:** Para orquestração e fácil inicialização do ambiente.
-  * **Granian:** Servidor ASGI para rodar o Django Channels.
+> O IPFS é tratado como camada de armazenamento. Novos arquivos são cifrados antes do upload; o CID não é mais usado como mecanismo de autorização.
 
------
+## Recursos principais
 
-## Requisitos para funcionamento
-### DOT ENV
-Altere o arquivo .env para oque é apropriado para cada projeto 
+- AES-256-GCM antes do IPFS, com chave aleatória por versão.
+- Envelope encryption: `FILE_ENCRYPTION_KEY` protege as chaves de conteúdo.
+- SHA-256 do conteúdo e verificação de integridade no download.
+- Versionamento de arquivos.
+- Permissões por proprietário, workspace e concessões explícitas.
+- Links temporários com senha, expiração, limite de downloads e revogação.
+- Workspaces, pastas e tags.
+- Lixeira com restauração e retenção.
+- Solicitações de documentos e acompanhamento de pendências.
+- Comentários e chat em tempo real.
+- Notificações internas.
+- 2FA TOTP com códigos de recuperação.
+- Inventário e revogação de sessões.
+- API tokens armazenados somente como hash.
+- Audit log com `django-auditlog` e tela administrativa em `/auditoria/`.
+- Sentry opcional, logging JSON e health checks.
+- PostgreSQL e Redis internos ou externos.
+- Quatro topologias de Docker Compose.
+- CI com PostgreSQL, Redis, testes, lint, migrations e smoke test do Compose.
 
-### Dependências e inicio do servidor
-Existem duas maneiras principais de iniciar o projeto: usando Docker Compose ou usando Ambiente de Desenvolvimento após a instalação das dependências.
+## Arquitetura
 
-### Opção 1: Com Docker Compose (Recomendado)
+```text
+                        HTTPS
+                          |
+                   Reverse Proxy
+                          |
+                    +-----v------+
+                    | AegisShare |
+                    | Django ASGI|
+                    |  Granian   |
+                    +--+------+--+
+                       |      |
+                +------v-+  +-v---------+
+                | Redis  |  | PostgreSQL|
+                +--------+  +-----------+
+                       |
+     arquivo -> validação -> ClamAV opcional -> AES-256-GCM
+                       |
+                       v
+                   Pinata/IPFS
+                (conteúdo cifrado)
+```
 
-Esta é a maneira mais fácil, pois o Docker Compose gerencia o Django, o Redis e o IPFS de uma só vez.
+Redis é usado por Channels e cache. Sem Redis, esses componentes usam memória local e a aplicação força um único worker para manter consistência.
 
-1.  **Pré-requisitos:** Certifique-se de ter [Docker](https://www.docker.com/get-started/) instalado.
+## Requisitos
 
-2.  **Construir e Iniciar:** Na raiz do projeto, execute o seguinte comando:
+- Docker e Docker Compose para o deploy recomendado.
+- Python 3 disponível no host apenas para o gerador independente de segredos, se desejar usá-lo.
+- Token JWT da Pinata.
+- `SECRET_KEY` e `FILE_ENCRYPTION_KEY` fortes.
+- HTTPS/reverse proxy em produção.
 
-    ```bash
-    docker compose up --build
-    ```
+## Primeira configuração
 
-3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.
+Copie o exemplo:
 
-#### Aviso de Segurança em Testes com Docker
+```bash
+cp .env-example .env
+```
 
-Se você estiver rodando o container **em um ambiente de teste ou CI/CD que não utilize HTTPS/SSL**, o Django provavelmente falhará devido às configurações de segurança estritas.
+Antes de iniciar o Django, gere os dois segredos com o script independente de settings:
 
-Para desativar a segurança e ativar o modo `DEBUG`, você deve garantir que a variável **`IS_DOCKER` seja configurada como `False`** no seu ambiente. Isso garante que as seguintes opções de desenvolvimento sejam ativadas, conforme o seu `settings.py`:
+```bash
+python3 scripts/generate_secrets.py
+```
 
-| Variável               | Valor para Teste Local | Valor Padrão no Docker |
-|------------------------|------------------------|-------------------------|
-| `DEBUG`                | `True`                 | `False`                 |
-| `SECURE_SSL_REDIRECT`  | `False`                | `True`                  |
-| `SESSION_COOKIE_SECURE`| `False`                | `True`                  |
-| `CSRF_COOKIE_SECURE`   | `False`                | `True`                  |
+O script cria `.secrets.generated.env` no diretório atual com permissão `0600` e **não imprime os segredos no terminal**. Copie os valores desse arquivo para o seu gerenciador de segredos ou para `.env`, configure os demais campos e depois remova o arquivo temporário:
 
+```env
+SECRET_KEY=...
+FILE_ENCRYPTION_KEY=...
+PINATA_JWT_TOKEN=...
+POSTGRES_PASSWORD=...
+ALLOWED_HOSTS=files.exemplo.com
+CSRF_TRUSTED_ORIGINS=https://files.exemplo.com
+```
 
------
+```bash
+rm .secrets.generated.env
+```
 
-## Instalação das Dependências (Opção 2)
+O arquivo temporário também consta no `.gitignore`, mas não deve ser mantido além do necessário.
 
-O projeto usa `pyproject.toml` para gerenciar dependências. Escolha seu gerenciador de pacotes preferido:
+Para produção atrás de HTTPS mantenha:
 
-### Usando Poetry
+```env
+DEBUG=false
+SECURE_SSL_REDIRECT=true
+SESSION_COOKIE_SECURE=true
+CSRF_COOKIE_SECURE=true
+```
 
-1.  **Instale as dependências:**
-    ```bash
-    poetry install
-    ```
-2.  **Rode Migrations com Poetry:**
-    ```bash
-    poetry run task migrate
-    ```
-3.  **Rode o Servidor com Poetry:**
-    ```bash
-    poetry run task server
-    ```
+Depois:
 
-### Usando uv
+```bash
+docker compose up -d --build
+```
 
-1.  **Sincronize as dependências:**
-    ```bash
-    uv sync
-    ```
-2.  **Rode Migrations com UV:**
-    ```bash
-    uv run task migrate
-    ```
-3.  **Rode o Servidor com UV:**
-    ```bash
-    uv run task server
-    ```
+No primeiro acesso, se ainda não houver administrador, `/setup/` permite criar o primeiro superusuário.
 
-### Usando Pip Tradicional
+## Docker Compose
 
-1.  **Instale um ambiente virtual:**
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # ou .venv\Scripts\activate no Windows
-    ```
-2.  **Instale as dependências a partir do `pyproject.toml`:**
-    ```bash
-    pip install .
-    ```
-3. **Rode os comandos com python dentro da venv:**
-    ```bash
-    python (manage.py) <comando>
-    ```
+### 1. Django + Redis + PostgreSQL
 
------
+Padrão recomendado:
 
-## Execução (Opção 2)
+```bash
+docker compose up -d --build
+```
 
-Se você escolheu a Opção 2, siga estes passos após instalar as dependências.
+PostgreSQL e Redis ficam somente na rede Docker. Apenas a aplicação publica porta no host.
 
-#### Configuração e Execução do Django
+A stack atual usa PostgreSQL 18 e monta o volume em `/var/lib/postgresql`, conforme o layout das imagens oficiais 18+. **Não conecte diretamente um volume criado por PostgreSQL 17 ou anterior a uma imagem PostgreSQL 18.** Faça backup/restauração ou um procedimento de `pg_upgrade` apropriado antes de uma mudança de versão principal.
 
-1.  **Migrações:**
+### 2. Django + Redis + PostgreSQL externo
 
-    ```bash
-    python manage.py migrate
-    ```
+```bash
+docker compose -f compose.no-postgres.yml up -d --build
+```
 
-2.  **Iniciar o Servidor:** Use o **Granian** para servir o projeto com suporte a ASGI (WebSockets).
+Configure:
 
-    ```bash
-    Granian mysite.asgi:application --host 0.0.0.0 --port 8000 --interface asgi
-    ```
+```env
+EXTERNAL_DATABASE_URL=postgresql://usuario:senha@host:5432/aegisshare
+```
 
-3.  **Acesso:** O projeto estará disponível em `http://localhost:8000`.
+### 3. Django + PostgreSQL + Redis externo ou sem Redis
+
+```bash
+docker compose -f compose.no-redis.yml up -d --build
+```
+
+Para Redis externo:
+
+```env
+EXTERNAL_REDIS_URL=redis://host:6379/0
+```
+
+Para operar sem Redis:
+
+```env
+EXTERNAL_REDIS_URL=
+```
+
+Nesse modo o entrypoint reduz `WEB_WORKERS` para `1`.
+
+### 4. Somente Django
+
+Banco externo obrigatório; Redis externo opcional:
+
+```bash
+docker compose -f compose.no-postgres-no-redis.yml up -d --build
+```
+
+```env
+EXTERNAL_DATABASE_URL=postgresql://usuario:senha@host:5432/aegisshare
+EXTERNAL_REDIS_URL=redis://host:6379/0
+```
+
+`EXTERNAL_REDIS_URL` pode ficar vazio para execução com um único worker.
+
+## Inicialização do container
+
+O entrypoint normal:
+
+1. aguarda o banco responder;
+2. executa `python manage.py migrate --noinput`;
+3. executa `python manage.py collectstatic --noinput`;
+4. inicia Granian/ASGI.
+
+Quando um comando é fornecido explicitamente com `docker compose run aegis_share <comando>`, o entrypoint executa somente esse comando. Isso permite usar `manage.py`, scripts e rotinas administrativas sem iniciar o servidor.
+
+As opções do processo web podem ser controladas por:
+
+```env
+RUN_MIGRATIONS=true
+COLLECT_STATIC=true
+WEB_WORKERS=2
+DB_STARTUP_ATTEMPTS=30
+```
+
+Em ambientes com várias réplicas, execute migrations em apenas uma delas e use `RUN_MIGRATIONS=false` nas demais.
+
+## Variáveis de ambiente
+
+| Variável | Uso |
+|---|---|
+| `SECRET_KEY` | segredo criptográfico do Django |
+| `FILE_ENCRYPTION_KEY` | chave-mestra que protege as chaves AES dos arquivos |
+| `POSTGRES_DB` | banco do PostgreSQL interno |
+| `POSTGRES_USER` | usuário do PostgreSQL interno |
+| `POSTGRES_PASSWORD` | senha do PostgreSQL interno |
+| `EXTERNAL_DATABASE_URL` | banco externo nos composes sem PostgreSQL |
+| `EXTERNAL_REDIS_URL` | Redis externo nos composes sem Redis |
+| `DATABASE_URL` | conexão direta quando Django roda fora dos composes fornecidos |
+| `REDIS_URL` | Redis direto quando Django roda fora dos composes fornecidos |
+| `PINATA_JWT_TOKEN` | autenticação da Pinata |
+| `PINATA_GATEWAY_URL` | URL de leitura dos CIDs |
+| `FILE_MAX_UPLOAD_MB` | limite de upload |
+| `FILE_RETENTION_DAYS` | retenção da lixeira |
+| `CLAMAV_ENABLED` | ativa varredura ClamAV |
+| `CLAMAV_REQUIRED` | bloqueia upload se o ClamAV não responder |
+| `SENTRY_DSN` | Sentry opcional |
+| `WEB_WORKERS` | workers Granian |
+
+Consulte `.env-example` para a configuração completa.
+
+## Criptografia e arquivos legados
+
+Novos uploads seguem:
+
+```text
+arquivo original
+   |
+   +--> validação de tamanho/MIME
+   +--> ClamAV opcional
+   +--> SHA-256
+   +--> AES-256-GCM
+   +--> Pinata/IPFS
+```
+
+Cada versão recebe uma chave AES aleatória. A chave de conteúdo é cifrada pela `FILE_ENCRYPTION_KEY` e apenas a chave protegida é armazenada no banco.
+
+A migration de upgrade preserva arquivos anteriores como `FileVersion v1` legada e não criptografada. Para obter a mesma confidencialidade dos novos uploads, envie uma nova versão do arquivo legado.
+
+**Não perca `FILE_ENCRYPTION_KEY`.** Sem ela, versões cifradas não podem ser recuperadas.
+
+## Auditoria
+
+O projeto usa `django-auditlog` para alterações e eventos de acesso. Campos sensíveis, como hashes de tokens, segredo TOTP e chave protegida do arquivo, são excluídos do histórico.
+
+Administradores podem consultar:
+
+```text
+/auditoria/
+```
+
+A interface permite filtrar por ator, modelo e ação.
+
+## Health checks
+
+```text
+/health/live/      processo HTTP vivo
+/health/ready/     banco e cache prontos
+/health/services/  diagnóstico ampliado, incluindo Pinata
+```
+
+`/health/live/` e `/health/ready/` não dependem da Pinata; uma falha do provedor de armazenamento não deve reiniciar o processo web saudável.
+
+## API
+
+A API usa tokens Bearer gerados em **Segurança**:
+
+```http
+Authorization: Bearer ags_...
+```
+
+Endpoints iniciais:
+
+```text
+GET  /api/v1/files/
+POST /api/v1/files/
+GET  /api/v1/files/<id>/
+GET  /api/v1/files/<id>/download/
+```
+
+O token completo é exibido somente no momento da criação; o banco armazena apenas SHA-256.
+
+## Desenvolvimento
+
+```bash
+uv sync --dev
+uv run python manage.py migrate
+uv run python manage.py runserver
+```
+
+Validações:
+
+```bash
+uv run ruff check aegis_share mysite
+uv run ruff format --check aegis_share mysite
+uv run python manage.py check
+uv run python manage.py makemigrations --check --dry-run
+uv run python manage.py test --verbosity 2
+```
+
+## Manutenção
+
+Expurgo da lixeira:
+
+```bash
+docker compose run --rm aegis_share python manage.py purge_trash
+```
+
+O Dependabot mantém dependências Python, GitHub Actions e imagens Docker sob atualização automática; os PRs passam pela CI antes de qualquer merge automático.
+
+## Segurança
+
+Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet. Para alterações no código, consulte também [CONTRIBUTING.md](CONTRIBUTING.md) e [CHANGELOG.md](CHANGELOG.md).
+
+## Licença
+
+Consulte [LICENSE](LICENSE).
