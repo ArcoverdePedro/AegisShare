@@ -1,11 +1,13 @@
 import logging
 import uuid
+from datetime import timedelta
 from pathlib import Path
 
 from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
+from aegis_share.file_policy import validate_uploaded_file
 from aegis_share.models import FileAccess, FileVersion, IPFSFile
 
 from .antivirus import scan_bytes
@@ -29,9 +31,17 @@ def _encrypted_name(filename: str, version_number: int) -> str:
     return f"{clean}.v{version_number}.aegis"
 
 
-def create_file_from_upload(*, uploaded_file, owner, actor, workspace=None, folder=None, description=""):
+def _read_validated(uploaded_file) -> bytes:
+    validate_uploaded_file(uploaded_file)
     content = uploaded_file.read()
+    if len(content) != uploaded_file.size:
+        raise ValueError("Nao foi possivel ler o arquivo completo.")
     scan_bytes(content)
+    return content
+
+
+def create_file_from_upload(*, uploaded_file, owner, actor, workspace=None, folder=None, description=""):
+    content = _read_validated(uploaded_file)
 
     version_id = uuid.uuid4()
     version_number = 1
@@ -96,9 +106,7 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
     if not file.user_pode_alterar(actor):
         raise PermissionError("Usuario sem permissao para criar nova versao.")
 
-    content = uploaded_file.read()
-    scan_bytes(content)
-
+    content = _read_validated(uploaded_file)
     current = file.versions.aggregate(max_version=Max("version_number"))["max_version"] or 0
     version_number = current + 1
     version_id = uuid.uuid4()
@@ -137,13 +145,8 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
             file.is_encrypted = True
             file.save(
                 update_fields=[
-                    "cid",
-                    "pinata_id",
-                    "mime_type",
-                    "tamanho_arquivo",
-                    "sha256",
-                    "is_encrypted",
-                    "updated_at",
+                    "cid", "pinata_id", "mime_type", "tamanho_arquivo", "sha256",
+                    "is_encrypted", "updated_at",
                 ]
             )
     except Exception:
@@ -159,18 +162,13 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
 
 def get_version_content(version: FileVersion) -> bytes:
     remote_content = PinataClient().download_bytes(version.cid)
-
     if version.encrypted_sha256 and sha256_hex(remote_content) != version.encrypted_sha256:
         raise FileIntegrityError("O conteudo criptografado nao corresponde ao hash registrado.")
 
     if version.is_encrypted:
         if not version.wrapped_key:
             raise FileIntegrityError("Versao marcada como criptografada sem chave protegida.")
-        plain = decrypt_file(
-            remote_content,
-            version.wrapped_key,
-            aad=_version_aad(version.id),
-        )
+        plain = decrypt_file(remote_content, version.wrapped_key, aad=_version_aad(version.id))
     else:
         plain = remote_content
 
@@ -183,9 +181,7 @@ def grant_access(*, file: IPFSFile, recipient, actor):
     if not file.user_pode_compartilhar(actor):
         raise PermissionError("Usuario sem permissao para compartilhar este arquivo.")
     grant, created = FileAccess.objects.get_or_create(
-        arquivo=file,
-        user=recipient,
-        defaults={"granted_by": actor},
+        arquivo=file, user=recipient, defaults={"granted_by": actor}
     )
     if created:
         notify_file_shared(file, recipient, actor)
@@ -199,12 +195,16 @@ def revoke_access(*, file: IPFSFile, recipient, actor):
 
 
 def purge_file(file: IPFSFile):
-    """Remove conteudo remoto e registro local. Retorna IDs remotos que falharam."""
     client = PinataClient()
     failures = []
-    for version in file.versions.all():
-        if version.pinata_id and not client.delete_file(version.pinata_id):
-            failures.append(version.pinata_id)
+    versions = list(file.versions.all())
+    if not versions and file.pinata_id:
+        # Compatibilidade com registros muito antigos sem FileVersion.
+        versions = [file]
+    for version in versions:
+        pinata_id = getattr(version, "pinata_id", "")
+        if pinata_id and not client.delete_file(pinata_id):
+            failures.append(pinata_id)
     if failures:
         return failures
     file.delete()
@@ -212,7 +212,7 @@ def purge_file(file: IPFSFile):
 
 
 def purge_expired_trash(retention_days: int):
-    cutoff = timezone.now() - timezone.timedelta(days=retention_days)
+    cutoff = timezone.now() - timedelta(days=retention_days)
     purged = 0
     failures = []
     for file in IPFSFile.objects.filter(deleted_at__isnull=False, deleted_at__lte=cutoff):
