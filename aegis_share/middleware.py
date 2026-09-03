@@ -20,10 +20,8 @@ class FirstAccessRedirectMiddleware:
             self._configured = self.User.objects.filter(is_superuser=True).exists()
 
         current_path = request.path
-        bypass = (
-            current_path.startswith(self.setup_url)
-            or current_path.startswith("/static/")
-            or current_path.startswith("/health/")
+        bypass = current_path.startswith(
+            (self.setup_url, "/static/", "/health/")
         )
         if not self._configured and not bypass:
             return redirect(self.setup_url)
