@@ -51,9 +51,9 @@ class Patient(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=["full_name"]),
-            models.Index(fields=["birth_date"]),
-            models.Index(fields=["active"]),
+            models.Index(fields=["full_name"], name="pep_patient_name_idx"),
+            models.Index(fields=["birth_date"], name="pep_patient_birth_idx"),
+            models.Index(fields=["active"], name="pep_patient_active_idx"),
         ]
 
     def clean(self):
@@ -108,8 +108,11 @@ class PatientAccessGrant(models.Model):
             )
         ]
         indexes = [
-            models.Index(fields=["user", "expires_at"]),
-            models.Index(fields=["patient", "expires_at"]),
+            models.Index(fields=["user", "expires_at"], name="pep_access_user_exp_idx"),
+            models.Index(
+                fields=["patient", "expires_at"],
+                name="pep_access_patient_exp_idx",
+            ),
         ]
 
     @property
