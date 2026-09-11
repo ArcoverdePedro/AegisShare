@@ -64,34 +64,31 @@ Redis é usado por Channels e cache. Sem Redis, esses componentes usam memória 
 
 ## Primeira configuração
 
-Copie o exemplo:
+Copie o exemplo e instale os segredos diretamente no `.env` antes de iniciar o Django:
 
 ```bash
 cp .env-example .env
+python3 scripts/generate_secrets.py --install-env .env
 ```
 
-Antes de iniciar o Django, gere os dois segredos com o script independente de settings:
+O modo `--install-env` substitui somente `SECRET_KEY` e `FILE_ENCRYPTION_KEY` vazias ou marcadas como `CHANGE_ME`, preserva valores válidos já existentes, recusa definições duplicadas e deixa o arquivo com permissão `0600`. Os segredos **não são impressos no terminal**.
 
-```bash
-python3 scripts/generate_secrets.py
-```
-
-O script cria `.secrets.generated.env` no diretório atual com permissão `0600` e **não imprime os segredos no terminal**. Copie os valores desse arquivo para o seu gerenciador de segredos ou para `.env`, configure os demais campos e depois remova o arquivo temporário:
+Depois configure os demais campos do `.env`, principalmente:
 
 ```env
-SECRET_KEY=...
-FILE_ENCRYPTION_KEY=...
 PINATA_JWT_TOKEN=...
 POSTGRES_PASSWORD=...
 ALLOWED_HOSTS=files.exemplo.com
 CSRF_TRUSTED_ORIGINS=https://files.exemplo.com
 ```
 
+Se preferir entregar os segredos a um gerenciador externo sem alterar `.env`, o comportamento anterior continua disponível:
+
 ```bash
-rm .secrets.generated.env
+python3 scripts/generate_secrets.py
 ```
 
-O arquivo temporário também consta no `.gitignore`, mas não deve ser mantido além do necessário.
+Esse comando cria `.secrets.generated.env` com permissão `0600`; copie o conteúdo para o gerenciador de segredos e remova o arquivo temporário quando terminar. Não use `--force` em produção sem uma decisão explícita de rotação de chaves.
 
 Para produção atrás de HTTPS mantenha:
 
