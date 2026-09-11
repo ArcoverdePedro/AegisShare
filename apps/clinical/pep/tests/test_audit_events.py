@@ -24,6 +24,14 @@ TEST_STORAGES = {
 @override_settings(STORAGES=TEST_STORAGES)
 class ClinicalReadAuditTests(TestCase):
     def setUp(self):
+        # FirstAccessRedirectMiddleware considera a instalação pronta somente quando
+        # existe um superusuário. Mantemos o ator auditado como FUNC e criamos um
+        # administrador separado apenas para reproduzir uma instalação configurada.
+        setup_admin = make_user("pep-audit-setup-admin", role="ADM")
+        setup_admin.is_superuser = True
+        setup_admin.is_staff = True
+        setup_admin.save(update_fields=["is_superuser", "is_staff"])
+
         self.user = make_user("pep-audit-user", role="FUNC")
         self.patient = Patient.objects.create(
             identifier_type=Patient.IdentifierType.OTHER,
