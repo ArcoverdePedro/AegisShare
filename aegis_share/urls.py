@@ -1,5 +1,6 @@
-from django.contrib.auth import views as auth_views
 from django.urls import path
+
+from apps.pwa.views import PwaLogoutView
 
 from .web import api, auth, chat, dashboard, files, health, security
 
@@ -11,7 +12,7 @@ urlpatterns = [
     path("sobre/", dashboard.sobre, name="sobre"),
     path("login/", auth.custom_login, name="login"),
     path("login/2fa/", auth.login_2fa, name="login_2fa"),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", PwaLogoutView.as_view(), name="logout"),
     path("cadastro/", auth.cadastro, name="cadastro"),
     path("user/", auth.user_profile, name="user"),
 
