@@ -84,6 +84,9 @@
             <div class="navbar-start">
                 <a class="navbar-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'home' %}">{% icon 'home' %} Inicio</a>
                 {% if user.is_authenticated %}
+                    {% if user.is_admin or user.is_employee %}
+                        <a class="navbar-item {% if request.resolver_match.namespace == 'pep' %}is-active{% endif %}" href="{% url 'pep:patient_list' %}">{% icon 'users' %} Pacientes</a>
+                    {% endif %}
                     <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
                     {% if not user.is_client %}
                         <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" href="{% url 'upload' %}">{% icon 'upload' %} Enviar</a>
