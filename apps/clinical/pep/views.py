@@ -3,6 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView
 
@@ -62,7 +63,7 @@ class PatientCreateView(LoginRequiredMixin, CreateView):
             },
         )
         messages.success(self.request, "Paciente cadastrado com sucesso.")
-        return super(CreateView, self).form_valid(form)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("pep:patient_detail", kwargs={"pk": self.object.pk})
