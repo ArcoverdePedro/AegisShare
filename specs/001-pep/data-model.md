@@ -2,7 +2,7 @@
 
 ## Escopo desta iteração
 
-O núcleo de identificação do paciente, autorização por vínculo explícito e encontros clínicos está implementado. Evoluções, observações, condições, alergias e documentos clínicos permanecem nas tarefas seguintes da Spec 001.
+O núcleo de identificação do paciente, autorização por vínculo explícito, encontros clínicos e evoluções append-only está implementado. Observações, condições, alergias, assinatura e documentos clínicos permanecem nas tarefas seguintes da Spec 001.
 
 ## Patient
 
@@ -76,13 +76,38 @@ O núcleo de identificação do paciente, autorização por vínculo explícito 
 - paciente, criador e profissional responsável usam `PROTECT` para preservar rastreabilidade;
 - índices cobrem histórico por paciente/data, status e profissional/data.
 
+## ClinicalEvolution
+
+| Campo | Tipo | Regra |
+|---|---|---|
+| `id` | UUID | chave primária, imutável |
+| `encounter` | FK Encounter | `PROTECT`; deve apontar para encontro `OPEN` no momento da criação |
+| `author` | FK User | `PROTECT`; profissional autenticado que registrou o conteúdo |
+| `content` | text | obrigatório; conteúdo clínico append-only |
+| `amendment_of` | FK self | opcional, `PROTECT`; aponta para o registro corrigido/complementado |
+| `amendment_reason` | string(255) | obrigatório quando `amendment_of` é informado |
+| `created_at` | datetime | automático; compõe a ordenação cronológica |
+
+### Regras de imutabilidade
+
+- uma evolução persistida não pode ser alterada por `save()` e não possui rota de edição;
+- uma evolução persistida não pode ser excluída pelo método de domínio;
+- correções são novos registros `ClinicalEvolution` vinculados por `amendment_of`;
+- adendo e evolução original obrigatoriamente pertencem ao mesmo encontro;
+- não existe motivo de adendo sem vínculo com uma evolução original;
+- o conteúdo original permanece intacto quando um adendo é criado;
+- a criação é permitida somente enquanto o encontro está `OPEN` e o usuário mantém acesso ao paciente;
+- índices cobrem linha do tempo por encontro/data e autoria/data;
+- `content` e `amendment_reason` são excluídos do payload do `django-auditlog` para evitar replicação de conteúdo clínico sensível.
+
 ## Retenção e LGPD
 
 - dados clínicos e identificadores não devem ser apagados em cascata por exclusão de usuário;
 - encontros preservam vínculo com paciente e profissionais usando `PROTECT`;
+- evoluções preservam encontro, autor e cadeia de adendos usando `PROTECT`;
 - exportação, anonimização, retenção definitiva e direitos do titular serão fechados na Spec 013;
-- logs e notificações não devem reproduzir CPF, diagnóstico, motivo do atendimento ou outros dados clínicos identificáveis.
+- logs e notificações não devem reproduzir CPF, diagnóstico, motivo do atendimento, conteúdo da evolução ou outros dados clínicos identificáveis.
 
 ## Rollback
 
-A migration `pep.0002_encounter` é reversível enquanto nenhuma migration posterior depender da tabela de encontros. Em ambiente com dados reais, qualquer rollback destrutivo deve ser precedido por backup, validação de dependências e janela de manutenção.
+A migration `pep.0003_clinicalevolution` é reversível enquanto nenhuma migration posterior depender da tabela de evoluções. O rollback destrói os registros de evolução e deve ser tratado como operação destrutiva: em ambiente com dados reais requer backup, validação de dependências, autorização explícita e janela de manutenção.
