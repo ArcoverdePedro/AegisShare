@@ -9,6 +9,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#363636">
+    <link rel="manifest" href="{% url 'pwa:manifest' %}">
+    <link rel="apple-touch-icon" href="{% url 'pwa:icon' 192 %}">
     {% if user.is_authenticated %}<meta name="user-id" content="{{ user.id }}">{% endif %}
     <script>
         (() => {
@@ -25,6 +28,7 @@
     <title>{% block title %}AegisShare{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     {% htmx_script %}
+    <script defer src="{% static 'pwa/register.js' %}"></script>
     <style>
         :root {
             --aegis-bg: #f5f7fb;
@@ -64,6 +68,23 @@
         .drop-zone.is-dragging { border-color: #485fc7; background: var(--aegis-drop-active); }
         html[data-theme="dark"] .drop-zone { border-color: #4b5568; }
         .table td, .table th { vertical-align: middle; }
+        .pwa-connection-status {
+            position: fixed;
+            z-index: 1100;
+            top: 3.25rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(94vw, 680px);
+            padding: .65rem 1rem;
+            border-radius: 0 0 12px 12px;
+            background: #ffdd57;
+            color: #3b2f00;
+            text-align: center;
+            font-size: .85rem;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+        }
+        .pwa-connection-status[hidden] { display: none !important; }
         @media (max-width: 768px) { .content-wrapper { padding-top: 4.5rem; } }
     </style>
     {% block extra_head %}{% endblock %}
@@ -123,7 +144,7 @@
                                 <a href="/aegis-admin/" class="navbar-item">{% icon 'settings' %} Administracao</a>
                             {% endif %}
                             <hr class="navbar-divider">
-                            <form method="post" action="{% url 'logout' %}">
+                            <form method="post" action="{% url 'logout' %}" data-pwa-logout>
                                 {% csrf_token %}
                                 <button class="navbar-item button is-ghost is-fullwidth has-text-left" type="submit">{% icon 'log-out' %} Sair</button>
                             </form>
@@ -136,6 +157,10 @@
         </div>
     </div>
 </nav>
+
+<div id="pwaConnectionStatus" class="pwa-connection-status" role="status" aria-live="polite" aria-hidden="true" hidden>
+    Sem conexão. Dados clínicos e páginas autenticadas não são lidos de cache.
+</div>
 
 <main class="content-wrapper">
     {% block page_content %}{% endblock %}
@@ -159,7 +184,7 @@
         if (systemTheme.media.addEventListener) {
             systemTheme.media.addEventListener('change', systemTheme.apply);
         } else if (systemTheme.media.addListener) {
-            systemTheme.media.addListener(systemTheme.apply);
+            systemTheme.media.addListener('change', systemTheme.apply);
         }
     }
 
