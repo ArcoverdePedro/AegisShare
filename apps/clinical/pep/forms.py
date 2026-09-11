@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import Encounter, Patient
+from .models import ClinicalEvolution, Encounter, Patient
 
 
 class PatientForm(forms.ModelForm):
@@ -77,3 +77,49 @@ class EncounterForm(forms.ModelForm):
                 second=0,
                 microsecond=0,
             )
+
+
+class ClinicalEvolutionForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalEvolution
+        fields = ["content"]
+        widgets = {
+            "content": forms.Textarea(
+                attrs={
+                    "class": "textarea",
+                    "rows": "10",
+                    "autocomplete": "off",
+                    "spellcheck": "true",
+                }
+            )
+        }
+        labels = {"content": "Evolução clínica"}
+        help_texts = {
+            "content": (
+                "Após salvar, o conteúdo não poderá ser alterado. Correções devem ser "
+                "registradas como adendo."
+            )
+        }
+
+
+class ClinicalEvolutionAmendmentForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalEvolution
+        fields = ["amendment_reason", "content"]
+        widgets = {
+            "amendment_reason": forms.TextInput(
+                attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}
+            ),
+            "content": forms.Textarea(
+                attrs={
+                    "class": "textarea",
+                    "rows": "10",
+                    "autocomplete": "off",
+                    "spellcheck": "true",
+                }
+            ),
+        }
+        labels = {
+            "amendment_reason": "Motivo do adendo",
+            "content": "Conteúdo do adendo",
+        }
