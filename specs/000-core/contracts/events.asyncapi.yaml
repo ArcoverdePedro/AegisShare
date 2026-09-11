@@ -1,7 +1,7 @@
 asyncapi: 3.0.0
 info:
   title: AegisShare HIS Core Internal Events
-  version: 0.1.0
+  version: 0.2.0
   description: Eventos internos via WebSocket/Celery/Redis. Não constitui API pública.
 channels:
   documentUploaded:
@@ -49,3 +49,38 @@ channels:
             conversationId: { type: string }
             senderId: { type: string }
             occurredAt: { type: string, format: date-time }
+  clinicalPatientUpdates:
+    address: /ws/clinical/patients/{patientId}/
+    description: >-
+      Canal autenticado por paciente. A autorização é validada na conexão e novamente
+      antes de cada entrega. O payload é deliberadamente livre de nome, CPF, diagnóstico,
+      motivo, conteúdo de evolução ou qualquer texto clínico.
+    parameters:
+      patientId:
+        description: UUID do paciente usado apenas para escopo e roteamento interno.
+    messages:
+      clinicalEvent:
+        payload:
+          type: object
+          additionalProperties: false
+          required: [type, event, patient_id, occurred_at]
+          properties:
+            type:
+              type: string
+              const: clinical_event
+            event:
+              type: string
+              enum:
+                - encounter.created
+                - evolution.created
+                - evolution.amended
+            patient_id: { type: string, format: uuid }
+            encounter_id:
+              oneOf:
+                - { type: string, format: uuid }
+                - { type: 'null' }
+            object_id:
+              oneOf:
+                - { type: string, format: uuid }
+                - { type: 'null' }
+            occurred_at: { type: string, format: date-time }
