@@ -23,6 +23,9 @@ class CoreObjectAuthorizationTests(TestCase):
         self.employee = make_user("auth-employee", role="FUNC")
         self.intruder = make_user("auth-intruder", role="FUNC")
         self.admin = make_user("auth-admin", role="ADM")
+        self.admin.is_superuser = True
+        self.admin.is_staff = True
+        self.admin.save(update_fields=["is_superuser", "is_staff"])
         self.workspace = Workspace.objects.create(
             name="Workspace autorizado",
             cliente=self.owner,
