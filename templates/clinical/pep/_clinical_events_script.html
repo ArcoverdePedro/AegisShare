@@ -1,0 +1,52 @@
+<script>
+(() => {
+    const patientId = '{{ patient.id|escapejs }}';
+    if (!patientId || !window.WebSocket) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${protocol}//${window.location.host}/ws/clinical/patients/${patientId}/`);
+
+    const eventLabels = {
+        'encounter.created': 'Novo encontro clínico registrado.',
+        'evolution.created': 'Nova evolução clínica registrada.',
+        'evolution.amended': 'Novo adendo clínico registrado.',
+    };
+
+    const showUpdate = (message) => {
+        let stack = document.querySelector('.notification-stack');
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.className = 'notification-stack';
+            document.body.appendChild(stack);
+        }
+
+        const notification = document.createElement('div');
+        notification.className = 'notification is-info is-light mb-2';
+
+        const close = document.createElement('button');
+        close.className = 'delete';
+        close.type = 'button';
+        close.setAttribute('aria-label', 'fechar');
+        close.addEventListener('click', () => notification.remove());
+
+        const text = document.createElement('span');
+        text.textContent = `${message} Recarregue a página para visualizar a atualização.`;
+
+        notification.append(close, text);
+        stack.appendChild(notification);
+    };
+
+    socket.addEventListener('message', (event) => {
+        let payload;
+        try {
+            payload = JSON.parse(event.data);
+        } catch (error) {
+            return;
+        }
+
+        if (payload.type !== 'clinical_event' || payload.patient_id !== patientId) return;
+        const message = eventLabels[payload.event] || 'O prontuário foi atualizado.';
+        showUpdate(message);
+    });
+})();
+</script>
