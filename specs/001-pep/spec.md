@@ -56,6 +56,8 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - `clinical/pep/patient_list.html`
 - `clinical/pep/patient_form.html`
 - `clinical/pep/patient_detail.html`
+- `clinical/pep/encounter_list.html`
+- `clinical/pep/encounter_form.html`
 - `clinical/pep/encounter_detail.html`
 - `clinical/pep/evolution_form.html`
 - `clinical/pep/document_sign.html`
@@ -85,10 +87,10 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 |---|---|---|---|
 | RF-PEP-01 | `/pacientes/novo/` · `PatientCreateView` | `clinical/pep/patient_form.html` | `PatientModelTests`, `PatientViewTests.test_employee_can_create_patient_and_receives_access_grant`, `test_duplicate_identifier_returns_form_error` |
 | RF-PEP-02 | `/pacientes/` · `PatientListView` | `clinical/pep/patient_list.html` | `test_admin_can_list_all_patients`, `test_employee_only_lists_patients_in_scope` |
-| RF-PEP-03 | `/pacientes/<uuid>/` · `PatientDetailView` | `clinical/pep/patient_detail.html` | `test_expired_grant_does_not_expose_patient`; conteúdo longitudinal ainda parcial |
-| RF-PEP-04 | `/pacientes/<id>/encontros/`, `/encontros/<id>/` | `encounter_detail.html` | pendente T-PEP-06 |
+| RF-PEP-03 | `/pacientes/<uuid>/` · `PatientDetailView` | `clinical/pep/patient_detail.html` | `test_expired_grant_does_not_expose_patient`, `EncounterTests.test_patient_record_shows_recent_encounters`; conteúdo longitudinal ainda parcial |
+| RF-PEP-04 | `/pacientes/<uuid>/encontros/` · `EncounterListView`; `/pacientes/<uuid>/encontros/novo/` · `EncounterCreateView`; `/encontros/<uuid>/` · `EncounterDetailView` | `encounter_list.html`, `encounter_form.html`, `encounter_detail.html` | `EncounterTests` cobre validação temporal, criação, listagem e autorização por escopo |
 | RF-PEP-05 | `/encontros/<id>/evolucoes/nova/` | `evolution_form.html` | pendente T-PEP-07 |
 | RF-PEP-06 | `/documentos/<id>/assinar/` | `document_sign.html` | pendente T-PEP-08 |
 | RF-PEP-07 | todas as rotas clínicas | — | escrita base via `django-auditlog`; leitura pendente T-PEP-09 |
-| RF-PEP-08 | `PatientListView` / `PatientDetailView` / `accessible_patients` | lista e detalhe | `test_client_role_is_denied_pep_listing`, `test_employee_only_lists_patients_in_scope`, `test_expired_grant_does_not_expose_patient` |
+| RF-PEP-08 | `PatientListView` / `PatientDetailView` / `accessible_patients` / views de encontro | lista e detalhe | testes de paciente + `EncounterTests.test_unrelated_employee_cannot_view_encounter`, `test_granted_employee_can_list_and_view_encounter` |
 | RF-PEP-09 | WebSocket clínico | — | pendente T-PEP-09 |
