@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from aegis_share.models import Conversation, CustomUser
 from aegis_share.services.collaboration import file_chat_users
-from aegis_share.services.selectors import get_accessible_file
+from aegis_share.services.selectors import files_for_user, get_accessible_file
 
 
 def _chat_users(user):
@@ -17,8 +17,10 @@ def _chat_users(user):
 
 @login_required
 def chat_index(request):
+    accessible_file_ids = files_for_user(request.user).order_by().values("id")
     conversations = (
         Conversation.objects.filter(participants=request.user)
+        .filter(Q(file__isnull=True) | Q(file_id__in=accessible_file_ids))
         .select_related("file")
         .prefetch_related("participants")
         .annotate(

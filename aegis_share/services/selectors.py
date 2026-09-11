@@ -9,18 +9,23 @@ def files_for_user(user, *, include_deleted=False):
         .prefetch_related("tags", "usuarios_permitidos")
     )
 
-    if not include_deleted:
-        qs = qs.filter(deleted_at__isnull=True)
-
     if user.is_admin():
+        if not include_deleted:
+            qs = qs.filter(deleted_at__isnull=True)
         return qs.distinct().order_by("-data_adicionado")
+
+    if include_deleted:
+        # Lixeira e restauracao pertencem somente ao dono. Compartilhamentos e
+        # memberships deixam de conceder acesso assim que o arquivo e excluido.
+        return qs.filter(dono_arquivo=user).distinct().order_by("-data_adicionado")
 
     workspace_ids = Workspace.objects.filter(
         Q(cliente=user) | Q(members=user)
     ).values_list("id", flat=True)
 
     return (
-        qs.filter(
+        qs.filter(deleted_at__isnull=True)
+        .filter(
             Q(dono_arquivo=user)
             | Q(usuarios_permitidos=user)
             | Q(workspace_id__in=workspace_ids)

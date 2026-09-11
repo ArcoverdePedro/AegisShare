@@ -8,7 +8,7 @@ from django.db.models import Max
 from django.utils import timezone
 
 from aegis_share.file_policy import validate_uploaded_file
-from aegis_share.models import FileAccess, FileVersion, IPFSFile
+from aegis_share.models import FileAccess, FileVersion, IPFSFile, WorkspaceMember
 
 from .antivirus import scan_bytes
 from .crypto import decrypt_file, encrypt_file, sha256_hex
@@ -40,7 +40,43 @@ def _read_validated(uploaded_file) -> bytes:
     return content
 
 
-def create_file_from_upload(*, uploaded_file, owner, actor, workspace=None, folder=None, description=""):
+def _validate_upload_scope(*, owner, actor, workspace=None, folder=None):
+    if folder and not workspace:
+        raise PermissionError("Uma pasta exige um workspace associado.")
+    if not workspace:
+        return
+
+    if workspace.cliente_id != owner.id:
+        raise PermissionError("O workspace nao pertence ao cliente selecionado.")
+
+    actor_can_upload = bool(
+        getattr(actor, "is_authenticated", False)
+        and (
+            actor.is_admin()
+            or workspace.cliente_id == actor.id
+            or WorkspaceMember.objects.filter(
+                workspace=workspace,
+                user=actor,
+                can_upload=True,
+            ).exists()
+        )
+    )
+    if not actor_can_upload:
+        raise PermissionError("Usuario sem permissao de upload neste workspace.")
+
+    if folder and folder.workspace_id != workspace.id:
+        raise PermissionError("A pasta nao pertence ao workspace selecionado.")
+
+
+def create_file_from_upload(
+    *, uploaded_file, owner, actor, workspace=None, folder=None, description=""
+):
+    _validate_upload_scope(
+        owner=owner,
+        actor=actor,
+        workspace=workspace,
+        folder=folder,
+    )
     content = _read_validated(uploaded_file)
 
     version_id = uuid.uuid4()
@@ -97,7 +133,11 @@ def create_file_from_upload(*, uploaded_file, owner, actor, workspace=None, fold
 
     logger.info(
         "file_created",
-        extra={"file_id": file.id, "version_id": str(version.id), "actor_id": str(actor.id)},
+        extra={
+            "file_id": file.id,
+            "version_id": str(version.id),
+            "actor_id": str(actor.id),
+        },
     )
     return file
 
@@ -128,7 +168,11 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
                 version_number=version_number,
                 cid=remote["cid"],
                 pinata_id=remote["id"],
-                mime_type=uploaded_file.content_type or file.mime_type or "application/octet-stream",
+                mime_type=(
+                    uploaded_file.content_type
+                    or file.mime_type
+                    or "application/octet-stream"
+                ),
                 original_size=len(content),
                 encrypted_size=len(encrypted),
                 sha256=plain_hash,
@@ -145,8 +189,13 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
             file.is_encrypted = True
             file.save(
                 update_fields=[
-                    "cid", "pinata_id", "mime_type", "tamanho_arquivo", "sha256",
-                    "is_encrypted", "updated_at",
+                    "cid",
+                    "pinata_id",
+                    "mime_type",
+                    "tamanho_arquivo",
+                    "sha256",
+                    "is_encrypted",
+                    "updated_at",
                 ]
             )
     except Exception:
@@ -155,7 +204,11 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
 
     logger.info(
         "file_version_created",
-        extra={"file_id": file.id, "version": version_number, "actor_id": str(actor.id)},
+        extra={
+            "file_id": file.id,
+            "version": version_number,
+            "actor_id": str(actor.id),
+        },
     )
     return version
 
@@ -163,12 +216,18 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
 def get_version_content(version: FileVersion) -> bytes:
     remote_content = PinataClient().download_bytes(version.cid)
     if version.encrypted_sha256 and sha256_hex(remote_content) != version.encrypted_sha256:
-        raise FileIntegrityError("O conteudo criptografado nao corresponde ao hash registrado.")
+        raise FileIntegrityError(
+            "O conteudo criptografado nao corresponde ao hash registrado."
+        )
 
     if version.is_encrypted:
         if not version.wrapped_key:
             raise FileIntegrityError("Versao marcada como criptografada sem chave protegida.")
-        plain = decrypt_file(remote_content, version.wrapped_key, aad=_version_aad(version.id))
+        plain = decrypt_file(
+            remote_content,
+            version.wrapped_key,
+            aad=_version_aad(version.id),
+        )
     else:
         plain = remote_content
 
@@ -181,7 +240,9 @@ def grant_access(*, file: IPFSFile, recipient, actor):
     if not file.user_pode_compartilhar(actor):
         raise PermissionError("Usuario sem permissao para compartilhar este arquivo.")
     grant, created = FileAccess.objects.get_or_create(
-        arquivo=file, user=recipient, defaults={"granted_by": actor}
+        arquivo=file,
+        user=recipient,
+        defaults={"granted_by": actor},
     )
     if created:
         notify_file_shared(file, recipient, actor)
@@ -215,7 +276,10 @@ def purge_expired_trash(retention_days: int):
     cutoff = timezone.now() - timedelta(days=retention_days)
     purged = 0
     failures = []
-    for file in IPFSFile.objects.filter(deleted_at__isnull=False, deleted_at__lte=cutoff):
+    for file in IPFSFile.objects.filter(
+        deleted_at__isnull=False,
+        deleted_at__lte=cutoff,
+    ):
         file_failures = purge_file(file)
         if file_failures:
             failures.extend(file_failures)
