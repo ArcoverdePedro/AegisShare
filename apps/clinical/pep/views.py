@@ -1,3 +1,4 @@
+from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -8,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.views.generic import CreateView, DetailView, FormView, ListView
 
+from .events import emit_clinical_event
 from .forms import (
     ClinicalEvolutionAmendmentForm,
     ClinicalEvolutionForm,
@@ -22,6 +24,15 @@ from .permissions import (
     can_create_patient,
     is_internal_professional,
 )
+
+
+class ClinicalAccessAuditMixin:
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        obj = getattr(self, "object", None)
+        if obj is not None:
+            accessed.send(obj.__class__, instance=obj)
+        return response
 
 
 class PatientListView(LoginRequiredMixin, ListView):
@@ -81,7 +92,7 @@ class PatientCreateView(LoginRequiredMixin, CreateView):
         return reverse("pep:patient_detail", kwargs={"pk": self.object.pk})
 
 
-class PatientDetailView(LoginRequiredMixin, DetailView):
+class PatientDetailView(ClinicalAccessAuditMixin, LoginRequiredMixin, DetailView):
     model = Patient
     template_name = "clinical/pep/patient_detail.html"
     context_object_name = "patient"
@@ -150,19 +161,32 @@ class EncounterCreateView(LoginRequiredMixin, PatientEncounterMixin, CreateView)
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        patient = self.get_patient()
+        accessed.send(patient.__class__, instance=patient)
+        return response
+
     def form_valid(self, form):
         form.instance.patient = self.get_patient()
         form.instance.responsible_professional = self.request.user
         form.instance.created_by = self.request.user
         form.instance.status = Encounter.Status.OPEN
         messages.success(self.request, "Encontro clínico iniciado com sucesso.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        emit_clinical_event(
+            event="encounter.created",
+            patient_id=self.object.patient_id,
+            encounter_id=self.object.pk,
+            object_id=self.object.pk,
+        )
+        return response
 
     def get_success_url(self):
         return reverse("pep:encounter_detail", kwargs={"pk": self.object.pk})
 
 
-class EncounterDetailView(LoginRequiredMixin, DetailView):
+class EncounterDetailView(ClinicalAccessAuditMixin, LoginRequiredMixin, DetailView):
     model = Encounter
     template_name = "clinical/pep/encounter_detail.html"
     context_object_name = "encounter"
@@ -222,17 +246,34 @@ class ClinicalEvolutionCreateView(
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        encounter = self.get_encounter()
+        accessed.send(encounter.__class__, instance=encounter)
+        return response
+
     def form_valid(self, form):
         form.instance.encounter = self.get_encounter()
         form.instance.author = self.request.user
         messages.success(self.request, "Evolução clínica registrada com sucesso.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        emit_clinical_event(
+            event="evolution.created",
+            patient_id=self.object.encounter.patient_id,
+            encounter_id=self.object.encounter_id,
+            object_id=self.object.pk,
+        )
+        return response
 
     def get_success_url(self):
         return reverse("pep:evolution_detail", kwargs={"pk": self.object.pk})
 
 
-class ClinicalEvolutionDetailView(LoginRequiredMixin, DetailView):
+class ClinicalEvolutionDetailView(
+    ClinicalAccessAuditMixin,
+    LoginRequiredMixin,
+    DetailView,
+):
     model = ClinicalEvolution
     template_name = "clinical/pep/evolution_detail.html"
     context_object_name = "evolution"
@@ -281,6 +322,12 @@ class ClinicalEvolutionAmendmentCreateView(LoginRequiredMixin, FormView):
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        original = self.get_original()
+        accessed.send(original.__class__, instance=original)
+        return response
+
     @transaction.atomic
     def form_valid(self, form):
         original = self.get_original()
@@ -290,6 +337,12 @@ class ClinicalEvolutionAmendmentCreateView(LoginRequiredMixin, FormView):
             amendment_of=original,
             amendment_reason=form.cleaned_data["amendment_reason"],
             content=form.cleaned_data["content"],
+        )
+        emit_clinical_event(
+            event="evolution.amended",
+            patient_id=self.object.encounter.patient_id,
+            encounter_id=self.object.encounter_id,
+            object_id=self.object.pk,
         )
         messages.success(self.request, "Adendo registrado sem alterar a evolução original.")
         return super().form_valid(form)

@@ -55,6 +55,25 @@ Cenário: Profissional corrige uma evolução
 ```
 
 ```gherkin
+Cenário: Leitura de registro clínico é auditada
+  Dado um profissional autenticado e autorizado
+  Quando abre o detalhe de um paciente, encontro ou evolução
+  Então o sistema registra uma ação de acesso no auditlog
+  E associa a ação ao usuário autenticado
+  E não duplica conteúdo clínico sensível no payload de alterações
+```
+
+```gherkin
+Cenário: Equipe recebe atualização clínica interna
+  Dado um profissional com acesso atual ao paciente e canal WebSocket conectado
+  Quando outro fluxo cria um encontro, evolução ou adendo
+  Então o canal envia um evento de atualização
+  E o payload contém apenas tipo de evento, identificadores UUID e data/hora
+  E não contém nome, CPF, diagnóstico, motivo ou texto clínico
+  E a autorização é revalidada antes da entrega
+```
+
+```gherkin
 Cenário: Usuário sem vínculo tenta abrir prontuário
   Dado um paciente fora do escopo de acesso do usuário
   Quando o usuário solicita a tela do paciente ou um registro clínico vinculado
@@ -93,10 +112,11 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - Definição de assinatura eletrônica/ICP-Brasil exige validação jurídica e operacional antes da implementação definitiva.
 - Dados mestres e duplicidade de pacientes exigem política de identificação/mesclagem posterior.
 - A imutabilidade desta etapa é garantida pela camada de domínio/aplicação; proteção adicional no banco poderá ser avaliada junto às regras operacionais de assinatura e retenção.
+- Eventos clínicos devem continuar livres de PHI/PII e revalidar autorização enquanto a conexão estiver aberta.
 
 ## Rastreabilidade
 
-| Requisito | Rota / View | Template | Teste |
+| Requisito | Rota / View | Template / canal | Teste |
 |---|---|---|---|
 | RF-PEP-01 | `/pacientes/novo/` · `PatientCreateView` | `clinical/pep/patient_form.html` | `PatientModelTests`, `PatientViewTests.test_employee_can_create_patient_and_receives_access_grant`, `test_duplicate_identifier_returns_form_error` |
 | RF-PEP-02 | `/pacientes/` · `PatientListView` | `clinical/pep/patient_list.html` | `test_admin_can_list_all_patients`, `test_employee_only_lists_patients_in_scope` |
@@ -104,6 +124,6 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 | RF-PEP-04 | `/pacientes/<uuid>/encontros/` · `EncounterListView`; `/pacientes/<uuid>/encontros/novo/` · `EncounterCreateView`; `/encontros/<uuid>/` · `EncounterDetailView` | `encounter_list.html`, `encounter_form.html`, `encounter_detail.html` | `EncounterTests` cobre validação temporal, criação, listagem e autorização por escopo |
 | RF-PEP-05 | `/encontros/<uuid>/evolucoes/nova/` · `ClinicalEvolutionCreateView`; `/evolucoes/<uuid>/` · `ClinicalEvolutionDetailView`; `/evolucoes/<uuid>/adendo/` · `ClinicalEvolutionAmendmentCreateView` | `evolution_form.html`, `evolution_detail.html` | `ClinicalEvolutionTests` cobre criação, escopo, encontro aberto, imutabilidade, adendo e preservação do original |
 | RF-PEP-06 | `/documentos/<id>/assinar/` | `document_sign.html` | pendente T-PEP-08 |
-| RF-PEP-07 | todas as rotas clínicas | — | escrita base via `django-auditlog` com conteúdo clínico excluído do payload; leitura pendente T-PEP-09 |
-| RF-PEP-08 | `accessible_patients`, views de paciente/encontro/evolução e `can_create_evolution` | telas clínicas | testes de paciente + encontro + `ClinicalEvolutionTests.test_unrelated_employee_cannot_create_or_view_evolution` |
-| RF-PEP-09 | WebSocket clínico | — | pendente T-PEP-09 |
+| RF-PEP-07 | detalhes de paciente/encontro/evolução e formulários que expõem contexto clínico | `django-auditlog` `Action.ACCESS` + auditoria de escrita registrada nos modelos | `ClinicalReadAuditTests` + testes de criação dos modelos clínicos |
+| RF-PEP-08 | `accessible_patients`, views de paciente/encontro/evolução e `can_create_evolution` | telas clínicas + consumer com revalidação | testes de paciente/encontro/evolução + `ClinicalConsumerAuthorizationTests` |
+| RF-PEP-09 | `/ws/clinical/patients/<uuid>/` · `PatientClinicalConsumer` | `_clinical_events_script.html`; contrato `specs/000-core/contracts/events.asyncapi.yaml` | `ClinicalEventServiceTests`, `ClinicalConsumerAuthorizationTests` |

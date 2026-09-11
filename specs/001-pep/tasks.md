@@ -10,7 +10,7 @@
 - [x] **T-PEP-06** Implementar encontros clínicos. RF-PEP-04.
 - [x] **T-PEP-07** Implementar evolução clínica e histórico imutável com adendos append-only. RF-PEP-05.
 - [ ] **T-PEP-08** Definir e implementar assinatura após validação jurídica/operacional. RF-PEP-06.
-- [ ] **T-PEP-09** Integrar auditoria de leitura/escrita e notificações internas. RF-PEP-07/09.
+- [x] **T-PEP-09** Integrar auditoria de leitura/escrita e notificações internas WebSocket sem PHI no payload. RF-PEP-07/09.
 - [ ] **T-PEP-10** Consolidar testes de autorização, auditoria e jornadas clínicas restantes.
 - [ ] **T-PEP-11** Criar cenários Gherkin e E2E das jornadas principais.
 - [ ] **T-PEP-12** Executar axe-core e validação mobile/tablet.

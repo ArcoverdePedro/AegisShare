@@ -108,10 +108,14 @@
 
                 <div class="aegis-card p-5">
                     <h2 class="title is-6 mb-2">Rastreabilidade</h2>
-                    <p class="muted is-size-7">Criado em {{ encounter.created_at|date:"d/m/Y H:i" }} por {{ encounter.created_by.username }}. Alterações são auditadas sem copiar o motivo clínico para o payload do log.</p>
+                    <p class="muted is-size-7">Criado em {{ encounter.created_at|date:"d/m/Y H:i" }} por {{ encounter.created_by.username }}. A leitura e a escrita são auditadas sem copiar motivo ou conteúdo clínico para o payload do log.</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% include 'clinical/pep/_clinical_events_script.html' %}
 {% endblock %}

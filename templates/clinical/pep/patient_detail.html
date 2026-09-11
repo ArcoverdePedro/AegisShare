@@ -67,7 +67,7 @@
 
                 <div class="aegis-card p-5">
                     <h2 class="title is-6 mb-2">Rastreabilidade</h2>
-                    <p class="muted is-size-7">Cadastro criado em {{ patient.created_at|date:"d/m/Y H:i" }}. Alterações de escrita são auditadas sem replicar identificadores sensíveis no payload do log.</p>
+                    <p class="muted is-size-7">Cadastro criado em {{ patient.created_at|date:"d/m/Y H:i" }}. Leituras e alterações clínicas são auditadas sem replicar conteúdo sensível no payload do log.</p>
                 </div>
             </div>
 
@@ -126,4 +126,8 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+{% include 'clinical/pep/_clinical_events_script.html' %}
 {% endblock %}
