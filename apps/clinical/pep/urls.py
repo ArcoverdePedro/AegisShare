@@ -1,6 +1,9 @@
 from django.urls import path
 
 from .views import (
+    ClinicalEvolutionAmendmentCreateView,
+    ClinicalEvolutionCreateView,
+    ClinicalEvolutionDetailView,
     EncounterCreateView,
     EncounterDetailView,
     EncounterListView,
@@ -29,5 +32,20 @@ urlpatterns = [
         "encontros/<uuid:pk>/",
         EncounterDetailView.as_view(),
         name="encounter_detail",
+    ),
+    path(
+        "encontros/<uuid:encounter_id>/evolucoes/nova/",
+        ClinicalEvolutionCreateView.as_view(),
+        name="evolution_create",
+    ),
+    path(
+        "evolucoes/<uuid:pk>/",
+        ClinicalEvolutionDetailView.as_view(),
+        name="evolution_detail",
+    ),
+    path(
+        "evolucoes/<uuid:pk>/adendo/",
+        ClinicalEvolutionAmendmentCreateView.as_view(),
+        name="evolution_amendment_create",
     ),
 ]
