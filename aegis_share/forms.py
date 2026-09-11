@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
 from .file_policy import FilePolicyError, validate_uploaded_file
-from .models import CustomUser, Folder, Workspace
+from .models import CustomUser, Folder, Workspace, WorkspaceMember
 from .utils import clear_strings
 
 
@@ -160,14 +160,26 @@ class IPFSForm(forms.Form):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        allowed_workspaces = Workspace.objects.none()
         if user:
             if user.is_admin():
-                self.fields["workspace"].queryset = Workspace.objects.all()
+                allowed_workspaces = Workspace.objects.all()
             else:
-                self.fields["workspace"].queryset = Workspace.objects.filter(members=user)
+                upload_workspace_ids = WorkspaceMember.objects.filter(
+                    user=user,
+                    can_upload=True,
+                ).values("workspace_id")
+                allowed_workspaces = Workspace.objects.filter(
+                    id__in=upload_workspace_ids
+                )
+        self.fields["workspace"].queryset = allowed_workspaces
+
         workspace_id = self.data.get("workspace") if self.is_bound else None
         if workspace_id:
-            self.fields["folder"].queryset = Folder.objects.filter(workspace_id=workspace_id)
+            self.fields["folder"].queryset = Folder.objects.filter(
+                workspace_id=workspace_id,
+                workspace__in=allowed_workspaces,
+            )
 
     def clean_cliente_id(self):
         cliente_id = self.cleaned_data.get("cliente_id")
@@ -184,8 +196,14 @@ class IPFSForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
+        cliente_id = cleaned.get("cliente_id")
         workspace = cleaned.get("workspace")
         folder = cleaned.get("folder")
+        if workspace and cliente_id and str(workspace.cliente_id) != str(cliente_id):
+            self.add_error(
+                "workspace",
+                "O workspace deve pertencer ao cliente selecionado.",
+            )
         if folder and (not workspace or folder.workspace_id != workspace.id):
             self.add_error("folder", "A pasta selecionada nao pertence ao workspace.")
         return cleaned
@@ -302,9 +320,28 @@ class WorkspaceForm(forms.Form):
 
 
 class FolderForm(forms.Form):
-    workspace = forms.ModelChoiceField(queryset=Workspace.objects.all())
+    workspace = forms.ModelChoiceField(queryset=Workspace.objects.none())
     name = forms.CharField(max_length=150)
-    parent = forms.ModelChoiceField(queryset=Folder.objects.all(), required=False)
+    parent = forms.ModelChoiceField(queryset=Folder.objects.none(), required=False)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed_workspaces = Workspace.objects.none()
+        if user:
+            if user.is_admin():
+                allowed_workspaces = Workspace.objects.all()
+            else:
+                upload_workspace_ids = WorkspaceMember.objects.filter(
+                    user=user,
+                    can_upload=True,
+                ).values("workspace_id")
+                allowed_workspaces = Workspace.objects.filter(
+                    id__in=upload_workspace_ids
+                )
+        self.fields["workspace"].queryset = allowed_workspaces
+        self.fields["parent"].queryset = Folder.objects.filter(
+            workspace__in=allowed_workspaces
+        )
 
     def clean(self):
         cleaned = super().clean()
