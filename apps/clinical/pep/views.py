@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.views.generic import CreateView, DetailView, ListView
+from django.views.generic import CreateView, DetailView, FormView, ListView
 
 from .forms import (
     ClinicalEvolutionAmendmentForm,
@@ -260,8 +260,7 @@ class ClinicalEvolutionDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ClinicalEvolutionAmendmentCreateView(LoginRequiredMixin, CreateView):
-    model = ClinicalEvolution
+class ClinicalEvolutionAmendmentCreateView(LoginRequiredMixin, FormView):
     form_class = ClinicalEvolutionAmendmentForm
     template_name = "clinical/pep/evolution_form.html"
 
@@ -282,11 +281,16 @@ class ClinicalEvolutionAmendmentCreateView(LoginRequiredMixin, CreateView):
                 raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
+    @transaction.atomic
     def form_valid(self, form):
         original = self.get_original()
-        form.instance.encounter = original.encounter
-        form.instance.author = self.request.user
-        form.instance.amendment_of = original
+        self.object = ClinicalEvolution.objects.create(
+            encounter=original.encounter,
+            author=self.request.user,
+            amendment_of=original,
+            amendment_reason=form.cleaned_data["amendment_reason"],
+            content=form.cleaned_data["content"],
+        )
         messages.success(self.request, "Adendo registrado sem alterar a evolução original.")
         return super().form_valid(form)
 
