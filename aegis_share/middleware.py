@@ -27,6 +27,7 @@ class FirstAccessRedirectMiddleware:
                 "/health/",
                 "/manifest.webmanifest",
                 "/service-worker.js",
+                "/pwa/icons/",
                 "/offline/",
             )
         )
