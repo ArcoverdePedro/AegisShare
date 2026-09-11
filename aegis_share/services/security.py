@@ -3,17 +3,29 @@ import secrets
 from datetime import timedelta
 
 import pyotp
-from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
+from django.utils.crypto import salted_hmac
 
 from aegis_share.models import APIToken, UserSecuritySettings
 
 from .crypto import decrypt_secret, encrypt_secret
 
 
+API_TOKEN_HASH_SALT = "aegis_share.api_token"
+
+
 def _security_settings(user):
     obj, _ = UserSecuritySettings.objects.get_or_create(user=user)
     return obj
+
+
+def _api_token_digest(raw: str) -> str:
+    """Return a keyed, fixed-size digest that fits APIToken.token_hash."""
+    return salted_hmac(
+        API_TOKEN_HASH_SALT,
+        raw,
+        algorithm="sha256",
+    ).hexdigest()
 
 
 def begin_totp_setup(user):
@@ -80,7 +92,7 @@ def consume_recovery_code(user, code: str) -> bool:
 
 def create_api_token(user, *, name: str, expires_days=None):
     raw = f"ags_{secrets.token_urlsafe(36)}"
-    token_hash = make_password(raw)
+    token_hash = _api_token_digest(raw)
     expires_at = None
     if expires_days:
         expires_at = timezone.now() + timedelta(days=int(expires_days))
@@ -98,18 +110,10 @@ def authenticate_api_token(raw: str):
     if not raw:
         return None
 
-    candidates = APIToken.objects.select_related("user").filter(
-        prefix=raw[:12],
-        revoked_at__isnull=True,
-    )
-    for token in candidates:
-        if not token.user.is_active:
-            continue
-        if not check_password(raw, token.token_hash):
-            continue
-        if not token.is_active:
-            continue
-        token.last_used_at = timezone.now()
-        token.save(update_fields=["last_used_at"])
-        return token.user
-    return None
+    token_hash = _api_token_digest(raw)
+    token = APIToken.objects.select_related("user").filter(token_hash=token_hash).first()
+    if not token or not token.is_active or not token.user.is_active:
+        return None
+    token.last_used_at = timezone.now()
+    token.save(update_fields=["last_used_at"])
+    return token.user
