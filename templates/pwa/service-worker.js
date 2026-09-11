@@ -1,12 +1,13 @@
 {% load static %}
-const CACHE_VERSION = 'aegisshare-shell-v1';
+const CACHE_VERSION = 'aegisshare-shell-v2';
 const OFFLINE_URL = '{% url "pwa:offline" %}';
+const OFFLINE_DATABASES = ['aegisshare-offline'];
 const PRECACHE_URLS = [
     OFFLINE_URL,
     '{% url "pwa:manifest" %}',
     '{% static "images/favicon.ico" %}',
-    '{% static "images/pwa-icon-192.png" %}',
-    '{% static "images/pwa-icon-512.png" %}',
+    '{% url "pwa:icon" 192 %}',
+    '{% url "pwa:icon" 512 %}',
 ];
 
 self.addEventListener('install', (event) => {
@@ -46,8 +47,8 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Somente assets estáticos podem ser armazenados. Todo o restante do
-    // monólito (incluindo PEP, arquivos, administração e formulários) é network-only.
+    // Somente assets estáticos podem ser armazenados dinamicamente. Todo o restante
+    // do monólito (PEP, arquivos, administração e formulários) permanece network-only.
     if (url.pathname.startsWith('/static/')) {
         event.respondWith(
             caches.match(request).then((cached) => {
@@ -67,6 +68,15 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(fetch(request, { cache: 'no-store' }));
 });
 
+function deleteIndexedDb(name) {
+    return new Promise((resolve) => {
+        const request = indexedDB.deleteDatabase(name);
+        request.onsuccess = resolve;
+        request.onerror = resolve;
+        request.onblocked = resolve;
+    });
+}
+
 self.addEventListener('message', (event) => {
     if (!event.data || event.data.type !== 'CLEAR_LOCAL_DATA') return;
 
@@ -77,6 +87,7 @@ self.addEventListener('message', (event) => {
                     .filter((key) => key.startsWith('aegisshare-'))
                     .map((key) => caches.delete(key))
             )),
+            ...OFFLINE_DATABASES.map(deleteIndexedDb),
         ])
     );
 });
