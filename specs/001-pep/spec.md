@@ -81,12 +81,14 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 
 ## Rastreabilidade
 
-| Requisito | Rota/View planejada | Template | Teste |
+| Requisito | Rota / View | Template | Teste |
 |---|---|---|---|
-| RF-PEP-01 | `/pacientes/novo/` | patient_form | view + Gherkin |
-| RF-PEP-02 | `/pacientes/` | patient_list | view + E2E |
-| RF-PEP-03 | `/pacientes/<id>/` | patient_detail | view + autorização |
-| RF-PEP-04 | `/pacientes/<id>/encontros/`, `/encontros/<id>/` | encounter_detail | integration |
-| RF-PEP-05 | `/encontros/<id>/evolucoes/nova/` | evolution_form | Gherkin + E2E |
-| RF-PEP-06 | `/documentos/<id>/assinar/` | document_sign | unit + integration |
-| RF-PEP-07 | todas as rotas clínicas | — | audit test |
+| RF-PEP-01 | `/pacientes/novo/` · `PatientCreateView` | `clinical/pep/patient_form.html` | `PatientModelTests`, `PatientViewTests.test_employee_can_create_patient_and_receives_access_grant`, `test_duplicate_identifier_returns_form_error` |
+| RF-PEP-02 | `/pacientes/` · `PatientListView` | `clinical/pep/patient_list.html` | `test_admin_can_list_all_patients`, `test_employee_only_lists_patients_in_scope` |
+| RF-PEP-03 | `/pacientes/<uuid>/` · `PatientDetailView` | `clinical/pep/patient_detail.html` | `test_expired_grant_does_not_expose_patient`; conteúdo longitudinal ainda parcial |
+| RF-PEP-04 | `/pacientes/<id>/encontros/`, `/encontros/<id>/` | `encounter_detail.html` | pendente T-PEP-06 |
+| RF-PEP-05 | `/encontros/<id>/evolucoes/nova/` | `evolution_form.html` | pendente T-PEP-07 |
+| RF-PEP-06 | `/documentos/<id>/assinar/` | `document_sign.html` | pendente T-PEP-08 |
+| RF-PEP-07 | todas as rotas clínicas | — | escrita base via `django-auditlog`; leitura pendente T-PEP-09 |
+| RF-PEP-08 | `PatientListView` / `PatientDetailView` / `accessible_patients` | lista e detalhe | `test_client_role_is_denied_pep_listing`, `test_employee_only_lists_patients_in_scope`, `test_expired_grant_does_not_expose_patient` |
+| RF-PEP-09 | WebSocket clínico | — | pendente T-PEP-09 |

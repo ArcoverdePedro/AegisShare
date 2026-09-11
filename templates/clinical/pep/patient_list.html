@@ -1,0 +1,99 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Pacientes · AegisShare HIS{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container is-fluid">
+        <div class="level is-align-items-flex-start">
+            <div class="level-left">
+                <div>
+                    <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">PEP</p>
+                    <h1 class="title is-3 mb-2">Pacientes</h1>
+                    <p class="muted">Prontuários visíveis dentro do seu vínculo assistencial.</p>
+                </div>
+            </div>
+            {% if can_create_patient %}
+            <div class="level-right">
+                <a class="button is-link" href="{% url 'pep:patient_create' %}">
+                    <span class="icon">{% icon 'user-plus' %}</span>
+                    <span>Novo paciente</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="aegis-card p-5 mb-5">
+            <form method="get" role="search" aria-label="Buscar pacientes">
+                <div class="field has-addons">
+                    <div class="control is-expanded has-icons-left">
+                        <input
+                            class="input"
+                            type="search"
+                            name="q"
+                            value="{{ query }}"
+                            placeholder="Buscar por nome ou identificador"
+                            autocomplete="off"
+                            aria-label="Nome ou identificador do paciente"
+                        >
+                        <span class="icon is-left">{% icon 'search' %}</span>
+                    </div>
+                    <div class="control">
+                        <button class="button is-link is-light" type="submit">Buscar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="aegis-card p-0" style="overflow: hidden;">
+            {% if patients %}
+            <div class="table-container mb-0">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Identificador</th>
+                            <th>Nascimento</th>
+                            <th>Sexo</th>
+                            <th class="has-text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td><strong>{{ patient.full_name }}</strong></td>
+                            <td>{{ patient.get_identifier_type_display }} · •••• {{ patient.identifier|slice:"-4:" }}</td>
+                            <td>{{ patient.birth_date|date:"d/m/Y" }}</td>
+                            <td>{{ patient.get_sex_display }}</td>
+                            <td class="has-text-right">
+                                <a class="button is-small is-link is-light" href="{% url 'pep:patient_detail' patient.id %}">Abrir prontuário</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="has-text-centered p-6">
+                <span class="icon is-large muted">{% icon 'users' %}</span>
+                <p class="title is-6 mt-3">Nenhum paciente encontrado</p>
+                <p class="muted is-size-7">O PEP exibe somente pacientes dentro do seu escopo de acesso.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if is_paginated %}
+        <nav class="pagination is-centered mt-5" role="navigation" aria-label="paginação">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?q={{ query|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?q={{ query|urlencode }}&page={{ page_obj.next_page_number }}">Próxima</a>
+            {% endif %}
+            <span class="pagination-list is-size-7 muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
