@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from django.http import HttpResponse
 from django.test import TestCase
 from django.urls import reverse
 
@@ -134,10 +137,17 @@ class CoreObjectAuthorizationTests(TestCase):
         grant.delete()
         self.client.force_login(self.employee)
 
-        response = self.client.get(reverse("chat_index"))
+        with patch(
+            "aegis_share.web.chat.render",
+            return_value=HttpResponse(),
+        ) as render_mock:
+            response = self.client.get(reverse("chat_index"))
+            visible_conversations = list(
+                render_mock.call_args.args[2]["conversations"]
+            )
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn(conversation, list(response.context["conversations"]))
+        self.assertNotIn(conversation, visible_conversations)
 
     def test_unrelated_user_cannot_revoke_shared_link(self):
         file = make_file(self.owner, cid="bafy-auth-link")
