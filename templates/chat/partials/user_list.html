@@ -1,17 +1,18 @@
 {% for user in users %}
-    <div class="user-item {% if user.active_conversation %}active{% endif %}" 
+    <div class="user-item"
+         data-user-id="{{ user.id }}"
          onclick="startConversation('{{ user.id }}')">
         <div class="user-info">
             <div class="user-details">
                 <div class="is-flex is-align-items-center mb-2">
                     <figure class="image is-48x48 mr-3" style="min-width: 48px;">
                         {% if user.foto_perfil %}
-                            <img src="{{ user.foto_perfil }}" 
+                            <img src="{{ user.foto_perfil }}"
                                  class="is-rounded"
                                  alt="{{ user.username }}"
                                  style="object-fit: cover; width: 48px; height: 48px;">
                         {% else %}
-                            <span class="has-background-link has-text-white is-flex is-justify-content-center is-align-items-center is-rounded" 
+                            <span class="has-background-link has-text-white is-flex is-justify-content-center is-align-items-center is-rounded"
                                   style="width: 48px; height: 48px; font-weight: 600; font-size: 1.25rem;">
                                 {{ user.username|first|upper }}
                             </span>
@@ -24,18 +25,18 @@
                         {% endif %}
                     </div>
                 </div>
-                
+
                 {% if user.last_message %}
                     <div class="last-message-preview">
                         {{ user.last_message.content|truncatechars:40 }}
                     </div>
                 {% else %}
-                    <div class="last-message-preview has-text-grey-dark">
+                    <div class="last-message-preview">
                         Clique para iniciar conversa
                     </div>
                 {% endif %}
             </div>
-            
+
             <div class="user-status">
                 {% if user.unread_count > 0 %}
                     <span class="unread-badge">{{ user.unread_count }}</span>

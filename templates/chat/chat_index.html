@@ -3,129 +3,191 @@
 {% load icon %}
 
 {% block page_content %}
-
-    <div class="columns is-gapless" style="height: 100vh; margin: 0;"> 
-
-        <div class="column is-one-quarter">
-            <div class="box" style="height: 100%; display: flex; flex-direction: column; margin: 0; border-radius: 6px 0 0 6px;">
-                <div class="has-background p-4" style="border-bottom: 1px solid #dbdbdb;">
+<div class="chat-page">
+    <div class="columns is-gapless chat-layout">
+        <div class="column is-one-quarter chat-sidebar-column">
+            <div class="box chat-panel chat-sidebar">
+                <div class="chat-surface p-4 chat-sidebar-header">
                     <h4 class="title is-5 mb-3">Conversas</h4>
-                    
                     <div class="field">
                         <p class="control has-icons-left">
-                            <input class="input is-small is-rounded" 
-                                type="text" 
-                                placeholder="Buscar usuário..."
-                                name="search"
-                                id="user-search-input"
-                                
-                                hx-get="{% url 'user_list' %}"
-                                hx-target="#user-list-container"
-                                hx-trigger="keyup changed delay:300ms, search"
-                                hx-indicator="#user-list-loading">
+                            <input class="input is-small is-rounded"
+                                   type="text"
+                                   placeholder="Buscar usuário..."
+                                   name="search"
+                                   id="user-search-input"
+                                   hx-get="{% url 'user_list' %}"
+                                   hx-target="#user-list-container"
+                                   hx-trigger="keyup changed delay:300ms, search"
+                                   hx-indicator="#user-list-loading">
                             <span class="icon is-small is-left">
                                 <i class="fas fa-search"></i>
                             </span>
                         </p>
                     </div>
-                    </div>
-                
-                <div id="user-list-container" 
-                    style="flex: 1; overflow-y: auto;">
-                    
+                </div>
+
+                <div id="user-list-container" class="chat-user-list-container">
                     <div id="user-list-loading" class="htmx-indicator has-text-centered p-6" style="display: none;">
                         <button class="button is-loading is-large is-ghost"></button>
                         <p class="mt-2">Buscando...</p>
                     </div>
-                    
+
                     <div id="user-list"
-                        hx-get="{% url 'user_list' %}"
-                        hx-trigger="load, every 4s"
-                        hx-target="this"
-                        hx-swap="innerHTML">
+                         hx-get="{% url 'user_list' %}"
+                         hx-trigger="load, every 4s"
+                         hx-target="this"
+                         hx-swap="innerHTML">
                         <div class="has-text-centered p-6">
                             <button class="button is-loading is-large is-ghost"></button>
                             <p class="mt-2">Carregando usuários...</p>
                         </div>
                     </div>
-                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="column">
-            <div class="box" style="height: 100%; display: flex; flex-direction: column; margin: 0; border-radius: 0 2px 2px 0;">
-                
-                <div id="conversation-messages" 
-                    class="box chat-container" 
-                    style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; margin: 0; border-radius: 0;">
-                    <div class="has-text-centered has-text-grey" style="margin-top: 3rem;">
-                        <span class="icon is-large has-text-grey-lighter">
+        <div class="column chat-main-column">
+            <div class="box chat-panel chat-main-panel">
+                <div id="conversation-messages" class="chat-container chat-surface">
+                    <div class="has-text-centered muted chat-empty-state">
+                        <span class="icon is-large">
                             {% icon "message-circle" %}
                         </span>
                         <p class="mt-4">Selecione um usuário para iniciar uma conversa</p>
                     </div>
                 </div>
-
-                <div id="message-form-container" style="display: none;"></div>
             </div>
         </div>
     </div>
+</div>
 
 <style>
-    .box {
+    .chat-page {
+        --chat-panel-bg: #ffffff;
+        --chat-panel-alt: #f8fafc;
+        --chat-border: #e3e8ef;
+        --chat-text: #363636;
+        --chat-muted: #7a7a7a;
+        --chat-received-bg: #f1f3f6;
+        --chat-received-text: #2f3540;
+        --chat-hover: #f6f8fb;
+        --chat-active: #eef4ff;
+        --chat-sent-bg: #3273dc;
+        --chat-sent-text: #ffffff;
+        color: var(--chat-text);
+    }
+
+    html[data-theme="dark"] .chat-page {
+        --chat-panel-bg: #181c24;
+        --chat-panel-alt: #141820;
+        --chat-border: #2c3340;
+        --chat-text: #e7ebf1;
+        --chat-muted: #a8b0bd;
+        --chat-received-bg: #262c36;
+        --chat-received-text: #eef1f5;
+        --chat-hover: #202631;
+        --chat-active: #202d45;
+        --chat-sent-bg: #3e7fe8;
+        --chat-sent-text: #ffffff;
+    }
+
+    .chat-layout {
+        height: calc(100vh - 8rem);
+        min-height: 520px;
         margin: 0 !important;
-        border-radius: 0 !important;
     }
 
-    .column .box {
-        margin: 0;
-        border-radius: 0;
+    .chat-panel {
+        height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+        border: 1px solid var(--chat-border);
+        background: var(--chat-panel-bg);
+        color: var(--chat-text);
+        box-shadow: none;
     }
 
-    .message {
-        margin-bottom: 1rem;
-        padding: 0.75rem 1rem;
+    .chat-sidebar { border-radius: 10px 0 0 10px !important; }
+    .chat-main-panel { border-radius: 0 10px 10px 0 !important; }
+
+    .chat-surface {
+        background: var(--chat-panel-bg);
+        color: var(--chat-text);
+    }
+
+    .chat-sidebar-header { border-bottom: 1px solid var(--chat-border); }
+    .chat-user-list-container { height: calc(100% - 112px); overflow-y: auto; }
+
+    .chat-container {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-empty-state { margin-top: 3rem; color: var(--chat-muted); }
+
+    .chat-message {
+        width: fit-content;
+        min-width: 90px;
+        max-width: min(70%, 720px);
+        margin-bottom: .75rem;
+        padding: .7rem 1rem;
         border-radius: 18px;
-        max-width: 70%;
-        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
     }
 
-    .message.sent {
-        background: #3273dc;
-        color: white;
+    .chat-message--sent {
+        align-self: flex-end;
         margin-left: auto;
-        margin-right: 0;
+        background: var(--chat-sent-bg);
+        color: var(--chat-sent-text);
+        border-bottom-right-radius: 6px;
     }
 
-    .message.received {
-        background: #f5f5f5;
-        color: #363636;
-        border: 1px solid #dbdbdb;
+    .chat-message--received {
+        align-self: flex-start;
+        margin-right: auto;
+        background: var(--chat-received-bg);
+        color: var(--chat-received-text);
+        border: 1px solid var(--chat-border);
+        border-bottom-left-radius: 6px;
     }
+
+    .chat-message__meta {
+        margin-top: .3rem;
+        font-size: .72rem;
+        opacity: .78;
+    }
+
+    .chat-message--sent .chat-message__meta { text-align: right; }
+    .chat-message--received .chat-message__meta { text-align: left; }
 
     .user-item {
         padding: 1rem;
-        border-bottom: 1px solid #f5f5f5;
+        border-bottom: 1px solid var(--chat-border);
         cursor: pointer;
-        transition: background-color 0.2s;
+        transition: background-color .2s ease, border-color .2s ease;
     }
 
-    .user-item:hover {
-        background-color: #fafafa;
-    }
+    .user-item:hover { background-color: var(--chat-hover); }
 
     .user-item.active {
-        background-color: #eff5fb;
-        border-right: 3px solid #3273dc;
+        background-color: var(--chat-active);
+        border-right: 3px solid var(--chat-sent-bg);
     }
 
     .unread-badge {
         background: #f14668;
         color: white;
-        border-radius: 50%;
-        width: 22px;
+        border-radius: 999px;
+        min-width: 22px;
         height: 22px;
-        font-size: 0.75rem;
+        padding: 0 6px;
+        font-size: .75rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -133,8 +195,8 @@
     }
 
     .last-message-preview {
-        font-size: 0.875rem;
-        color: #7a7a7a;
+        font-size: .875rem;
+        color: var(--chat-muted);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -148,134 +210,147 @@
         width: 100%;
     }
 
-    .user-details {
-        flex: 1;
-        min-width: 0;
+    .user-details { flex: 1; min-width: 0; }
+    .user-status { display: flex; align-items: center; gap: .5rem; }
+
+    html[data-theme="dark"] .chat-page .has-text-grey,
+    html[data-theme="dark"] .chat-page .has-text-grey-dark,
+    html[data-theme="dark"] .chat-page .has-text-grey-lighter {
+        color: var(--chat-muted) !important;
     }
 
-    .user-status {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .chat-container {
-        margin: 0 !important;
-        border-radius: 0 !important;
+    @media (max-width: 768px) {
+        .chat-layout { height: auto; min-height: 0; }
+        .chat-sidebar-column { max-height: 42vh; }
+        .chat-main-column { min-height: 58vh; }
+        .chat-sidebar { border-radius: 10px 10px 0 0 !important; }
+        .chat-main-panel { border-radius: 0 0 10px 10px !important; }
+        .chat-message { max-width: 86%; }
     }
 </style>
 
 <script>
     let chatSocket = null;
-    let currentUserId = null;
+    let activeChatUserId = null;
+    const currentUserId = String(
+        document.querySelector('meta[name="user-id"]')?.content || '{{ request.user.id|escapejs }}'
+    );
 
-    document.addEventListener('DOMContentLoaded', () => {
-        currentUserId = document.querySelector('meta[name="user-id"]').content;
-    });
+    function formatMessageTimestamp(value) {
+        if (!value) return '';
+        if (/^\d{2}\/\d{2}\/\d{4}\s\d{2}:\d{2}$/.test(value)) return value;
 
-    // Função para Conecta no Websocket
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function setActiveUser(userId) {
+        activeChatUserId = String(userId);
+        document.querySelectorAll('.user-item').forEach((item) => {
+            item.classList.toggle('active', item.dataset.userId === activeChatUserId);
+        });
+    }
+
     function connectChatSocket(conversationId) {
-        if (chatSocket) chatSocket.close(); // Fecha conexão anterior
+        if (chatSocket) chatSocket.close();
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         chatSocket = new WebSocket(`${protocol}//${window.location.host}/ws/chat/${conversationId}/`);
 
-        chatSocket.onopen = () => {
-            scrollToBottom(); // Rola para o fim quando conecta
-        };
+        chatSocket.onopen = scrollToBottom;
 
-        chatSocket.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            
-            if (data.type === 'new_message') {
-                const isSent = data.sender_id === currentUserId;
-                
-                // Formata o timestamp (dd/mm/yyyy HH:mm)
-                const date = new Date(data.created_at);
-                const formattedDate = date.toLocaleString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                
-                // Adiciona mensagem na tela (igual ao template Django)
-                document.getElementById('messages-container').insertAdjacentHTML('beforeend', `
-                    <div class="message ${isSent ? 'sent' : 'received'}" data-message-id="${data.message_id}">
-                        <div class="message-content">
-                            ${escapeHtml(data.content)}
-                        </div>
-                        <div class="is-size-7 has-text-weight-light mt-1" 
-                            style="opacity: 0.8; text-align: ${isSent ? 'right' : 'left'};">
-                            <span class="icon is-small">
-                                <i class="far fa-clock"></i>
-                            </span>
-                            ${formattedDate}
-                        </div>
+        chatSocket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type !== 'new_message') return;
+
+            const messagesContainer = document.getElementById('messages-container');
+            if (!messagesContainer) return;
+
+            const isSent = String(data.sender_id) === currentUserId;
+            const directionClass = isSent ? 'chat-message--sent' : 'chat-message--received';
+            const formattedDate = formatMessageTimestamp(data.created_at);
+
+            messagesContainer.querySelectorAll('.chat-empty').forEach((element) => element.remove());
+            messagesContainer.insertAdjacentHTML('beforeend', `
+                <div class="chat-message ${directionClass}"
+                     data-message-id="${escapeHtml(String(data.message_id))}"
+                     data-sender-id="${escapeHtml(String(data.sender_id))}">
+                    <div class="chat-message__content">${escapeHtml(data.content)}</div>
+                    <div class="chat-message__meta">
+                        ${isSent ? 'Você' : escapeHtml(data.sender_username || '')} · ${escapeHtml(formattedDate)}
                     </div>
-                `);
-                
-                scrollToBottom();
-            }
+                </div>
+            `);
+            scrollToBottom();
         };
     }
 
-    // Função para Enviar Mensagem
     function sendMessage(event) {
         event.preventDefault();
-        
-        const input = event.target.querySelector('input[name="content"]');
-        const content = input.value.trim();
-        
-        if (content && chatSocket) {
-            chatSocket.send(JSON.stringify({
-                type: 'chat_message',
-                content: content
-            }));
-            input.value = '';
-        }
+        const input = event.currentTarget.querySelector('input[name="content"]');
+        const content = input?.value.trim();
+
+        if (!content || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+
+        chatSocket.send(JSON.stringify({ type: 'chat_message', content }));
+        input.value = '';
+        input.focus();
     }
 
-    // Função para Iniciar Conversa
     function startConversation(userId) {
+        setActiveUser(userId);
+
         fetch(`/chat/conversation/${userId}/`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.conversation_id) {
-                    // Carrega o HTML da conversa
-                    fetch(`/chat/${data.conversation_id}/`)
-                        .then(res => res.text())
-                        .then(html => {
-                            document.getElementById('conversation-messages').innerHTML = html;
-                            
-                            // Rola para o fim antes de conectar
-                            setTimeout(scrollToBottom, 100);
-                            
-                            connectChatSocket(data.conversation_id);
-                            
-                            // Adiciona evento de envio
-                            document.querySelector('#conversation-messages form')
-                                .addEventListener('submit', sendMessage);
-                        });
-                }
-            });
+            .then((response) => {
+                if (!response.ok) throw new Error('Não foi possível iniciar a conversa.');
+                return response.json();
+            })
+            .then((data) => {
+                if (!data.conversation_id) return null;
+                return fetch(`/chat/${data.conversation_id}/`)
+                    .then((response) => {
+                        if (!response.ok) throw new Error('Não foi possível carregar a conversa.');
+                        return response.text();
+                    })
+                    .then((html) => ({ html, conversationId: data.conversation_id }));
+            })
+            .then((result) => {
+                if (!result) return;
+                document.getElementById('conversation-messages').innerHTML = result.html;
+                connectChatSocket(result.conversationId);
+
+                const form = document.querySelector('#conversation-messages form');
+                if (form) form.addEventListener('submit', sendMessage);
+
+                setTimeout(scrollToBottom, 0);
+            })
+            .catch((error) => console.error(error));
     }
 
-    // Função para scrollar para baixo ao iniciar uma conversa
     function scrollToBottom() {
         const container = document.getElementById('messages-container');
         if (container) container.scrollTop = container.scrollHeight;
     }
 
-    // Função para evitar XSS
     function escapeHtml(text) {
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = text ?? '';
         return div.innerHTML;
     }
 
-    // Função para Fecha conexão ao sair
+    document.body.addEventListener('htmx:afterSwap', (event) => {
+        if (event.target.id === 'user-list' && activeChatUserId) {
+            setActiveUser(activeChatUserId);
+        }
+    });
+
     window.addEventListener('beforeunload', () => {
         if (chatSocket) chatSocket.close();
     });
