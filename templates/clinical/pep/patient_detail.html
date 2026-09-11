@@ -1,0 +1,73 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}{{ patient.full_name }} · PEP{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container is-fluid">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:patient_list' %}">← Voltar para pacientes</a>
+            <div class="level mt-3">
+                <div class="level-left">
+                    <div>
+                        <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">PRONTUÁRIO ELETRÔNICO</p>
+                        <h1 class="title is-3 mb-2">{{ patient.full_name }}</h1>
+                        <p class="muted">Identificação e resumo inicial do paciente.</p>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <span class="tag {% if patient.active %}is-success is-light{% else %}is-warning is-light{% endif %}">
+                        {% if patient.active %}Ativo{% else %}Inativo{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-multiline">
+            <div class="column is-12-tablet is-7-desktop">
+                <div class="aegis-card p-5">
+                    <h2 class="title is-5">Identificação</h2>
+                    <dl>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">{{ patient.get_identifier_type_display }}</dt>
+                            <dd class="column mono">{{ patient.identifier }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Nascimento</dt>
+                            <dd class="column">{{ patient.birth_date|date:"d/m/Y" }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Sexo</dt>
+                            <dd class="column">{{ patient.get_sex_display }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Telefone</dt>
+                            <dd class="column">{{ patient.phone|default:"Não informado" }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2">
+                            <dt class="column is-5 has-text-weight-semibold">E-mail</dt>
+                            <dd class="column">{{ patient.email|default:"Não informado" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="column is-12-tablet is-5-desktop">
+                <div class="aegis-card p-5 mb-4">
+                    <h2 class="title is-5">Contexto assistencial</h2>
+                    <p class="muted is-size-7 mb-4">O acesso a este prontuário foi autorizado por vínculo assistencial ou administrativo.</p>
+                    <div class="notification is-info is-light mb-0">
+                        Encontros clínicos e evoluções serão habilitados na próxima etapa da Spec 001.
+                    </div>
+                </div>
+
+                <div class="aegis-card p-5">
+                    <h2 class="title is-6 mb-2">Rastreabilidade</h2>
+                    <p class="muted is-size-7">Cadastro criado em {{ patient.created_at|date:"d/m/Y H:i" }}. Alterações de escrita são auditadas sem replicar identificadores sensíveis no payload do log.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
