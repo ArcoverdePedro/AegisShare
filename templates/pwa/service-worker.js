@@ -1,11 +1,9 @@
-{% load static %}
 const CACHE_VERSION = 'aegisshare-shell-v2';
 const OFFLINE_URL = '{% url "pwa:offline" %}';
 const OFFLINE_DATABASES = ['aegisshare-offline'];
 const PRECACHE_URLS = [
     OFFLINE_URL,
     '{% url "pwa:manifest" %}',
-    '{% static "images/favicon.ico" %}',
     '{% url "pwa:icon" 192 %}',
     '{% url "pwa:icon" 512 %}',
 ];
