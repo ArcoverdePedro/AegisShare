@@ -1,0 +1,51 @@
+asyncapi: 3.0.0
+info:
+  title: AegisShare HIS Core Internal Events
+  version: 0.1.0
+  description: Eventos internos via WebSocket/Celery/Redis. Não constitui API pública.
+channels:
+  documentUploaded:
+    address: document.uploaded
+    messages:
+      documentUploaded:
+        payload:
+          type: object
+          required: [documentId, actorId, occurredAt]
+          properties:
+            documentId: { type: string }
+            actorId: { type: string }
+            occurredAt: { type: string, format: date-time }
+  documentShared:
+    address: document.shared
+    messages:
+      documentShared:
+        payload:
+          type: object
+          required: [documentId, actorId, targetUserId, occurredAt]
+          properties:
+            documentId: { type: string }
+            actorId: { type: string }
+            targetUserId: { type: string }
+            occurredAt: { type: string, format: date-time }
+  auditRecorded:
+    address: audit.recorded
+    messages:
+      auditRecorded:
+        payload:
+          type: object
+          required: [eventId, action, occurredAt]
+          properties:
+            eventId: { type: string }
+            action: { type: string }
+            occurredAt: { type: string, format: date-time }
+  chatMessageCreated:
+    address: chat.message.created
+    messages:
+      chatMessageCreated:
+        payload:
+          type: object
+          required: [conversationId, senderId, occurredAt]
+          properties:
+            conversationId: { type: string }
+            senderId: { type: string }
+            occurredAt: { type: string, format: date-time }
