@@ -1,0 +1,72 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Novo encontro · {{ patient.full_name }}{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container" style="max-width: 900px;">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:patient_detail' patient.id %}">← Voltar para o prontuário</a>
+            <p class="is-size-7 has-text-weight-semibold has-text-link mt-3 mb-2">PRONTUÁRIO ELETRÔNICO</p>
+            <h1 class="title is-3 mb-2">Novo encontro clínico</h1>
+            <p class="muted">Paciente: <strong>{{ patient.full_name }}</strong>. O encontro será vinculado ao profissional autenticado.</p>
+        </div>
+
+        <div class="aegis-card p-5">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="notification is-danger is-light" role="alert">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.encounter_type.id_for_label }}">{{ form.encounter_type.label }}</label>
+                            <div class="control select is-fullwidth">{{ form.encounter_type }}</div>
+                            {% for error in form.encounter_type.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.started_at.id_for_label }}">{{ form.started_at.label }}</label>
+                            <div class="control">{{ form.started_at }}</div>
+                            {% for error in form.started_at.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="{{ form.location.id_for_label }}">{{ form.location.label }}</label>
+                    <div class="control">{{ form.location }}</div>
+                    <p class="help">Opcional. Ex.: ambulatório, unidade, setor ou teleatendimento.</p>
+                    {% for error in form.location.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+                    <div class="control">{{ form.reason }}</div>
+                    {% if form.reason.help_text %}<p class="help">{{ form.reason.help_text }}</p>{% endif %}
+                    {% for error in form.reason.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="notification is-info is-light mt-5">
+                    Este fluxo cria um encontro em estado <strong>Aberto</strong>. Evoluções clínicas serão vinculadas ao encontro na próxima etapa da Spec 001.
+                </div>
+
+                <div class="is-flex is-justify-content-flex-end is-align-items-center mt-5" style="gap: .75rem;">
+                    <a class="button" href="{% url 'pep:patient_detail' patient.id %}">Cancelar</a>
+                    <button class="button is-link" type="submit">
+                        <span class="icon">{% icon 'activity' %}</span>
+                        <span>Iniciar encontro</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
