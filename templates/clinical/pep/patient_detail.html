@@ -13,7 +13,7 @@
                     <div>
                         <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">PRONTUÁRIO ELETRÔNICO</p>
                         <h1 class="title is-3 mb-2">{{ patient.full_name }}</h1>
-                        <p class="muted">Identificação e resumo inicial do paciente.</p>
+                        <p class="muted">Identificação e histórico assistencial do paciente.</p>
                     </div>
                 </div>
                 <div class="level-right">
@@ -57,14 +57,68 @@
                 <div class="aegis-card p-5 mb-4">
                     <h2 class="title is-5">Contexto assistencial</h2>
                     <p class="muted is-size-7 mb-4">O acesso a este prontuário foi autorizado por vínculo assistencial ou administrativo.</p>
-                    <div class="notification is-info is-light mb-0">
-                        Encontros clínicos e evoluções serão habilitados na próxima etapa da Spec 001.
-                    </div>
+                    {% if can_create_encounter %}
+                    <a class="button is-link is-fullwidth" href="{% url 'pep:encounter_create' patient.id %}">
+                        <span class="icon">{% icon 'plus' %}</span>
+                        <span>Novo encontro clínico</span>
+                    </a>
+                    {% endif %}
                 </div>
 
                 <div class="aegis-card p-5">
                     <h2 class="title is-6 mb-2">Rastreabilidade</h2>
                     <p class="muted is-size-7">Cadastro criado em {{ patient.created_at|date:"d/m/Y H:i" }}. Alterações de escrita são auditadas sem replicar identificadores sensíveis no payload do log.</p>
+                </div>
+            </div>
+
+            <div class="column is-12">
+                <div class="aegis-card p-5">
+                    <div class="level mb-4">
+                        <div class="level-left">
+                            <div>
+                                <h2 class="title is-5 mb-1">Encontros clínicos</h2>
+                                <p class="muted is-size-7">Últimos registros assistenciais deste prontuário.</p>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <a class="button is-small" href="{% url 'pep:encounter_list' patient.id %}">Ver histórico completo</a>
+                        </div>
+                    </div>
+
+                    {% if recent_encounters %}
+                    <div class="table-container">
+                        <table class="table is-fullwidth is-hoverable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Tipo</th>
+                                    <th>Status</th>
+                                    <th>Profissional</th>
+                                    <th class="has-text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for encounter in recent_encounters %}
+                                <tr>
+                                    <td>{{ encounter.started_at|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ encounter.get_encounter_type_display }}</td>
+                                    <td>
+                                        <span class="tag {% if encounter.status == 'OPEN' %}is-success is-light{% elif encounter.status == 'CLOSED' %}is-info is-light{% else %}is-warning is-light{% endif %}">
+                                            {{ encounter.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ encounter.responsible_professional.get_full_name|default:encounter.responsible_professional.username }}</td>
+                                    <td class="has-text-right"><a class="button is-small" href="{% url 'pep:encounter_detail' encounter.id %}">Abrir</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="notification is-info is-light mb-0">
+                        Nenhum encontro clínico registrado para este paciente.
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
