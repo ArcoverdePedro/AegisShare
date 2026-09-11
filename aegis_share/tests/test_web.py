@@ -5,6 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from aegis_share.file_policy import FilePolicyError
+from aegis_share.models import Conversation, Message
 from aegis_share.services.security import create_api_token
 
 from .helpers import make_file, make_user
@@ -86,3 +87,28 @@ class WebSurfaceTests(TestCase):
 
         response = self.client.get(reverse("file_detail", args=[file.id]))
         self.assertEqual(response.status_code, 404)
+
+    def test_chat_distinguishes_own_and_received_messages(self):
+        sender = make_user("chat-sender")
+        recipient = make_user("chat-recipient")
+        conversation = Conversation.objects.create()
+        conversation.participants.add(sender, recipient)
+        Message.objects.create(
+            conversation=conversation,
+            sender=sender,
+            content="Mensagem enviada por mim",
+        )
+        Message.objects.create(
+            conversation=conversation,
+            sender=recipient,
+            content="Mensagem recebida",
+        )
+        self.client.force_login(sender)
+
+        response = self.client.get(reverse("load_conversation", args=[conversation.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "chat-message--sent", count=1)
+        self.assertContains(response, "chat-message--received", count=1)
+        self.assertContains(response, "Você ·", count=1)
+        self.assertContains(response, "chat-recipient ·", count=1)
