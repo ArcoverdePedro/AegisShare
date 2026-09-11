@@ -102,24 +102,34 @@ class ClinicalEvolutionForm(forms.ModelForm):
         }
 
 
-class ClinicalEvolutionAmendmentForm(forms.ModelForm):
-    class Meta:
-        model = ClinicalEvolution
-        fields = ["amendment_reason", "content"]
-        widgets = {
-            "amendment_reason": forms.TextInput(
-                attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}
-            ),
-            "content": forms.Textarea(
-                attrs={
-                    "class": "textarea",
-                    "rows": "10",
-                    "autocomplete": "off",
-                    "spellcheck": "true",
-                }
-            ),
-        }
-        labels = {
-            "amendment_reason": "Motivo do adendo",
-            "content": "Conteúdo do adendo",
-        }
+class ClinicalEvolutionAmendmentForm(forms.Form):
+    amendment_reason = forms.CharField(
+        max_length=255,
+        label="Motivo do adendo",
+        widget=forms.TextInput(
+            attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}
+        ),
+    )
+    content = forms.CharField(
+        label="Conteúdo do adendo",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea",
+                "rows": "10",
+                "autocomplete": "off",
+                "spellcheck": "true",
+            }
+        ),
+    )
+
+    def clean_amendment_reason(self):
+        reason = " ".join((self.cleaned_data.get("amendment_reason") or "").split())
+        if not reason:
+            raise forms.ValidationError("Informe o motivo do adendo.")
+        return reason
+
+    def clean_content(self):
+        content = (self.cleaned_data.get("content") or "").strip()
+        if not content:
+            raise forms.ValidationError("Informe o conteúdo do adendo.")
+        return content
