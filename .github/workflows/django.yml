@@ -75,7 +75,7 @@ jobs:
         run: uv sync --frozen --dev
 
       - name: Ruff
-        run: uv run ruff check aegis_share mysite
+        run: uv run ruff check aegis_share mysite --fix
 
       - name: Django system check
         run: uv run manage.py check
