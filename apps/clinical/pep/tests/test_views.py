@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -9,6 +9,13 @@ from aegis_share.tests.helpers import make_user
 from ..models import Patient, PatientAccessGrant
 
 
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
+@override_settings(STORAGES=TEST_STORAGES)
 class PatientViewTests(TestCase):
     def setUp(self):
         self.admin = make_user("pep-admin", role="ADM")
@@ -64,7 +71,7 @@ class PatientViewTests(TestCase):
         response = self.client.get(reverse("pep:patient_detail", args=[self.patient.id]))
 
         self.assertEqual(response.status_code, 404)
-        self.assertNotContains(response, "Maria da Silva")
+        self.assertNotContains(response, "Maria da Silva", status_code=404)
 
     def test_client_role_is_denied_pep_listing(self):
         self.client.force_login(self.client_user)
