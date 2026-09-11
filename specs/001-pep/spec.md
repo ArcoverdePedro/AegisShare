@@ -36,17 +36,28 @@ O PEP é o primeiro bounded context clínico do AegisShare HIS. Deve oferecer ca
 ```gherkin
 Cenário: Médico registra evolução
   Dado um paciente com encontro aberto
-  E um profissional autenticado com papel médico e acesso ao paciente
+  E um profissional autenticado com papel clínico e acesso ao paciente
   Quando acessa a tela de nova evolução e submete conteúdo válido
   Então o sistema salva a evolução vinculada ao encontro e ao profissional
-  E registra auditoria
-  E disponibiliza a etapa de assinatura
+  E preserva o registro como append-only
+  E registra auditoria de escrita sem replicar o conteúdo clínico no payload
+  E a etapa de assinatura permanece separada na T-PEP-08
+```
+
+```gherkin
+Cenário: Profissional corrige uma evolução
+  Dado um registro de evolução existente em encontro aberto
+  E um profissional autenticado com acesso ao paciente
+  Quando registra uma correção
+  Então o sistema cria um novo adendo vinculado à evolução original
+  E mantém o conteúdo original inalterado
+  E registra autor, data/hora e motivo do adendo
 ```
 
 ```gherkin
 Cenário: Usuário sem vínculo tenta abrir prontuário
   Dado um paciente fora do escopo de acesso do usuário
-  Quando o usuário solicita a tela do paciente
+  Quando o usuário solicita a tela do paciente ou um registro clínico vinculado
   Então o sistema nega o acesso
   E não revela dados clínicos no corpo da resposta
 ```
@@ -60,7 +71,8 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - `clinical/pep/encounter_form.html`
 - `clinical/pep/encounter_detail.html`
 - `clinical/pep/evolution_form.html`
-- `clinical/pep/document_sign.html`
+- `clinical/pep/evolution_detail.html`
+- `clinical/pep/document_sign.html` — futuro T-PEP-08
 
 ## Fora de Escopo
 
@@ -80,6 +92,7 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - Regras de acesso clínico insuficientes podem causar exposição indevida.
 - Definição de assinatura eletrônica/ICP-Brasil exige validação jurídica e operacional antes da implementação definitiva.
 - Dados mestres e duplicidade de pacientes exigem política de identificação/mesclagem posterior.
+- A imutabilidade desta etapa é garantida pela camada de domínio/aplicação; proteção adicional no banco poderá ser avaliada junto às regras operacionais de assinatura e retenção.
 
 ## Rastreabilidade
 
@@ -87,10 +100,10 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 |---|---|---|---|
 | RF-PEP-01 | `/pacientes/novo/` · `PatientCreateView` | `clinical/pep/patient_form.html` | `PatientModelTests`, `PatientViewTests.test_employee_can_create_patient_and_receives_access_grant`, `test_duplicate_identifier_returns_form_error` |
 | RF-PEP-02 | `/pacientes/` · `PatientListView` | `clinical/pep/patient_list.html` | `test_admin_can_list_all_patients`, `test_employee_only_lists_patients_in_scope` |
-| RF-PEP-03 | `/pacientes/<uuid>/` · `PatientDetailView` | `clinical/pep/patient_detail.html` | `test_expired_grant_does_not_expose_patient`, `EncounterTests.test_patient_record_shows_recent_encounters`; conteúdo longitudinal ainda parcial |
+| RF-PEP-03 | `/pacientes/<uuid>/` · `PatientDetailView`; `/encontros/<uuid>/` · `EncounterDetailView` | `patient_detail.html`, `encounter_detail.html` | `test_expired_grant_does_not_expose_patient`, `EncounterTests.test_patient_record_shows_recent_encounters`, `ClinicalEvolutionTests.test_encounter_detail_shows_evolution_history`; conteúdo longitudinal ainda parcial |
 | RF-PEP-04 | `/pacientes/<uuid>/encontros/` · `EncounterListView`; `/pacientes/<uuid>/encontros/novo/` · `EncounterCreateView`; `/encontros/<uuid>/` · `EncounterDetailView` | `encounter_list.html`, `encounter_form.html`, `encounter_detail.html` | `EncounterTests` cobre validação temporal, criação, listagem e autorização por escopo |
-| RF-PEP-05 | `/encontros/<id>/evolucoes/nova/` | `evolution_form.html` | pendente T-PEP-07 |
+| RF-PEP-05 | `/encontros/<uuid>/evolucoes/nova/` · `ClinicalEvolutionCreateView`; `/evolucoes/<uuid>/` · `ClinicalEvolutionDetailView`; `/evolucoes/<uuid>/adendo/` · `ClinicalEvolutionAmendmentCreateView` | `evolution_form.html`, `evolution_detail.html` | `ClinicalEvolutionTests` cobre criação, escopo, encontro aberto, imutabilidade, adendo e preservação do original |
 | RF-PEP-06 | `/documentos/<id>/assinar/` | `document_sign.html` | pendente T-PEP-08 |
-| RF-PEP-07 | todas as rotas clínicas | — | escrita base via `django-auditlog`; leitura pendente T-PEP-09 |
-| RF-PEP-08 | `PatientListView` / `PatientDetailView` / `accessible_patients` / views de encontro | lista e detalhe | testes de paciente + `EncounterTests.test_unrelated_employee_cannot_view_encounter`, `test_granted_employee_can_list_and_view_encounter` |
+| RF-PEP-07 | todas as rotas clínicas | — | escrita base via `django-auditlog` com conteúdo clínico excluído do payload; leitura pendente T-PEP-09 |
+| RF-PEP-08 | `accessible_patients`, views de paciente/encontro/evolução e `can_create_evolution` | telas clínicas | testes de paciente + encontro + `ClinicalEvolutionTests.test_unrelated_employee_cannot_create_or_view_evolution` |
 | RF-PEP-09 | WebSocket clínico | — | pendente T-PEP-09 |
