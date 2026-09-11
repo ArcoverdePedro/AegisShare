@@ -2,7 +2,7 @@
 
 ## Escopo desta iteração
 
-Esta primeira implementação entrega o núcleo de identificação do paciente e a autorização por vínculo explícito. Encontros, evoluções, observações, condições, alergias e documentos clínicos permanecem nas tarefas seguintes da Spec 001.
+O núcleo de identificação do paciente, autorização por vínculo explícito e encontros clínicos está implementado. Evoluções, observações, condições, alergias e documentos clínicos permanecem nas tarefas seguintes da Spec 001.
 
 ## Patient
 
@@ -49,12 +49,40 @@ Esta primeira implementação entrega o núcleo de identificação do paciente e
 - usuário `CLI` não acessa o PEP;
 - criação de paciente é restrita a `ADM`/`FUNC`.
 
+## Encounter
+
+| Campo | Tipo | Regra |
+|---|---|---|
+| `id` | UUID | chave primária, imutável |
+| `patient` | FK Patient | `PROTECT`; encontro não existe sem prontuário |
+| `encounter_type` | enum | `CONSULTATION`, `EMERGENCY`, `INPATIENT`, `TELEHEALTH`, `OTHER` |
+| `status` | enum | `OPEN`, `CLOSED`, `CANCELLED`; criação inicia em `OPEN` |
+| `started_at` | datetime | início assistencial |
+| `ended_at` | datetime | obrigatório quando `status=CLOSED` |
+| `location` | string(160) | opcional |
+| `reason` | text | opcional; conteúdo clínico não é replicado no auditlog |
+| `responsible_professional` | FK User | `PROTECT`; profissional responsável pelo encontro |
+| `created_by` | FK User | `PROTECT`; ator que abriu o encontro |
+| `created_at` | datetime | automático |
+| `updated_at` | datetime | automático |
+
+### Regras do encontro
+
+- apenas usuário interno com acesso atual ao paciente pode iniciar ou consultar o encontro;
+- usuário fora do escopo recebe resposta sem revelar o conteúdo do encontro;
+- horário de encerramento não pode ser anterior ao início;
+- encontro `CLOSED` exige `ended_at`;
+- encontro `OPEN` não possui `ended_at`;
+- paciente, criador e profissional responsável usam `PROTECT` para preservar rastreabilidade;
+- índices cobrem histórico por paciente/data, status e profissional/data.
+
 ## Retenção e LGPD
 
-- dados clínicos e identificadores não devem ser apagados em cascata por exclusão de usuário; `created_by` usa `PROTECT`;
+- dados clínicos e identificadores não devem ser apagados em cascata por exclusão de usuário;
+- encontros preservam vínculo com paciente e profissionais usando `PROTECT`;
 - exportação, anonimização, retenção definitiva e direitos do titular serão fechados na Spec 013;
-- logs e notificações não devem reproduzir CPF, diagnóstico ou outros dados clínicos identificáveis.
+- logs e notificações não devem reproduzir CPF, diagnóstico, motivo do atendimento ou outros dados clínicos identificáveis.
 
 ## Rollback
 
-A migration inicial do app `pep` é reversível por `migrate pep zero` enquanto não houver dependências posteriores. Em ambiente com dados reais, rollback destrutivo deve ser precedido por backup e janela de manutenção.
+A migration `pep.0002_encounter` é reversível enquanto nenhuma migration posterior depender da tabela de encontros. Em ambiente com dados reais, qualquer rollback destrutivo deve ser precedido por backup, validação de dependências e janela de manutenção.
