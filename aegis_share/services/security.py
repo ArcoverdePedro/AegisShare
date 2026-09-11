@@ -3,8 +3,8 @@ import secrets
 from datetime import timedelta
 
 import pyotp
-from django.utils import timezone
 from django.utils.crypto import salted_hmac
+from django.utils import timezone
 
 from aegis_share.models import APIToken, UserSecuritySettings
 
