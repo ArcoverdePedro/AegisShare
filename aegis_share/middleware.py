@@ -21,7 +21,14 @@ class FirstAccessRedirectMiddleware:
 
         current_path = request.path
         bypass = current_path.startswith(
-            (self.setup_url, "/static/", "/health/")
+            (
+                self.setup_url,
+                "/static/",
+                "/health/",
+                "/manifest.webmanifest",
+                "/service-worker.js",
+                "/offline/",
+            )
         )
         if not self._configured and not bypass:
             return redirect(self.setup_url)
