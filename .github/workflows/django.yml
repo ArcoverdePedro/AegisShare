@@ -96,7 +96,7 @@ jobs:
         run: uv run python -m compileall -q aegis_share apps mysite
 
   docker:
-    name: Docker Compose production smoke test
+    name: Docker Compose + PWA browser smoke test
     runs-on: ubuntu-latest
 
     steps:
@@ -149,6 +149,34 @@ jobs:
           done
           echo "A aplicacao nao ficou pronta."
           exit 1
+
+      - name: Preparar instalacao para testes de navegador
+        run: >-
+          docker compose -f compose.yml exec -T aegis_share python manage.py shell -c
+          "from django.contrib.auth import get_user_model;
+          User=get_user_model();
+          user,_=User.objects.get_or_create(username='ci-pwa-admin', defaults={'email':'ci-pwa@example.invalid','nivel_permissao':'ADM'});
+          user.is_staff=True;
+          user.is_superuser=True;
+          user.nivel_permissao='ADM';
+          user.set_unusable_password();
+          user.save()"
+
+      - name: Instalar ferramentas PWA de navegador
+        run: npm install --no-save --no-audit --no-fund @playwright/test@1.63.0 @lhci/cli@0.15.1
+
+      - name: Instalar Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Validar PWA e fallback offline com Playwright
+        env:
+          PWA_BASE_URL: http://127.0.0.1:8000
+        run: npx playwright test --config=playwright.config.cjs
+
+      - name: Executar Lighthouse CI
+        run: |
+          export CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          npx lhci autorun --config=./lighthouserc.cjs
 
       - name: Logs em caso de falha
         if: failure()

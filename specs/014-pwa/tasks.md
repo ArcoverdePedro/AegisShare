@@ -12,5 +12,5 @@
 - [x] **T-PWA-08** Implementar limpeza de cache/IndexedDB no logout. RF-PWA-08.
 - [ ] **T-PWA-09** Configurar push genérico sem PHI. RF-PWA-04.
 - [x] **T-PWA-10** Garantir tema claro/escuro consistente em standalone/offline. RF-PWA-07.
-- [ ] **T-PWA-11** Adicionar Playwright offline e Lighthouse CI. RNF-PWA-05/06.
-- [ ] **T-PWA-12** Executar testes de segurança completos para caches, IndexedDB e push. RNF-PWA-08. A fundação já possui testes unitários de manifest, fallback, cache deny-by-default e limpeza no logout.
+- [x] **T-PWA-11** Adicionar Playwright offline e Lighthouse CI. RNF-PWA-05/06. Playwright valida manifest, service worker, fallback offline e ausência de rotas sensíveis no cache; Lighthouse CI aplica gates às categorias atuais de qualidade web.
+- [ ] **T-PWA-12** Executar testes de segurança completos para caches, IndexedDB e push. RNF-PWA-08. A fundação já possui testes unitários e E2E de manifest, fallback, cache deny-by-default e limpeza no logout; IndexedDB clínico e push permanecem desabilitados até as tarefas correspondentes.
