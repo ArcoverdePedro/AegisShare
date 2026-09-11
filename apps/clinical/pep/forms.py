@@ -72,7 +72,7 @@ class EncounterForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["started_at"].input_formats = ["%Y-%m-%dT%H:%M"]
-        if not self.is_bound and not self.instance.pk:
+        if not self.is_bound and self.instance._state.adding:
             self.fields["started_at"].initial = timezone.localtime().replace(
                 second=0,
                 microsecond=0,
