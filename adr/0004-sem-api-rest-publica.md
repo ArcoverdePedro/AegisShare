@@ -1,7 +1,7 @@
 # ADR-0004 — Sem API REST pública
 
 ## Status
-Proposto — aguarda aprovação da arquitetura HIS.
+Aceito em 2026-09-11 após aprovação explícita da arquitetura HIS.
 
 ## Contexto
 
