@@ -97,6 +97,8 @@ def _apply_file_filters(queryset, request):
 
 @login_required
 def buscar_cliente(request):
+    if request.user.is_client():
+        return HttpResponseForbidden("Sem permissao.")
     term = request.GET.get("term", "").strip()
     clientes = CustomUser.objects.filter(
         nivel_permissao="CLI", is_active=True, username__icontains=term
@@ -108,6 +110,8 @@ def buscar_cliente(request):
 
 @login_required
 def buscar_funcionario(request):
+    if request.user.is_client():
+        return HttpResponseForbidden("Sem permissao.")
     term = request.GET.get("term", "").strip()
     users = (
         CustomUser.objects.filter(is_active=True, username__icontains=term)
@@ -349,6 +353,8 @@ def create_file_link(request, file_id):
 @require_POST
 def revoke_file_link(request, link_id):
     link = get_object_or_404(SharedLink.objects.select_related("file"), id=link_id)
+    if not link.file.user_tem_acesso(request.user):
+        raise Http404
     try:
         revoke_shared_link(link, request.user)
         messages.success(request, "Link revogado.")
@@ -504,8 +510,14 @@ def workspaces(request):
             .distinct()
         )
 
-    workspace_form = WorkspaceForm(request.POST or None) if not request.user.is_client() else None
-    folder_form = FolderForm(request.POST or None) if not request.user.is_client() else None
+    workspace_form = (
+        WorkspaceForm(request.POST or None) if not request.user.is_client() else None
+    )
+    folder_form = (
+        FolderForm(request.POST or None, user=request.user)
+        if not request.user.is_client()
+        else None
+    )
 
     if request.method == "POST" and not request.user.is_client():
         if "create_workspace" in request.POST and workspace_form.is_valid():
@@ -523,8 +535,13 @@ def workspaces(request):
             return redirect("workspaces")
         if "create_folder" in request.POST and folder_form.is_valid():
             workspace = folder_form.cleaned_data["workspace"]
-            if not workspace.user_has_access(request.user):
-                return HttpResponseForbidden("Sem acesso ao workspace.")
+            can_upload = request.user.is_admin() or WorkspaceMember.objects.filter(
+                workspace=workspace,
+                user=request.user,
+                can_upload=True,
+            ).exists()
+            if not can_upload:
+                return HttpResponseForbidden("Sem permissao de upload no workspace.")
             Folder.objects.create(
                 workspace=workspace,
                 parent=folder_form.cleaned_data.get("parent"),
