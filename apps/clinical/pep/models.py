@@ -133,8 +133,92 @@ class PatientAccessGrant(models.Model):
         return f"Acesso PEP {self.id}"
 
 
+class Encounter(models.Model):
+    class Type(models.TextChoices):
+        CONSULTATION = "CONSULTATION", "Consulta"
+        EMERGENCY = "EMERGENCY", "Urgência/Emergência"
+        INPATIENT = "INPATIENT", "Internação"
+        TELEHEALTH = "TELEHEALTH", "Teleatendimento"
+        OTHER = "OTHER", "Outro"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Aberto"
+        CLOSED = "CLOSED", "Encerrado"
+        CANCELLED = "CANCELLED", "Cancelado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.PROTECT,
+        related_name="encounters",
+    )
+    encounter_type = models.CharField(
+        max_length=20,
+        choices=Type.choices,
+        default=Type.CONSULTATION,
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
+    started_at = models.DateTimeField(default=timezone.now)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    location = models.CharField(max_length=160, blank=True)
+    reason = models.TextField(blank=True)
+    responsible_professional = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="responsible_pep_encounters",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_pep_encounters",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-started_at", "-created_at"]
+        indexes = [
+            models.Index(fields=["patient", "started_at"], name="pep_enc_patient_start_idx"),
+            models.Index(fields=["status"], name="pep_enc_status_idx"),
+            models.Index(
+                fields=["responsible_professional", "started_at"],
+                name="pep_enc_prof_start_idx",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        self.location = " ".join((self.location or "").split())
+        self.reason = " ".join((self.reason or "").split())
+
+        if self.started_at and self.ended_at and self.ended_at < self.started_at:
+            raise ValidationError(
+                {"ended_at": "O encerramento não pode ser anterior ao início."}
+            )
+        if self.status == self.Status.CLOSED and not self.ended_at:
+            raise ValidationError(
+                {"ended_at": "Informe o horário de encerramento do encontro."}
+            )
+        if self.status == self.Status.OPEN and self.ended_at:
+            raise ValidationError(
+                {"ended_at": "Encontro aberto não pode possuir horário de encerramento."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Encontro {self.id}"
+
+
 auditlog.register(
     Patient,
     exclude_fields=["identifier", "full_name", "birth_date", "phone", "email"],
 )
 auditlog.register(PatientAccessGrant, exclude_fields=["reason"])
+auditlog.register(Encounter, exclude_fields=["reason", "location"])
