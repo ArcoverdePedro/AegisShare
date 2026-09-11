@@ -1,0 +1,94 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Novo paciente · AegisShare HIS{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container" style="max-width: 900px;">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:patient_list' %}">← Voltar para pacientes</a>
+            <h1 class="title is-3 mt-3 mb-2">Novo paciente</h1>
+            <p class="muted">Cadastre apenas os dados mínimos necessários. O acesso ao prontuário é controlado por vínculo.</p>
+        </div>
+
+        <div class="aegis-card p-5">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="notification is-danger is-light" role="alert">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <div class="columns">
+                    <div class="column is-one-third">
+                        <div class="field">
+                            <label class="label" for="{{ form.identifier_type.id_for_label }}">{{ form.identifier_type.label }}</label>
+                            <div class="control select is-fullwidth">{{ form.identifier_type }}</div>
+                            {% for error in form.identifier_type.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.identifier.id_for_label }}">{{ form.identifier.label }}</label>
+                            <div class="control">{{ form.identifier }}</div>
+                            <p class="help">CPF é armazenado normalizado, somente com dígitos.</p>
+                            {% for error in form.identifier.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label" for="{{ form.full_name.id_for_label }}">{{ form.full_name.label }}</label>
+                    <div class="control">{{ form.full_name }}</div>
+                    {% for error in form.full_name.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.birth_date.id_for_label }}">{{ form.birth_date.label }}</label>
+                            <div class="control">{{ form.birth_date }}</div>
+                            {% for error in form.birth_date.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.sex.id_for_label }}">{{ form.sex.label }}</label>
+                            <div class="control select is-fullwidth">{{ form.sex }}</div>
+                            {% for error in form.sex.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label>
+                            <div class="control">{{ form.phone }}</div>
+                            {% for error in form.phone.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                            <div class="control">{{ form.email }}</div>
+                            {% for error in form.email.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="is-flex is-justify-content-flex-end is-align-items-center mt-5" style="gap: .75rem;">
+                    <a class="button" href="{% url 'pep:patient_list' %}">Cancelar</a>
+                    <button class="button is-link" type="submit">
+                        <span class="icon">{% icon 'save' %}</span>
+                        <span>Salvar paciente</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
