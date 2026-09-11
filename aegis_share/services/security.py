@@ -3,6 +3,7 @@ import secrets
 from datetime import timedelta
 
 import pyotp
+from django.contrib.auth.hashers import check_password, make_password
 from django.utils import timezone
 
 from aegis_share.models import APIToken, UserSecuritySettings
@@ -79,7 +80,7 @@ def consume_recovery_code(user, code: str) -> bool:
 
 def create_api_token(user, *, name: str, expires_days=None):
     raw = f"ags_{secrets.token_urlsafe(36)}"
-    token_hash = hashlib.sha256(raw.encode()).hexdigest()
+    token_hash = make_password(raw)
     expires_at = None
     if expires_days:
         expires_at = timezone.now() + timedelta(days=int(expires_days))
@@ -94,10 +95,21 @@ def create_api_token(user, *, name: str, expires_days=None):
 
 
 def authenticate_api_token(raw: str):
-    token_hash = hashlib.sha256((raw or "").encode()).hexdigest()
-    token = APIToken.objects.select_related("user").filter(token_hash=token_hash).first()
-    if not token or not token.is_active or not token.user.is_active:
+    if not raw:
         return None
-    token.last_used_at = timezone.now()
-    token.save(update_fields=["last_used_at"])
-    return token.user
+
+    candidates = APIToken.objects.select_related("user").filter(
+        prefix=raw[:12],
+        revoked_at__isnull=True,
+    )
+    for token in candidates:
+        if not token.user.is_active:
+            continue
+        if not check_password(raw, token.token_hash):
+            continue
+        if not token.is_active:
+            continue
+        token.last_used_at = timezone.now()
+        token.save(update_fields=["last_used_at"])
+        return token.user
+    return None
