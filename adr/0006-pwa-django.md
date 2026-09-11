@@ -1,7 +1,7 @@
 # ADR-0006 — Adoção de PWA com Django
 
 ## Status
-Proposto — aguarda aprovação da Spec 014.
+Aceito em 2026-09-11 após aprovação explícita da Spec 014.
 
 ## Contexto
 
