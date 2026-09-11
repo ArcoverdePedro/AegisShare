@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#363636">
+    <meta id="themeColorMeta" name="theme-color" content="#363636">
     <link rel="manifest" href="{% url 'pwa:manifest' %}">
     <link rel="apple-touch-icon" href="{% url 'pwa:icon' 192 %}">
     {% if user.is_authenticated %}<meta name="user-id" content="{{ user.id }}">{% endif %}
@@ -20,6 +20,8 @@
                 const theme = media.matches ? 'dark' : 'light';
                 document.documentElement.dataset.theme = theme;
                 document.documentElement.style.colorScheme = theme;
+                const themeMeta = document.getElementById('themeColorMeta');
+                if (themeMeta) themeMeta.content = theme === 'dark' ? '#11141a' : '#363636';
             };
             applySystemTheme();
             window.aegisSystemTheme = { media, apply: applySystemTheme };
@@ -184,7 +186,7 @@
         if (systemTheme.media.addEventListener) {
             systemTheme.media.addEventListener('change', systemTheme.apply);
         } else if (systemTheme.media.addListener) {
-            systemTheme.media.addListener('change', systemTheme.apply);
+            systemTheme.media.addListener(systemTheme.apply);
         }
     }
 
