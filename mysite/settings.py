@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     "crispy_bulma",
     "django_feather",
     "aegis_share",
+    "apps.pwa.apps.PwaConfig",
     "apps.clinical.pep.apps.PepConfig",
 ]
 
