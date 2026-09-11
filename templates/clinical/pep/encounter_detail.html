@@ -1,0 +1,78 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Encontro · {{ patient.full_name }}{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container is-fluid">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:encounter_list' patient.id %}">← Voltar para encontros</a>
+            <div class="level mt-3">
+                <div class="level-left">
+                    <div>
+                        <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">ENCONTRO CLÍNICO</p>
+                        <h1 class="title is-3 mb-2">{{ encounter.get_encounter_type_display }}</h1>
+                        <p class="muted">{{ patient.full_name }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <span class="tag is-medium {% if encounter.status == 'OPEN' %}is-success is-light{% elif encounter.status == 'CLOSED' %}is-info is-light{% else %}is-warning is-light{% endif %}">
+                        {{ encounter.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-multiline">
+            <div class="column is-12-tablet is-7-desktop">
+                <div class="aegis-card p-5 mb-4">
+                    <h2 class="title is-5">Dados do encontro</h2>
+                    <dl>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Início</dt>
+                            <dd class="column">{{ encounter.started_at|date:"d/m/Y H:i" }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Encerramento</dt>
+                            <dd class="column">{% if encounter.ended_at %}{{ encounter.ended_at|date:"d/m/Y H:i" }}{% else %}Em andamento{% endif %}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Profissional responsável</dt>
+                            <dd class="column">{{ encounter.responsible_professional.get_full_name|default:encounter.responsible_professional.username }}</dd>
+                        </div>
+                        <div class="columns is-mobile py-2">
+                            <dt class="column is-5 has-text-weight-semibold">Local</dt>
+                            <dd class="column">{{ encounter.location|default:"Não informado" }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="aegis-card p-5">
+                    <h2 class="title is-5">Motivo do atendimento</h2>
+                    {% if encounter.reason %}
+                        <div class="content"><p>{{ encounter.reason|linebreaksbr }}</p></div>
+                    {% else %}
+                        <p class="muted">Não informado.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="column is-12-tablet is-5-desktop">
+                <div class="aegis-card p-5 mb-4">
+                    <h2 class="title is-5">Evoluções</h2>
+                    <p class="muted is-size-7 mb-4">As evoluções clínicas serão vinculadas a este encontro na próxima etapa da Spec 001.</p>
+                    <div class="notification is-info is-light mb-0">
+                        O encontro já fornece o contexto temporal e assistencial necessário para a evolução imutável.
+                    </div>
+                </div>
+
+                <div class="aegis-card p-5">
+                    <h2 class="title is-6 mb-2">Rastreabilidade</h2>
+                    <p class="muted is-size-7">Criado em {{ encounter.created_at|date:"d/m/Y H:i" }} por {{ encounter.created_by.username }}. Alterações são auditadas sem copiar o motivo clínico para o payload do log.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

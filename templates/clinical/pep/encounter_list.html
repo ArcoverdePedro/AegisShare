@@ -1,0 +1,89 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Encontros · {{ patient.full_name }}{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <a class="is-size-7" href="{% url 'pep:patient_detail' patient.id %}">← Voltar para o prontuário</a>
+                    <p class="is-size-7 has-text-weight-semibold has-text-link mt-3 mb-2">PRONTUÁRIO ELETRÔNICO</p>
+                    <h1 class="title is-3 mb-2">Encontros clínicos</h1>
+                    <p class="muted">Histórico assistencial de {{ patient.full_name }}.</p>
+                </div>
+            </div>
+            {% if can_create_encounter %}
+            <div class="level-right">
+                <a class="button is-link" href="{% url 'pep:encounter_create' patient.id %}">
+                    <span class="icon">{% icon 'plus' %}</span>
+                    <span>Novo encontro</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="aegis-card p-5">
+            {% if encounters %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Início</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Profissional</th>
+                            <th>Local</th>
+                            <th class="has-text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for encounter in encounters %}
+                        <tr>
+                            <td>{{ encounter.started_at|date:"d/m/Y H:i" }}</td>
+                            <td>{{ encounter.get_encounter_type_display }}</td>
+                            <td>
+                                <span class="tag {% if encounter.status == 'OPEN' %}is-success is-light{% elif encounter.status == 'CLOSED' %}is-info is-light{% else %}is-warning is-light{% endif %}">
+                                    {{ encounter.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ encounter.responsible_professional.get_full_name|default:encounter.responsible_professional.username }}</td>
+                            <td>{{ encounter.location|default:"Não informado" }}</td>
+                            <td class="has-text-right">
+                                <a class="button is-small" href="{% url 'pep:encounter_detail' encounter.id %}">Abrir</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="has-text-centered py-6">
+                <span class="icon is-large mb-3">{% icon 'activity' %}</span>
+                <h2 class="title is-5">Nenhum encontro registrado</h2>
+                <p class="muted mb-4">Inicie o primeiro encontro clínico deste paciente.</p>
+                {% if can_create_encounter %}
+                <a class="button is-link is-light" href="{% url 'pep:encounter_create' patient.id %}">Novo encontro</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if is_paginated %}
+        <nav class="pagination is-centered mt-5" role="navigation" aria-label="paginação">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Próxima</a>
+            {% endif %}
+            <ul class="pagination-list">
+                <li><span class="pagination-link is-current">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

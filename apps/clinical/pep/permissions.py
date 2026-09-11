@@ -45,3 +45,7 @@ def can_access_patient(user, patient: Patient) -> bool:
     return patient.access_grants.filter(user=user).filter(
         Q(expires_at__isnull=True) | Q(expires_at__gt=now)
     ).exists()
+
+
+def can_create_encounter(user, patient: Patient) -> bool:
+    return is_internal_professional(user) and can_access_patient(user, patient)
