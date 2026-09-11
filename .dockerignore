@@ -64,7 +64,14 @@ local_settings.py
 staticfiles/
 media/
 
-# Environment files
+# Secrets and environment files
+.env
+.env.*
+!.env-example
+.secrets.generated.env
+*.secrets.env
+
+# Python environments
 .venv
 venv/
 .venv/
