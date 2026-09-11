@@ -8,7 +8,7 @@
 - [x] **T-CORE-04** Criar teste de arquitetura que falhe se novas rotas públicas `/api/` forem adicionadas. Vinculado a RF-CORE-08.
 - [ ] **T-CORE-05** Mapear modelos atuais para `core/documents/audit` sem mover tabelas ainda. Vinculado a RNF-CORE-05.
 - [ ] **T-CORE-06** Criar plano de migração incremental dos apps com rollback. Vinculado a RNF-CORE-05.
-- [ ] **T-CORE-07** Revisar autorização por objeto nas views de arquivos, workspaces e chat. Vinculado a RF-CORE-02.
+- [x] **T-CORE-07** Revisar autorização por objeto nas views de arquivos, workspaces e chat. Vinculado a RF-CORE-02. Uploads agora validam escopo de cliente/workspace/pasta, `can_upload` e links; lixeira e chat deixam de expor objetos após perda de acesso; testes de regressão cobrem os limites revisados.
 - [x] **T-CORE-08** Formalizar eventos internos do Core em AsyncAPI. Vinculado a RF-CORE-06/07.
 - [ ] **T-CORE-09** Definir inventário LGPD e política de retenção inicial. Vinculado a RNF-CORE-01/03.
 - [ ] **T-CORE-10** Decidir e executar mudança de licença MIT -> AGPL-3.0 somente após aprovação do mantenedor.
