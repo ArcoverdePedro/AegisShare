@@ -8,25 +8,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light">
+    <meta name="color-scheme" content="light dark">
+    {% if user.is_authenticated %}<meta name="user-id" content="{{ user.id }}">{% endif %}
+    <script>
+        (() => {
+            const media = window.matchMedia('(prefers-color-scheme: dark)');
+            const applySystemTheme = () => {
+                const theme = media.matches ? 'dark' : 'light';
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.style.colorScheme = theme;
+            };
+            applySystemTheme();
+            window.aegisSystemTheme = { media, apply: applySystemTheme };
+        })();
+    </script>
     <title>{% block title %}AegisShare{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     {% htmx_script %}
     <style>
-        :root { --aegis-bg: #f5f7fb; --aegis-border: #e8ecf3; }
+        :root {
+            --aegis-bg: #f5f7fb;
+            --aegis-surface: #ffffff;
+            --aegis-border: #e8ecf3;
+            --aegis-muted: #7a7a7a;
+            --aegis-drop-bg: #fafcff;
+            --aegis-drop-active: #f0f3ff;
+            --aegis-shadow: rgba(20, 35, 70, .06);
+        }
+        html[data-theme="dark"] {
+            --aegis-bg: #11141a;
+            --aegis-surface: #181c24;
+            --aegis-border: #2a303b;
+            --aegis-muted: #a8b0bd;
+            --aegis-drop-bg: #171c25;
+            --aegis-drop-active: #1d2740;
+            --aegis-shadow: rgba(0, 0, 0, .28);
+        }
         html, body { min-height: 100%; background: var(--aegis-bg); }
         body { display: flex; flex-direction: column; min-height: 100vh; }
         .content-wrapper { flex: 1; padding-top: 5rem; padding-bottom: 3rem; }
         .navbar { box-shadow: 0 2px 14px rgba(10, 10, 10, .08); }
         .navbar-item .icon { margin-right: .35rem; }
-        .aegis-card { border: 1px solid var(--aegis-border); border-radius: 14px; box-shadow: 0 8px 28px rgba(20, 35, 70, .06); }
+        .aegis-card {
+            background: var(--aegis-surface);
+            border: 1px solid var(--aegis-border);
+            border-radius: 14px;
+            box-shadow: 0 8px 28px var(--aegis-shadow);
+        }
         .metric { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
-        .muted { color: #7a7a7a; }
+        .muted { color: var(--aegis-muted); }
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
         .notification-stack { position: fixed; right: 1rem; bottom: 1rem; z-index: 1000; width: min(420px, calc(100vw - 2rem)); }
         .notification-dot { display: inline-flex; min-width: 1.3rem; height: 1.3rem; padding: 0 .3rem; align-items: center; justify-content: center; border-radius: 999px; font-size: .72rem; font-weight: 700; background: #ff3860; color: #fff; }
-        .drop-zone { border: 2px dashed #b7c4dc; border-radius: 14px; padding: 2rem; text-align: center; transition: .2s ease; background: #fafcff; }
-        .drop-zone.is-dragging { border-color: #485fc7; background: #f0f3ff; }
+        .drop-zone { border: 2px dashed #b7c4dc; border-radius: 14px; padding: 2rem; text-align: center; transition: .2s ease; background: var(--aegis-drop-bg); }
+        .drop-zone.is-dragging { border-color: #485fc7; background: var(--aegis-drop-active); }
+        html[data-theme="dark"] .drop-zone { border-color: #4b5568; }
         .table td, .table th { vertical-align: middle; }
         @media (max-width: 768px) { .content-wrapper { padding-top: 4.5rem; } }
     </style>
@@ -86,7 +122,7 @@
                             <hr class="navbar-divider">
                             <form method="post" action="{% url 'logout' %}">
                                 {% csrf_token %}
-                                <button class="navbar-item button is-white is-fullwidth has-text-left" type="submit">{% icon 'log-out' %} Sair</button>
+                                <button class="navbar-item button is-ghost is-fullwidth has-text-left" type="submit">{% icon 'log-out' %} Sair</button>
                             </form>
                         </div>
                     </div>
@@ -115,6 +151,15 @@
 
 <script>
 (() => {
+    const systemTheme = window.aegisSystemTheme;
+    if (systemTheme) {
+        if (systemTheme.media.addEventListener) {
+            systemTheme.media.addEventListener('change', systemTheme.apply);
+        } else if (systemTheme.media.addListener) {
+            systemTheme.media.addListener(systemTheme.apply);
+        }
+    }
+
     const burger = document.getElementById('burgerButton');
     const menu = document.getElementById('navbarMenu');
     if (burger && menu) burger.addEventListener('click', () => {
