@@ -259,15 +259,17 @@ A interface permite filtrar por ator, modelo e ação.
 
 `/health/live/` e `/health/ready/` não dependem da Pinata; uma falha do provedor de armazenamento não deve reiniciar o processo web saudável.
 
-## API
+## API legada
 
-A API usa tokens Bearer gerados em **Segurança**:
+> **Depreciação:** as rotas públicas `api/v1/*` são compatibilidade legada e não devem receber novos consumidores. A Spec 000 prevê sua retirada somente após inventário e migração dos consumidores existentes. Consulte [`specs/000-core/contracts/api-deprecation.md`](specs/000-core/contracts/api-deprecation.md).
+
+Enquanto a compatibilidade estiver ativa, a API usa tokens Bearer gerados em **Segurança**:
 
 ```http
 Authorization: Bearer ags_...
 ```
 
-Endpoints iniciais:
+Rotas legadas atuais:
 
 ```text
 GET  /api/v1/files/
@@ -276,7 +278,7 @@ GET  /api/v1/files/<id>/
 GET  /api/v1/files/<id>/download/
 ```
 
-O token completo é exibido somente no momento da criação; o banco armazena apenas SHA-256.
+O token completo é exibido somente no momento da criação; o banco armazena apenas um digest criptográfico do token. O uso bem-sucedido atualiza `last_used_at` para apoiar o inventário operacional antes da retirada.
 
 ## Desenvolvimento
 

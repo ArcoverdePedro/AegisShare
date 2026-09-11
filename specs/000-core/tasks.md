@@ -2,9 +2,9 @@
 
 > Spec aprovada em 2026-09-11. Implementação liberada de forma incremental e sem breaking changes silenciosos.
 
-- [ ] **T-CORE-01** Inventariar consumidores das rotas `api/v1/*`. Vinculado a RF-CORE-08.
+- [x] **T-CORE-01** Inventariar consumidores das rotas `api/v1/*`. Vinculado a RF-CORE-08. A superfície e os consumidores versionados estão documentados em `contracts/api-deprecation.md`; consumidores externos permanecem como gate operacional antes de qualquer remoção.
 - [x] **T-CORE-02** Registrar ADR para ausência de API REST pública. Vinculado a RF-CORE-08.
-- [ ] **T-CORE-03** Definir estratégia de migração dos consumidores da API para views, formulários, arquivos ou jobs internos. Vinculado a RF-CORE-08/09.
+- [x] **T-CORE-03** Definir estratégia de migração dos consumidores da API para views, formulários, arquivos ou jobs internos. Vinculado a RF-CORE-08/09. O plano incremental e reversível está em `contracts/api-deprecation.md`.
 - [x] **T-CORE-04** Criar teste de arquitetura que falhe se novas rotas públicas `/api/` forem adicionadas. Vinculado a RF-CORE-08.
 - [ ] **T-CORE-05** Mapear modelos atuais para `core/documents/audit` sem mover tabelas ainda. Vinculado a RNF-CORE-05.
 - [ ] **T-CORE-06** Criar plano de migração incremental dos apps com rollback. Vinculado a RNF-CORE-05.
