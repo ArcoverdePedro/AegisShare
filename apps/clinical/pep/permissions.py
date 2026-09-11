@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Patient
+from .models import Encounter, Patient
 
 
 def is_internal_professional(user) -> bool:
@@ -49,3 +49,11 @@ def can_access_patient(user, patient: Patient) -> bool:
 
 def can_create_encounter(user, patient: Patient) -> bool:
     return is_internal_professional(user) and can_access_patient(user, patient)
+
+
+def can_create_evolution(user, encounter: Encounter) -> bool:
+    return (
+        is_internal_professional(user)
+        and encounter.status == Encounter.Status.OPEN
+        and can_access_patient(user, encounter.patient)
+    )

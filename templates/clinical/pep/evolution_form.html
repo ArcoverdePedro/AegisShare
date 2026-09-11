@@ -1,0 +1,64 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}{% if is_amendment %}Novo adendo{% else %}Nova evolução{% endif %} · {{ patient.full_name }}{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container" style="max-width: 920px;">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:encounter_detail' encounter.id %}">← Voltar para o encontro</a>
+            <h1 class="title is-3 mt-3 mb-2">{% if is_amendment %}Registrar adendo{% else %}Nova evolução clínica{% endif %}</h1>
+            <p class="muted">{{ patient.full_name }} · {{ encounter.get_encounter_type_display }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
+        </div>
+
+        {% if is_amendment %}
+        <div class="notification is-warning is-light">
+            <p class="has-text-weight-semibold mb-2">A evolução original não será modificada.</p>
+            <p class="is-size-7">O adendo será salvo como um novo registro imutável e ficará permanentemente vinculado ao registro original.</p>
+        </div>
+        <div class="aegis-card p-4 mb-4">
+            <p class="is-size-7 has-text-weight-semibold mb-2">EVOLUÇÃO ORIGINAL · {{ original_evolution.created_at|date:"d/m/Y H:i" }}</p>
+            <div class="content is-size-7 mb-0">{{ original_evolution.content|linebreaksbr }}</div>
+        </div>
+        {% else %}
+        <div class="notification is-info is-light">
+            Depois de salvar, esta evolução não poderá ser editada nem excluída. Se houver correção posterior, use um adendo para preservar o histórico clínico.
+        </div>
+        {% endif %}
+
+        <div class="aegis-card p-5">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="notification is-danger is-light" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% if is_amendment %}
+                <div class="field">
+                    <label class="label" for="{{ form.amendment_reason.id_for_label }}">{{ form.amendment_reason.label }}</label>
+                    <div class="control">{{ form.amendment_reason }}</div>
+                    {% for error in form.amendment_reason.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="field">
+                    <label class="label" for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>
+                    <div class="control">{{ form.content }}</div>
+                    {% if form.content.help_text %}<p class="help">{{ form.content.help_text }}</p>{% endif %}
+                    {% for error in form.content.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="is-flex is-justify-content-flex-end is-align-items-center mt-5" style="gap: .75rem;">
+                    <a class="button" href="{% url 'pep:encounter_detail' encounter.id %}">Cancelar</a>
+                    <button class="button is-link" type="submit">
+                        <span class="icon">{% icon 'save' %}</span>
+                        <span>{% if is_amendment %}Salvar adendo{% else %}Salvar evolução{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -216,9 +216,105 @@ class Encounter(models.Model):
         return f"Encontro {self.id}"
 
 
+class ClinicalEvolution(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    encounter = models.ForeignKey(
+        Encounter,
+        on_delete=models.PROTECT,
+        related_name="evolutions",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="clinical_evolutions",
+    )
+    content = models.TextField()
+    amendment_of = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        related_name="amendments",
+        null=True,
+        blank=True,
+    )
+    amendment_reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+        indexes = [
+            models.Index(
+                fields=["encounter", "created_at"],
+                name="pep_evo_enc_created_idx",
+            ),
+            models.Index(
+                fields=["author", "created_at"],
+                name="pep_evo_author_created_idx",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        self.content = (self.content or "").strip()
+        self.amendment_reason = " ".join((self.amendment_reason or "").split())
+
+        if not self.content:
+            raise ValidationError({"content": "Informe o conteúdo da evolução clínica."})
+
+        if self.encounter_id and self.encounter.status != Encounter.Status.OPEN:
+            raise ValidationError(
+                {"encounter": "Evoluções só podem ser registradas em encontro aberto."}
+            )
+
+        if self.amendment_of_id:
+            if self.amendment_of_id == self.id:
+                raise ValidationError(
+                    {"amendment_of": "Uma evolução não pode corrigir a si própria."}
+                )
+            if self.amendment_of.encounter_id != self.encounter_id:
+                raise ValidationError(
+                    {
+                        "amendment_of": (
+                            "O adendo deve pertencer ao mesmo encontro da evolução original."
+                        )
+                    }
+                )
+            if not self.amendment_reason:
+                raise ValidationError(
+                    {"amendment_reason": "Informe o motivo do adendo."}
+                )
+        elif self.amendment_reason:
+            raise ValidationError(
+                {
+                    "amendment_reason": (
+                        "Motivo de adendo só pode ser informado ao corrigir uma evolução."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError(
+                "Evoluções clínicas são imutáveis. Registre um adendo em vez de editar."
+            )
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError(
+            "Evoluções clínicas são imutáveis e não podem ser excluídas."
+        )
+
+    def __str__(self):
+        return f"Evolução {self.id}"
+
+
 auditlog.register(
     Patient,
     exclude_fields=["identifier", "full_name", "birth_date", "phone", "email"],
 )
 auditlog.register(PatientAccessGrant, exclude_fields=["reason"])
 auditlog.register(Encounter, exclude_fields=["reason", "location"])
+auditlog.register(
+    ClinicalEvolution,
+    exclude_fields=["content", "amendment_reason"],
+)

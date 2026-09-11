@@ -1,0 +1,79 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Evolução · {{ patient.full_name }}{% endblock %}
+
+{% block page_content %}
+<section class="section pt-3">
+    <div class="container" style="max-width: 980px;">
+        <div class="mb-5">
+            <a class="is-size-7" href="{% url 'pep:encounter_detail' encounter.id %}">← Voltar para o encontro</a>
+            <div class="level mt-3">
+                <div class="level-left">
+                    <div>
+                        <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">REGISTRO CLÍNICO IMUTÁVEL</p>
+                        <h1 class="title is-3 mb-2">{% if evolution.amendment_of_id %}Adendo clínico{% else %}Evolução clínica{% endif %}</h1>
+                        <p class="muted">{{ patient.full_name }} · {{ evolution.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="level-right">
+                    {% if can_amend %}
+                    <a class="button is-warning is-light" href="{% url 'pep:evolution_amendment_create' evolution.id %}">
+                        <span class="icon">{% icon 'edit-3' %}</span>
+                        <span>Registrar adendo</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if evolution.amendment_of_id %}
+        <div class="notification is-warning is-light">
+            <p class="has-text-weight-semibold">Este registro é um adendo.</p>
+            <p class="is-size-7 mt-1">Motivo: {{ evolution.amendment_reason }}</p>
+            <a class="is-size-7" href="{% url 'pep:evolution_detail' evolution.amendment_of_id %}">Abrir evolução corrigida →</a>
+        </div>
+        {% endif %}
+
+        <div class="columns is-multiline">
+            <div class="column is-12-tablet is-8-desktop">
+                <div class="aegis-card p-5">
+                    <div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-5" style="gap: 1rem;">
+                        <div>
+                            <p class="has-text-weight-semibold">{{ evolution.author.get_full_name|default:evolution.author.username }}</p>
+                            <p class="muted is-size-7">Registrado em {{ evolution.created_at|date:"d/m/Y H:i:s" }}</p>
+                        </div>
+                        <span class="tag is-success is-light">Imutável</span>
+                    </div>
+                    <div class="content">{{ evolution.content|linebreaksbr }}</div>
+                </div>
+            </div>
+
+            <div class="column is-12-tablet is-4-desktop">
+                <div class="aegis-card p-5 mb-4">
+                    <h2 class="title is-6">Contexto do encontro</h2>
+                    <p class="is-size-7 mb-2"><strong>Tipo:</strong> {{ encounter.get_encounter_type_display }}</p>
+                    <p class="is-size-7 mb-2"><strong>Início:</strong> {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
+                    <p class="is-size-7 mb-3"><strong>Status:</strong> {{ encounter.get_status_display }}</p>
+                    <a class="button is-small is-fullwidth" href="{% url 'pep:encounter_detail' encounter.id %}">Abrir encontro</a>
+                </div>
+
+                <div class="aegis-card p-5">
+                    <h2 class="title is-6 mb-3">Adendos vinculados</h2>
+                    {% if amendments %}
+                        {% for amendment in amendments %}
+                        <div class="mb-3 pb-3" style="border-bottom: 1px solid var(--aegis-border);">
+                            <p class="is-size-7 has-text-weight-semibold">{{ amendment.created_at|date:"d/m/Y H:i" }}</p>
+                            <p class="muted is-size-7 mb-1">{{ amendment.author.get_full_name|default:amendment.author.username }}</p>
+                            <a class="is-size-7" href="{% url 'pep:evolution_detail' amendment.id %}">Ver adendo →</a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="muted is-size-7">Nenhum adendo registrado.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

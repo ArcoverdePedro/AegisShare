@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import Encounter, Patient
+from .models import ClinicalEvolution, Encounter, Patient
 
 
 class PatientForm(forms.ModelForm):
@@ -77,3 +77,59 @@ class EncounterForm(forms.ModelForm):
                 second=0,
                 microsecond=0,
             )
+
+
+class ClinicalEvolutionForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalEvolution
+        fields = ["content"]
+        widgets = {
+            "content": forms.Textarea(
+                attrs={
+                    "class": "textarea",
+                    "rows": "10",
+                    "autocomplete": "off",
+                    "spellcheck": "true",
+                }
+            )
+        }
+        labels = {"content": "Evolução clínica"}
+        help_texts = {
+            "content": (
+                "Após salvar, o conteúdo não poderá ser alterado. Correções devem ser "
+                "registradas como adendo."
+            )
+        }
+
+
+class ClinicalEvolutionAmendmentForm(forms.Form):
+    amendment_reason = forms.CharField(
+        max_length=255,
+        label="Motivo do adendo",
+        widget=forms.TextInput(
+            attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}
+        ),
+    )
+    content = forms.CharField(
+        label="Conteúdo do adendo",
+        widget=forms.Textarea(
+            attrs={
+                "class": "textarea",
+                "rows": "10",
+                "autocomplete": "off",
+                "spellcheck": "true",
+            }
+        ),
+    )
+
+    def clean_amendment_reason(self):
+        reason = " ".join((self.cleaned_data.get("amendment_reason") or "").split())
+        if not reason:
+            raise forms.ValidationError("Informe o motivo do adendo.")
+        return reason
+
+    def clean_content(self):
+        content = (self.cleaned_data.get("content") or "").strip()
+        if not content:
+            raise forms.ValidationError("Informe o conteúdo do adendo.")
+        return content

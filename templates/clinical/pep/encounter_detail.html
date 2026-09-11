@@ -60,11 +60,50 @@
 
             <div class="column is-12-tablet is-5-desktop">
                 <div class="aegis-card p-5 mb-4">
-                    <h2 class="title is-5">Evoluções</h2>
-                    <p class="muted is-size-7 mb-4">As evoluções clínicas serão vinculadas a este encontro na próxima etapa da Spec 001.</p>
-                    <div class="notification is-info is-light mb-0">
-                        O encontro já fornece o contexto temporal e assistencial necessário para a evolução imutável.
+                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-4" style="gap: .75rem;">
+                        <div>
+                            <h2 class="title is-5 mb-1">Evoluções</h2>
+                            <p class="muted is-size-7">Registro cronológico e imutável do atendimento.</p>
+                        </div>
+                        {% if can_create_evolution %}
+                        <a class="button is-link is-small" href="{% url 'pep:evolution_create' encounter.id %}">
+                            <span class="icon">{% icon 'plus' %}</span>
+                            <span>Nova evolução</span>
+                        </a>
+                        {% endif %}
                     </div>
+
+                    {% if evolutions %}
+                        {% for evolution in evolutions %}
+                        <article class="mb-4 pb-4" style="border-bottom: 1px solid var(--aegis-border);">
+                            <div class="is-flex is-justify-content-space-between is-align-items-flex-start mb-2" style="gap: .75rem;">
+                                <div>
+                                    <p class="has-text-weight-semibold">
+                                        {{ evolution.author.get_full_name|default:evolution.author.username }}
+                                    </p>
+                                    <p class="muted is-size-7">{{ evolution.created_at|date:"d/m/Y H:i" }}</p>
+                                </div>
+                                {% if evolution.amendment_of_id %}
+                                <span class="tag is-warning is-light">Adendo</span>
+                                {% else %}
+                                <span class="tag is-info is-light">Evolução</span>
+                                {% endif %}
+                            </div>
+                            <div class="content is-size-7">
+                                <p>{{ evolution.content|truncatechars:280|linebreaksbr }}</p>
+                            </div>
+                            <a class="is-size-7" href="{% url 'pep:evolution_detail' evolution.id %}">Ver registro completo →</a>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <div class="notification is-info is-light mb-0">
+                            Nenhuma evolução clínica registrada neste encontro.
+                        </div>
+                    {% endif %}
+
+                    {% if encounter.status != 'OPEN' %}
+                    <p class="help mt-3">O encontro está encerrado ou cancelado; novas evoluções e adendos estão bloqueados.</p>
+                    {% endif %}
                 </div>
 
                 <div class="aegis-card p-5">
