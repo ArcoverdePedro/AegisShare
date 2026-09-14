@@ -44,7 +44,7 @@ async function verifyStock(page) {
   await page.goto('/estoque-farmacia/');
   await expect(page.getByRole('heading', { name: 'Estoque farmacêutico' })).toBeVisible();
   await expect(page.getByText('Medicamento Sintético Acessibilidade')).toBeVisible();
-  await expect(page.getByText('E2E-RX-A11Y-001')).toBeVisible();
+  await expect(page.getByText('E2E-RX-LOT-A11Y-001')).toBeVisible();
   await expectNoPageOverflow(page);
 }
 
