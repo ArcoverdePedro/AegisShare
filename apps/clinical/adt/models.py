@@ -1,8 +1,12 @@
 import uuid
 
 from auditlog.registry import auditlog
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import F, Q
+
+from apps.clinical.pep.models import Encounter
 
 
 class Location(models.Model):
@@ -98,6 +102,12 @@ class Bed(models.Model):
         if not self.label:
             raise ValidationError({"label": "Informe a identificação do leito."})
 
+    @property
+    def current_status(self):
+        if self.occupancies.filter(ended_at__isnull=True).exists():
+            return "OCCUPIED"
+        return self.operational_status
+
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
@@ -106,5 +116,125 @@ class Bed(models.Model):
         return f"Leito {self.code}"
 
 
+class Admission(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    encounter = models.OneToOneField(
+        Encounter,
+        on_delete=models.PROTECT,
+        related_name="adt_admission",
+    )
+    admitted_at = models.DateTimeField()
+    admitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="adt_admissions_created",
+    )
+    operation_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-admitted_at", "-created_at"]
+        indexes = [models.Index(fields=["admitted_at"], name="adt_admission_time_idx")]
+        permissions = [
+            ("admit_patient", "Pode admitir paciente"),
+            ("view_movement_history", "Pode visualizar histórico de movimentação ADT"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if not self.encounter_id:
+            return
+        if self.encounter.encounter_type != Encounter.Type.INPATIENT:
+            raise ValidationError({"encounter": "A admissão exige encontro do tipo internação."})
+        if self.encounter.status != Encounter.Status.OPEN:
+            raise ValidationError({"encounter": "A admissão exige encontro aberto."})
+        if self.admitted_at and self.admitted_at < self.encounter.started_at:
+            raise ValidationError(
+                {"admitted_at": "A admissão não pode ser anterior ao início do encontro."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Admissão {self.id}"
+
+
+class BedOccupancy(models.Model):
+    class EndReason(models.TextChoices):
+        TRANSFER = "TRANSFER", "Transferência"
+        DISCHARGE = "DISCHARGE", "Alta"
+        CORRECTION = "CORRECTION", "Correção"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    admission = models.ForeignKey(
+        Admission,
+        on_delete=models.PROTECT,
+        related_name="occupancies",
+    )
+    bed = models.ForeignKey(Bed, on_delete=models.PROTECT, related_name="occupancies")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField(null=True, blank=True)
+    started_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="adt_occupancies_started",
+    )
+    ended_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="adt_occupancies_ended",
+    )
+    end_reason = models.CharField(max_length=12, choices=EndReason.choices, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["started_at", "created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(ended_at__isnull=True) | Q(ended_at__gte=F("started_at")),
+                name="adt_occ_end_after_start",
+            ),
+            models.UniqueConstraint(
+                fields=["bed"],
+                condition=Q(ended_at__isnull=True),
+                name="uniq_adt_active_bed_occ",
+            ),
+            models.UniqueConstraint(
+                fields=["admission"],
+                condition=Q(ended_at__isnull=True),
+                name="uniq_adt_active_adm_occ",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["bed", "ended_at"], name="adt_occ_bed_end_idx"),
+            models.Index(
+                fields=["admission", "ended_at"],
+                name="adt_occ_adm_end_idx",
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+        if self.ended_at and self.ended_at < self.started_at:
+            raise ValidationError({"ended_at": "O fim não pode ser anterior ao início."})
+        if self.ended_at and (not self.ended_by_id or not self.end_reason):
+            raise ValidationError("O encerramento exige responsável e motivo.")
+        if not self.ended_at and (self.ended_by_id or self.end_reason):
+            raise ValidationError("Ocupação ativa não pode possuir dados de encerramento.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Ocupação {self.id}"
+
+
 auditlog.register(Location)
 auditlog.register(Bed)
+auditlog.register(Admission)
+auditlog.register(BedOccupancy)
