@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter
 
+from .events import emit_prescription_event
 from .models import Drug, MedicationRequest, MedicationRequestItem
 from .permissions import can_prescribe_for_encounter
 
@@ -165,4 +166,10 @@ def submit_medication_request(*, request_id, actor):
         request.status = MedicationRequest.Status.SUBMITTED
         request.submitted_at = timezone.now()
         request.save(update_fields=["status", "submitted_at", "updated_at"])
+        emit_prescription_event(
+            event_type="prescription.created",
+            prescription_id=request.pk,
+            encounter_id=request.encounter_id,
+            status=request.status,
+        )
         return request
