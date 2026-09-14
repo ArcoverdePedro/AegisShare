@@ -1,0 +1,98 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Estoque farmacêutico - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="mb-5">
+            <p class="heading">Prescrição e Farmácia</p>
+            <h1 class="title is-3 mb-1">Estoque farmacêutico</h1>
+            <p class="muted">Saldo operacional por medicamento, localização, lote e validade.</p>
+        </div>
+
+        {% if can_manage_stock %}
+            <div class="notification is-info is-light">
+                Entradas e ajustes são registrados por serviços transacionais e geram movimentos append-only. O saldo não deve ser editado diretamente.
+            </div>
+        {% endif %}
+
+        {% for stock in stock_items %}
+            <div class="box aegis-card mb-5">
+                <div class="level mb-4">
+                    <div class="level-left">
+                        <div>
+                            <h2 class="title is-5 mb-1">{{ stock.drug.name }}</h2>
+                            <p class="is-size-7 muted">
+                                {{ stock.drug.code }} · {{ stock.storage_location }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="has-text-right">
+                            <p class="heading mb-1">Saldo elegível</p>
+                            <p class="title is-5 mb-1">{{ stock.eligible_quantity }}</p>
+                            <p class="is-size-7 muted">Mínimo: {{ stock.minimum_level }}</p>
+                            {% if stock.is_low %}
+                                <span class="tag is-warning is-light mt-2">Estoque baixo</span>
+                            {% else %}
+                                <span class="tag is-success is-light mt-2">Acima do mínimo</span>
+                            {% endif %}
+                            {% if not stock.active %}
+                                <span class="tag is-light mt-2">Estoque inativo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="table is-fullwidth is-hoverable">
+                        <thead>
+                            <tr>
+                                <th>Lote</th>
+                                <th>Validade</th>
+                                <th>Saldo</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lot in stock.lots.all %}
+                                <tr>
+                                    <td>{{ lot.lot_number }}</td>
+                                    <td>{{ lot.expires_on|date:'d/m/Y' }}</td>
+                                    <td>{{ lot.quantity_available }}</td>
+                                    <td>
+                                        {% if lot.is_expired %}
+                                            <span class="tag is-danger is-light">Expirado</span>
+                                        {% elif not lot.active %}
+                                            <span class="tag is-light">Inativo</span>
+                                        {% elif lot.quantity_available <= 0 %}
+                                            <span class="tag is-warning is-light">Sem saldo</span>
+                                        {% else %}
+                                            <span class="tag is-success is-light">Disponível</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="has-text-centered muted py-5">Nenhum lote cadastrado.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% empty %}
+            <div class="box aegis-card has-text-centered muted py-6">Nenhum estoque farmacêutico cadastrado.</div>
+        {% endfor %}
+
+        {% if is_paginated %}
+            <nav class="pagination is-centered" aria-label="paginação">
+                {% if page_obj.has_previous %}<a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                {% if page_obj.has_next %}<a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+                <ul class="pagination-list"><li><span class="pagination-link is-current">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li></ul>
+            </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
