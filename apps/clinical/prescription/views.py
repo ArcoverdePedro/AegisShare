@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -137,8 +138,10 @@ class PharmacyStockView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
         context = super().get_context_data(**kwargs)
         today = timezone.localdate()
         for stock_item in context["stock_items"]:
+            accessed.send(stock_item.__class__, instance=stock_item)
             stock_item.is_low = stock_item.eligible_quantity <= stock_item.minimum_level
             for lot in stock_item.lots.all():
+                accessed.send(lot.__class__, instance=lot)
                 lot.is_expired = lot.expires_on < today
         context["can_manage_stock"] = can_manage_stock(self.request.user)
         return context
