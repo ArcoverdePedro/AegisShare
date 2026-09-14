@@ -24,7 +24,7 @@ class Drug(models.Model):
     class Meta:
         ordering = ["name", "presentation", "code"]
         indexes = [models.Index(fields=["active", "name"], name="rx_drug_active_name_idx")]
-        permissions = [("manage_medication_reference", "Pode gerenciar referências farmacêuticas")]
+        permissions = [("manage_drug_catalog", "Pode manter catálogo farmacêutico")]
 
     def clean(self):
         super().clean()
@@ -84,14 +84,20 @@ class Interaction(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=~Q(drug_a=F("drug_b")), name="rx_interaction_distinct_drugs"),
+            models.CheckConstraint(
+                condition=~Q(drug_a=F("drug_b")),
+                name="rx_interaction_distinct_drugs",
+            ),
             models.UniqueConstraint(
                 fields=["drug_a", "drug_b", "reference_version"],
                 name="uniq_rx_interaction_pair_version",
             ),
         ]
         indexes = [
-            models.Index(fields=["drug_a", "drug_b", "active"], name="rx_interaction_pair_idx")
+            models.Index(
+                fields=["drug_a", "drug_b", "active"],
+                name="rx_interaction_pair_idx",
+            )
         ]
 
     def clean(self):
@@ -208,7 +214,11 @@ class MedicationRequest(models.Model):
         CANCELLED = "CANCELLED", "Cancelada"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    encounter = models.ForeignKey(Encounter, on_delete=models.PROTECT, related_name="medication_requests")
+    encounter = models.ForeignKey(
+        Encounter,
+        on_delete=models.PROTECT,
+        related_name="medication_requests",
+    )
     authored_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -216,7 +226,11 @@ class MedicationRequest(models.Model):
     )
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
     replaces = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="replacements"
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="replacements",
     )
     submitted_at = models.DateTimeField(null=True, blank=True)
     validated_by = models.ForeignKey(
@@ -247,9 +261,10 @@ class MedicationRequest(models.Model):
             models.Index(fields=["authored_by", "created_at"], name="rx_request_author_idx"),
         ]
         permissions = [
-            ("view_prescription", "Pode visualizar prescrições"),
+            ("view_medication_request", "Pode visualizar prescrições"),
             ("prescribe_medication", "Pode prescrever medicamentos"),
-            ("validate_prescription", "Pode validar prescrições"),
+            ("validate_medication_request", "Pode validar prescrições"),
+            ("cancel_medication_request", "Pode cancelar prescrições"),
         ]
 
     def clean(self):
@@ -260,11 +275,14 @@ class MedicationRequest(models.Model):
                 raise ValidationError({"encounter": "Prescrição nova exige encontro aberto."})
         if self.replaces_id and self.replaces.encounter_id != self.encounter_id:
             raise ValidationError({"replaces": "A substituição deve pertencer ao mesmo encontro."})
+        if self.status == self.Status.SUBMITTED and not self.submitted_at:
+            raise ValidationError({"submitted_at": "Prescrição submetida exige horário de submissão."})
         if self.status == self.Status.VALIDATED and not (self.validated_by_id and self.validated_at):
             raise ValidationError("Prescrição validada exige responsável e horário de validação.")
-        if self.status == self.Status.CANCELLED:
-            if not (self.cancelled_by_id and self.cancelled_at and self.cancellation_reason):
-                raise ValidationError("Prescrição cancelada exige ator, horário e motivo.")
+        if self.status == self.Status.CANCELLED and not (
+            self.cancelled_by_id and self.cancelled_at and self.cancellation_reason
+        ):
+            raise ValidationError("Prescrição cancelada exige ator, horário e motivo.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -277,7 +295,9 @@ class MedicationRequest(models.Model):
 class MedicationRequestItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     medication_request = models.ForeignKey(
-        MedicationRequest, on_delete=models.PROTECT, related_name="items"
+        MedicationRequest,
+        on_delete=models.PROTECT,
+        related_name="items",
     )
     drug = models.ForeignKey(Drug, on_delete=models.PROTECT, related_name="request_items")
     dose = models.DecimalField(max_digits=12, decimal_places=4)
@@ -294,12 +314,16 @@ class MedicationRequestItem(models.Model):
         ordering = ["sequence", "created_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["medication_request", "sequence"], name="uniq_rx_request_item_sequence"
+                fields=["medication_request", "sequence"],
+                name="uniq_rx_request_item_sequence",
             ),
             models.CheckConstraint(condition=Q(dose__gt=0), name="rx_request_item_dose_positive"),
         ]
         indexes = [
-            models.Index(fields=["medication_request", "sequence"], name="rx_request_item_seq_idx")
+            models.Index(
+                fields=["medication_request", "sequence"],
+                name="rx_request_item_seq_idx",
+            )
         ]
 
     def clean(self):
@@ -313,7 +337,10 @@ class MedicationRequestItem(models.Model):
             raise ValidationError({"dose": "A dose deve ser maior que zero."})
         if self.drug_id and not self.drug.active and self._state.adding:
             raise ValidationError({"drug": "Medicamento inativo não pode ser prescrito."})
-        if self.medication_request_id and self.medication_request.status != MedicationRequest.Status.DRAFT:
+        if (
+            self.medication_request_id
+            and self.medication_request.status != MedicationRequest.Status.DRAFT
+        ):
             raise ValidationError("Itens só podem ser alterados enquanto a prescrição está em rascunho.")
 
     def save(self, *args, **kwargs):
@@ -343,7 +370,9 @@ class MedicationSafetyReview(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     medication_request = models.ForeignKey(
-        MedicationRequest, on_delete=models.PROTECT, related_name="safety_reviews"
+        MedicationRequest,
+        on_delete=models.PROTECT,
+        related_name="safety_reviews",
     )
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -359,7 +388,12 @@ class MedicationSafetyReview(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        indexes = [models.Index(fields=["medication_request", "created_at"], name="rx_review_request_idx")]
+        indexes = [
+            models.Index(
+                fields=["medication_request", "created_at"],
+                name="rx_review_request_idx",
+            )
+        ]
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
@@ -381,7 +415,11 @@ class MedicationSafetyFinding(models.Model):
         DOSE = "DOSE", "Dose"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    review = models.ForeignKey(MedicationSafetyReview, on_delete=models.PROTECT, related_name="findings")
+    review = models.ForeignKey(
+        MedicationSafetyReview,
+        on_delete=models.PROTECT,
+        related_name="findings",
+    )
     kind = models.CharField(max_length=16, choices=Kind.choices)
     request_item = models.ForeignKey(
         MedicationRequestItem,
@@ -391,10 +429,18 @@ class MedicationSafetyFinding(models.Model):
         related_name="safety_findings",
     )
     interaction = models.ForeignKey(
-        Interaction, null=True, blank=True, on_delete=models.PROTECT, related_name="findings"
+        Interaction,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="findings",
     )
     dose_rule = models.ForeignKey(
-        DoseRule, null=True, blank=True, on_delete=models.PROTECT, related_name="findings"
+        DoseRule,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="findings",
     )
     severity = models.CharField(max_length=32)
     blocking = models.BooleanField(default=False)
@@ -427,10 +473,19 @@ class StockItem(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["drug", "storage_location"], name="uniq_rx_stock_location"),
-            models.CheckConstraint(condition=Q(minimum_level__gte=0), name="rx_stock_min_nonnegative"),
+            models.UniqueConstraint(
+                fields=["drug", "storage_location"],
+                name="uniq_rx_stock_location",
+            ),
+            models.CheckConstraint(
+                condition=Q(minimum_level__gte=0),
+                name="rx_stock_min_nonnegative",
+            ),
         ]
-        permissions = [("manage_pharmacy_stock", "Pode gerenciar estoque farmacêutico")]
+        permissions = [
+            ("view_pharmacy_stock", "Pode consultar estoque farmacêutico"),
+            ("manage_pharmacy_stock", "Pode gerenciar estoque farmacêutico"),
+        ]
 
     def clean(self):
         super().clean()
@@ -458,10 +513,21 @@ class Lot(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["stock_item", "lot_number"], name="uniq_rx_lot_number"),
-            models.CheckConstraint(condition=Q(quantity_available__gte=0), name="rx_lot_quantity_nonnegative"),
+            models.UniqueConstraint(
+                fields=["stock_item", "lot_number"],
+                name="uniq_rx_lot_number",
+            ),
+            models.CheckConstraint(
+                condition=Q(quantity_available__gte=0),
+                name="rx_lot_quantity_nonnegative",
+            ),
         ]
-        indexes = [models.Index(fields=["stock_item", "expires_on", "active"], name="rx_lot_expiry_idx")]
+        indexes = [
+            models.Index(
+                fields=["stock_item", "expires_on", "active"],
+                name="rx_lot_expiry_idx",
+            )
+        ]
 
     def clean(self):
         super().clean()
@@ -480,7 +546,9 @@ class Lot(models.Model):
 class MedicationDispense(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     medication_request = models.ForeignKey(
-        MedicationRequest, on_delete=models.PROTECT, related_name="dispenses"
+        MedicationRequest,
+        on_delete=models.PROTECT,
+        related_name="dispenses",
     )
     dispensed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -494,14 +562,25 @@ class MedicationDispense(models.Model):
     class Meta:
         ordering = ["-dispensed_at", "-created_at"]
         indexes = [
-            models.Index(fields=["medication_request", "dispensed_at"], name="rx_dispense_request_idx")
+            models.Index(
+                fields=["medication_request", "dispensed_at"],
+                name="rx_dispense_request_idx",
+            )
         ]
-        permissions = [("dispense_medication", "Pode dispensar medicamentos")]
+        permissions = [
+            ("view_medication_dispense", "Pode visualizar dispensações"),
+            ("dispense_medication", "Pode dispensar medicamentos"),
+        ]
 
     def clean(self):
         super().clean()
-        if self.medication_request_id and self.medication_request.status != MedicationRequest.Status.VALIDATED:
-            raise ValidationError({"medication_request": "A dispensação exige prescrição validada."})
+        if (
+            self.medication_request_id
+            and self.medication_request.status != MedicationRequest.Status.VALIDATED
+        ):
+            raise ValidationError(
+                {"medication_request": "A dispensação exige prescrição validada."}
+            )
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
@@ -518,9 +597,15 @@ class MedicationDispense(models.Model):
 
 class MedicationDispenseItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    dispense = models.ForeignKey(MedicationDispense, on_delete=models.PROTECT, related_name="items")
+    dispense = models.ForeignKey(
+        MedicationDispense,
+        on_delete=models.PROTECT,
+        related_name="items",
+    )
     request_item = models.ForeignKey(
-        MedicationRequestItem, on_delete=models.PROTECT, related_name="dispense_items"
+        MedicationRequestItem,
+        on_delete=models.PROTECT,
+        related_name="dispense_items",
     )
     lot = models.ForeignKey(Lot, on_delete=models.PROTECT, related_name="dispense_items")
     quantity = models.DecimalField(max_digits=14, decimal_places=4)
@@ -528,7 +613,10 @@ class MedicationDispenseItem(models.Model):
 
     class Meta:
         constraints = [
-            models.CheckConstraint(condition=Q(quantity__gt=0), name="rx_dispense_item_quantity_positive")
+            models.CheckConstraint(
+                condition=Q(quantity__gt=0),
+                name="rx_dispense_item_quantity_positive",
+            )
         ]
 
     def clean(self):
@@ -581,13 +669,15 @@ class StockMovement(models.Model):
     class Meta:
         ordering = ["created_at"]
         constraints = [
-            models.CheckConstraint(condition=~Q(quantity_delta=0), name="rx_stock_movement_nonzero")
+            models.CheckConstraint(
+                condition=~Q(quantity_delta=0),
+                name="rx_stock_movement_nonzero",
+            )
         ]
         indexes = [
             models.Index(fields=["lot", "created_at"], name="rx_stock_move_lot_idx"),
             models.Index(fields=["operation_key"], name="rx_stock_move_operation_idx"),
         ]
-        permissions = [("adjust_pharmacy_stock", "Pode ajustar estoque farmacêutico")]
 
     def clean(self):
         super().clean()
@@ -596,7 +686,9 @@ class StockMovement(models.Model):
             if self.quantity_delta is not None and self.quantity_delta >= 0:
                 raise ValidationError({"quantity_delta": "Dispensação exige delta negativo."})
             if not self.dispense_item_id:
-                raise ValidationError({"dispense_item": "Movimento de dispensação exige item dispensado."})
+                raise ValidationError(
+                    {"dispense_item": "Movimento de dispensação exige item dispensado."}
+                )
         if self.movement_type == self.Type.ADJUSTMENT and not self.reason:
             raise ValidationError({"reason": "Ajuste manual exige justificativa."})
 
