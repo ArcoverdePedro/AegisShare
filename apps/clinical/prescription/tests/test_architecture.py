@@ -6,7 +6,6 @@ from django.urls import URLPattern, URLResolver, reverse
 
 from apps.clinical.prescription.urls import urlpatterns as prescription_urlpatterns
 
-
 FORBIDDEN_OFFLINE_TOKENS = (
     "AegisOfflineQueue",
     "offline_queue.js",
