@@ -122,6 +122,32 @@ class PwaLogoutTests(TestCase):
         self.assertEqual(response["Cache-Control"], "no-store")
         self.assertNotIn("_auth_user_id", self.client.session)
 
+    def test_logout_revokes_only_push_bound_to_current_session(self):
+        current_fingerprint = PushSubscription.hash_session_key(self.client.session.session_key)
+        current = PushSubscription.objects.create(
+            user=self.user,
+            endpoint="https://push.example.invalid/current-session",
+            session_fingerprint=current_fingerprint,
+            p256dh="current-p256dh",
+            auth="current-auth",
+        )
+        other = PushSubscription.objects.create(
+            user=self.user,
+            endpoint="https://push.example.invalid/other-session",
+            session_fingerprint=PushSubscription.hash_session_key("other-session-key"),
+            p256dh="other-p256dh",
+            auth="other-auth",
+        )
+
+        self.client.post(reverse("logout"))
+
+        current.refresh_from_db()
+        other.refresh_from_db()
+        self.assertFalse(current.active)
+        self.assertIsNotNone(current.disabled_at)
+        self.assertTrue(other.active)
+        self.assertIsNone(other.disabled_at)
+
 
 @override_settings(**WEBPUSH_TEST_SETTINGS)
 class WebPushSubscriptionViewTests(TestCase):
@@ -169,6 +195,11 @@ class WebPushSubscriptionViewTests(TestCase):
             stored.endpoint_hash,
             PushSubscription.hash_endpoint(self.subscription["endpoint"]),
         )
+        self.assertEqual(
+            stored.session_fingerprint,
+            PushSubscription.hash_session_key(self.client.session.session_key),
+        )
+        self.assertNotEqual(stored.session_fingerprint, self.client.session.session_key)
         self.assertTrue(stored.active)
 
     def test_subscribe_rejects_non_https_endpoint(self):
@@ -186,6 +217,9 @@ class WebPushSubscriptionViewTests(TestCase):
         stored = PushSubscription.objects.create(
             user=self.user,
             endpoint=self.subscription["endpoint"],
+            session_fingerprint=PushSubscription.hash_session_key(
+                self.client.session.session_key
+            ),
             p256dh=self.subscription["keys"]["p256dh"],
             auth=self.subscription["keys"]["auth"],
         )
@@ -212,6 +246,7 @@ class WebPushDeliveryTests(TestCase):
         self.subscription = PushSubscription.objects.create(
             user=self.user,
             endpoint="https://push.example.invalid/subscription/recipient",
+            session_fingerprint=PushSubscription.hash_session_key("delivery-session"),
             p256dh="p256dh-recipient-key",
             auth="auth-recipient-key",
         )
