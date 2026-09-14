@@ -1,6 +1,6 @@
 # ADR-0008 — `Encounter` canônico permanece no PEP
 
-- Status: Proposto
+- Status: Aceito
 - Data: 2026-09-14
 - Relacionado: Specs 001 (PEP) e 002 (ADT)
 

@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "aegis_share",
     "apps.pwa.apps.PwaConfig",
     "apps.clinical.pep.apps.PepConfig",
+    "apps.clinical.adt.apps.AdtConfig",
 ]
 
 MIDDLEWARE = [

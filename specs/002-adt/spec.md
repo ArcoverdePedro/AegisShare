@@ -2,7 +2,7 @@
 
 > Prioridade: P0  
 > Dependência: Spec 001 — PEP  
-> Status: proposta para aprovação do mantenedor
+> Status: aprovada pelo mantenedor em 2026-09-14
 
 ## Contexto
 
