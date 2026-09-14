@@ -30,12 +30,14 @@ Sem `DATABASE_URL`, o modo `DEBUG=true` usa SQLite. Sem Redis, Channels/cache us
 Execute:
 
 ```bash
-uv run ruff check aegis_share mysite
-uv run ruff format --check aegis_share mysite
+uv run ruff check aegis_share apps mysite
+uv run ruff format --check aegis_share apps mysite
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 uv run python manage.py test --verbosity 2
 ```
+
+O CI executa `ruff check` sem `--fix`: violações de lint devem ser corrigidas e versionadas antes do merge, nunca corrigidas apenas no runner.
 
 Para validar a imagem real:
 

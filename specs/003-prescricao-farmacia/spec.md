@@ -2,7 +2,7 @@
 
 > Prioridade: P0  
 > Dependências: Spec 001 — PEP; Spec 002 — ADT  
-> Status: proposta — aguardando aprovação do mantenedor
+> Status: aprovada pelo mantenedor em 2026-09-14 — implementação incremental liberada
 
 ## Contexto
 
