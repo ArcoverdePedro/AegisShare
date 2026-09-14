@@ -1,5 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
+const ADMIN = {
+  username: 'ci-e2e-admin',
+  password: 'ci-e2e-admin-password',
+};
 const SENSITIVE_CACHE_PREFIXES = [
   '/pacientes/',
   '/encontros/',
@@ -8,6 +12,14 @@ const SENSITIVE_CACHE_PREFIXES = [
   '/aegis-admin/',
   '/api/',
 ];
+
+async function login(page, credentials) {
+  await page.goto('/login/');
+  await page.getByLabel('Usuário').fill(credentials.username);
+  await page.getByLabel('Senha').fill(credentials.password);
+  await page.getByRole('button', { name: 'Entrar' }).click();
+  await expect(page).toHaveURL(/\/$/);
+}
 
 test('registers the PWA shell and serves only the generic offline fallback', async ({ page, context }) => {
   await page.goto('/');
@@ -150,4 +162,32 @@ test('offline queue stores only encrypted payloads and keeps the local key non-e
     }),
   ]);
   expect(result.duplicateRejected).toBe(true);
+});
+
+test('logout removes the encrypted offline database for the authenticated session', async ({ page }) => {
+  await login(page, ADMIN);
+  await page.addScriptTag({ url: '/static/pwa/offline_queue.js' });
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    await window.AegisOfflineQueue.clear().catch(() => {});
+    await window.AegisOfflineQueue.enqueue({
+      operationType: 'ci.synthetic.logout',
+      userSessionFingerprint: 'ci-authenticated-session',
+      payload: { synthetic_secret: 'SYNTHETIC-LOCAL-SECRET' },
+      idempotencyKey: 'ci-pwa-logout-cleanup-001',
+    });
+  });
+
+  const databaseExistsBeforeLogout = await page.evaluate(async () =>
+    (await indexedDB.databases()).some((database) => database.name === 'aegisshare-offline')
+  );
+  expect(databaseExistsBeforeLogout).toBe(true);
+
+  await page.getByRole('button', { name: new RegExp(ADMIN.username) }).click();
+  await page.getByRole('button', { name: 'Sair' }).click();
+  await expect(page.getByRole('link', { name: 'Entrar' })).toBeVisible();
+
+  await expect.poll(async () => page.evaluate(async () =>
+    !(await indexedDB.databases()).some((database) => database.name === 'aegisshare-offline')
+  )).toBe(true);
 });
