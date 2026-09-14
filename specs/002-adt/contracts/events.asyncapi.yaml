@@ -1,0 +1,123 @@
+asyncapi: 3.0.0
+info:
+  title: AegisShare HIS - ADT Internal Events
+  version: 0.1.0
+  description: >-
+    Contrato interno para sinais ADT. Não representa API pública e não deve
+    transportar PHI textual.
+channels:
+  adtEvents:
+    address: internal.adt.events
+    messages:
+      encounterAdmitted:
+        $ref: '#/components/messages/EncounterAdmitted'
+      encounterTransferred:
+        $ref: '#/components/messages/EncounterTransferred'
+      encounterDischarged:
+        $ref: '#/components/messages/EncounterDischarged'
+      bedOccupied:
+        $ref: '#/components/messages/BedOccupied'
+      bedReleased:
+        $ref: '#/components/messages/BedReleased'
+      bedStatusChanged:
+        $ref: '#/components/messages/BedStatusChanged'
+operations:
+  publishAdtEvent:
+    action: send
+    channel:
+      $ref: '#/channels/adtEvents'
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    EncounterEventPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - encounter_id
+            - admission_id
+          properties:
+            encounter_id:
+              type: string
+              format: uuid
+            admission_id:
+              type: string
+              format: uuid
+            occupancy_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            bed_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            location_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+    BedEventPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - bed_id
+            - location_id
+          properties:
+            bed_id:
+              type: string
+              format: uuid
+            location_id:
+              type: string
+              format: uuid
+            state:
+              type: string
+              enum:
+                - AVAILABLE
+                - OCCUPIED
+                - BLOCKED
+                - OUT_OF_SERVICE
+  messages:
+    EncounterAdmitted:
+      name: encounter.admitted
+      payload:
+        $ref: '#/components/schemas/EncounterEventPayload'
+    EncounterTransferred:
+      name: encounter.transferred
+      payload:
+        $ref: '#/components/schemas/EncounterEventPayload'
+    EncounterDischarged:
+      name: encounter.discharged
+      payload:
+        $ref: '#/components/schemas/EncounterEventPayload'
+    BedOccupied:
+      name: bed.occupied
+      payload:
+        $ref: '#/components/schemas/BedEventPayload'
+    BedReleased:
+      name: bed.released
+      payload:
+        $ref: '#/components/schemas/BedEventPayload'
+    BedStatusChanged:
+      name: bed.status_changed
+      payload:
+        $ref: '#/components/schemas/BedEventPayload'
