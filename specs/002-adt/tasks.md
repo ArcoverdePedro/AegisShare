@@ -13,7 +13,7 @@
 - [x] **T-ADT-09** Integrar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual. RF-ADT-08/10. Leituras identificáveis do mapa/lista emitem `ACCESS`; mutações continuam no `django-auditlog`; `emit_adt_event()` usa `transaction.on_commit()` e payload técnico minimizado.
 - [x] **T-ADT-10** Implementar atualização do mapa via Channels como sinal de invalidação, com revalidação de autorização. RF-ADT-09. `AdtBedMapConsumer` revalida capacidade e escopo local em cada evento; o navegador apenas dispara novo GET HTMX autorizado e não persiste payload clínico.
 - [x] **T-ADT-11** Criar testes de concorrência PostgreSQL para admissão/transferência simultânea. RF-ADT-02/11. `AdmissionConcurrencyTests` e `TransferConcurrencyTests` usam `TransactionTestCase`, conexões independentes e barreira entre threads para provar que apenas uma ocupação vence e que a operação perdedora não deixa estado parcial.
-- [ ] **T-ADT-12** Criar Gherkin + Playwright das jornadas principais e negações de acesso. RF-ADT-01/03/04/05/07.
-- [ ] **T-ADT-13** Executar axe-core e validação mobile/tablet do mapa e formulários críticos. RNF-ADT-06.
+- [x] **T-ADT-12** Criar Gherkin + Playwright das jornadas principais e negações de acesso. RF-ADT-01/03/04/05/07. `acceptance.feature` formaliza os cenários e `adt_journeys.spec.js` percorre admissão → transferência → alta, negação sem capacidade ADT e mascaramento de PHI sem escopo PEP.
+- [x] **T-ADT-13** Executar axe-core e validação mobile/tablet do mapa e formulários críticos. RNF-ADT-06. A jornada Playwright executa regras WCAG 2.1 A/AA sem violações sérias/críticas e verifica ausência de overflow horizontal em telefone e tablet.
 - [ ] **T-ADT-14** Garantir via testes que mutações ADT permanecem fora de cache/fila offline PWA. RF-ADT-12.
 - [ ] **T-ADT-15** Atualizar AsyncAPI, documentação e rastreabilidade final; confirmar ausência de nova API REST pública. RF-ADT-10 / RNF-ADT-03.
