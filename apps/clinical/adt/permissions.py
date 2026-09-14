@@ -3,6 +3,7 @@ from apps.clinical.pep.permissions import accessible_patients, can_access_patien
 from .models import Location, UserLocationAccess
 
 
+PERM_VIEW_ADMISSION = "adt.view_admission"
 PERM_VIEW_BED_MAP = "adt.view_bed_map"
 PERM_ADMIT = "adt.admit_patient"
 PERM_TRANSFER = "adt.transfer_patient"
@@ -46,6 +47,10 @@ def can_access_location(user, location):
 
 def can_access_bed(user, bed):
     return can_access_location(user, bed.location)
+
+
+def can_view_admissions(user):
+    return has_adt_permission(user, PERM_VIEW_ADMISSION)
 
 
 def can_view_bed_map(user):
