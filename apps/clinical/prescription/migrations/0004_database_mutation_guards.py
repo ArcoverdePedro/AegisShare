@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 APPEND_ONLY_MODELS = (
     "MedicationSafetyReview",
     "MedicationSafetyFinding",
