@@ -1,6 +1,6 @@
+import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
-import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -25,6 +25,10 @@ class Migration(migrations.Migration):
                 ),
                 ("endpoint", models.TextField()),
                 ("endpoint_hash", models.CharField(editable=False, max_length=64, unique=True)),
+                (
+                    "session_fingerprint",
+                    models.CharField(db_index=True, editable=False, max_length=64),
+                ),
                 ("p256dh", models.TextField()),
                 ("auth", models.TextField()),
                 ("active", models.BooleanField(db_index=True, default=True)),
