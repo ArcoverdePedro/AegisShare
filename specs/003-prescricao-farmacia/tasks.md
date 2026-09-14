@@ -1,12 +1,12 @@
 # Tasks — Spec 003 Prescrição e Farmácia
 
-> Status: proposta; nenhuma tarefa de runtime pode iniciar antes da aprovação do mantenedor desta spec e dos contratos.
+> Status: aprovada pelo mantenedor em 2026-09-14; implementação incremental liberada, preservando os gates clínicos/farmacêuticos para referências reais, alergias estruturadas e fonte de peso.
 
-- [ ] **T-RX-01** Aprovar `spec.md`, `plan.md`, `data-model.md` e contratos. Gate SDD para qualquer código.
+- [x] **T-RX-01** Aprovar `spec.md`, `plan.md`, `data-model.md` e contratos. Gate SDD concluído em 2026-09-14.
 - [ ] **T-RX-02** Validar com governança clínica/farmacêutica o formato e a procedência das referências de `Interaction` e `DoseRule`; manter somente fixtures sintéticas até essa validação. RF-RX-05/07, RNF-RX-06.
 - [ ] **T-RX-03** Definir extensão PEP para `AllergyIntolerance` em spec própria antes de habilitar checagem automática de alergias; até lá implementar estado explícito `UNAVAILABLE`/revisão manual, sem falso negativo. RF-RX-06.
-- [ ] **T-RX-04** Criar `apps/clinical/prescription`, models e migrations reversíveis para catálogo, prescrição, safety review, estoque/lotes e dispensação. RF-RX-01/02/03/09/11.
-- [ ] **T-RX-05** Implementar RBAC + ABAC deny-by-default, selectors autorizados e negações sem exposição de PHI. RF-RX-12.
+- [x] **T-RX-04** Criar `apps/clinical/prescription`, models e migrations reversíveis para catálogo, prescrição, safety review, estoque/lotes e dispensação. RF-RX-01/02/03/09/11. A fundação cria entidades UUID, FKs históricas `PROTECT`, constraints de quantidade/saldo e trilhas append-only, sem carregar conteúdo clínico de referência real.
+- [x] **T-RX-05** Implementar RBAC + ABAC deny-by-default, selectors autorizados e negações sem exposição de PHI. RF-RX-12. Capacidades farmacêuticas são permissões Django específicas, `CLI` permanece negado mesmo com permissão mal atribuída e acesso a prescrições exige simultaneamente escopo PEP válido.
 - [ ] **T-RX-06** Implementar catálogo `Drug` e manutenção de referências `Interaction`/`DoseRule` com procedência/versionamento/aprovação. RF-RX-01/05/07.
 - [ ] **T-RX-07** Implementar criação DRAFT, itens estruturados, submissão e histórico imutável/substituição de `MedicationRequest`. RF-RX-02/03/04.
 - [ ] **T-RX-08** Implementar safety engine determinístico para interações e dose, incluindo `NOT_EVALUABLE` para peso/fato ausente e sem lógica clínica hardcoded. RF-RX-05/07.
