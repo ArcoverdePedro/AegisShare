@@ -28,8 +28,8 @@ def emit_stock_low_event(
         "stock_item_id": str(stock_item_id),
         "drug_id": str(drug_id),
         "storage_location": storage_location,
-        "quantity_available": str(quantity_available),
-        "minimum_level": str(minimum_level),
+        "quantity_available": float(quantity_available),
+        "minimum_level": float(minimum_level),
     }
 
     def _send():
