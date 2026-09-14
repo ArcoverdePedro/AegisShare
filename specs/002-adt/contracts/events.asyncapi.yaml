@@ -1,10 +1,10 @@
 asyncapi: 3.0.0
 info:
   title: AegisShare HIS - ADT Internal Events
-  version: 0.1.0
+  version: 0.2.0
   description: >-
-    Contrato interno para sinais ADT. Não representa API pública e não deve
-    transportar PHI textual.
+    Contrato interno para eventos ADT pós-commit e sinais WebSocket de invalidação.
+    Não representa API pública e não transporta PHI textual.
 channels:
   adtEvents:
     address: internal.adt.events
@@ -21,11 +21,24 @@ channels:
         $ref: '#/components/messages/BedReleased'
       bedStatusChanged:
         $ref: '#/components/messages/BedStatusChanged'
+  bedMapInvalidation:
+    address: /ws/clinical/adt/bed-map/
+    description: >-
+      WebSocket autenticado por sessão. O servidor revalida a autorização antes
+      de cada envio e o cliente refaz GET /leitos/mapa/ para renderização autorizada.
+      O navegador recebe somente metadados técnicos mínimos do evento.
+    messages:
+      invalidation:
+        $ref: '#/components/messages/BedMapInvalidation'
 operations:
   publishAdtEvent:
     action: send
     channel:
       $ref: '#/channels/adtEvents'
+  publishBedMapInvalidation:
+    action: send
+    channel:
+      $ref: '#/channels/bedMapInvalidation'
 components:
   schemas:
     BaseEvent:
@@ -82,6 +95,7 @@ components:
           required:
             - bed_id
             - location_id
+            - state
           properties:
             bed_id:
               type: string
@@ -96,6 +110,46 @@ components:
                 - OCCUPIED
                 - BLOCKED
                 - OUT_OF_SERVICE
+    BedMapInvalidationPayload:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - event_id
+        - event_type
+        - occurred_at
+        - location_id
+      properties:
+        type:
+          type: string
+          const: adt_event
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          enum:
+            - encounter.admitted
+            - encounter.transferred
+            - encounter.discharged
+            - bed.occupied
+            - bed.released
+            - bed.status_changed
+        occurred_at:
+          type: string
+          format: date-time
+        bed_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        location_id:
+          type: string
+          format: uuid
+        state:
+          type:
+            - string
+            - 'null'
   messages:
     EncounterAdmitted:
       name: encounter.admitted
@@ -121,3 +175,7 @@ components:
       name: bed.status_changed
       payload:
         $ref: '#/components/schemas/BedEventPayload'
+    BedMapInvalidation:
+      title: Invalidação autorizada do mapa de leitos
+      payload:
+        $ref: '#/components/schemas/BedMapInvalidationPayload'

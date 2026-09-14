@@ -54,4 +54,7 @@ Nenhum até aprovação da spec clínica correspondente. O primeiro piloto recom
 - exclusão/revogação de consentimento;
 - administração de medicamento sem regra clínica específica;
 - download de documento;
-- alterações administrativas sensíveis.
+- alterações administrativas sensíveis;
+- **admissão, transferência e alta ADT**: dependem do estado concorrente atual de leitos e permanecem `network-only` conforme RF-ADT-12; não podem usar Cache Storage, IndexedDB ou Background Sync para persistir a mutação.
+
+A regressão ADT é exercitada por Playwright em `tests/e2e/adt_journeys.spec.js`: com service worker ativo, os POSTs críticos devem falhar quando a rede é removida e nenhuma entrada pode surgir no cache ou no IndexedDB `aegisshare-offline`.

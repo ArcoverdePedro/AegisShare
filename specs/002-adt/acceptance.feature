@@ -36,3 +36,12 @@ Funcionalidade: Jornada ADT segura e consistente
     Quando ele abrir o mapa e os formulários críticos em viewport de telefone ou tablet
     Então não deve haver overflow horizontal da página
     E não deve haver violações WCAG 2.1 A ou AA com impacto sério ou crítico detectadas pelo axe-core
+
+  Cenário: impedir mutações ADT offline
+    Dado um profissional autorizado com o PWA instalado
+    E os formulários de admissão, transferência e alta disponíveis enquanto há rede
+    Quando a conexão for interrompida
+    E o navegador tentar enviar uma mutação ADT
+    Então a requisição deve falhar por ausência de rede
+    E nenhuma mutação ADT deve ser gravada no cache do service worker
+    E nenhuma mutação ADT deve ser gravada no IndexedDB de fila offline
