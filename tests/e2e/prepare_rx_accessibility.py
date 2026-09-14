@@ -20,6 +20,7 @@ from apps.clinical.prescription.stock_services import (  # noqa: E402
 
 USERNAME = "ci-rx-accessibility"
 PASSWORD = "ci-rx-accessibility-password"
+LOT_NUMBER = "E2E-RX-LOT-A11Y-001"
 
 
 def configure_admin():
@@ -63,12 +64,12 @@ def ensure_stock(*, actor, drug):
             minimum_level=Decimal("5"),
         )
 
-    lot = Lot.objects.filter(stock_item=stock, lot_number="E2E-RX-A11Y-001").first()
+    lot = Lot.objects.filter(stock_item=stock, lot_number=LOT_NUMBER).first()
     if lot is None:
         lot = create_lot(
             actor=actor,
             stock_item_id=stock.pk,
-            lot_number="E2E-RX-A11Y-001",
+            lot_number=LOT_NUMBER,
             expires_on=timezone.localdate() + timedelta(days=180),
             initial_quantity=Decimal("12"),
         )
