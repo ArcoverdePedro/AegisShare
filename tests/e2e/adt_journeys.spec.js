@@ -48,6 +48,25 @@ async function expectNoPageOverflow(page) {
   expect(sizes.scrollWidth).toBeLessThanOrEqual(sizes.viewportWidth + 1);
 }
 
+async function inspectOfflineState(page) {
+  return page.evaluate(async () => {
+    const cachedPaths = [];
+    for (const cacheName of await caches.keys()) {
+      const cache = await caches.open(cacheName);
+      for (const request of await cache.keys()) {
+        cachedPaths.push(new URL(request.url).pathname);
+      }
+    }
+
+    const databases = typeof indexedDB.databases === 'function' ? await indexedDB.databases() : [];
+    return {
+      cachedPaths,
+      queueDatabaseExists: databases.some((database) => database.name === 'aegisshare-offline'),
+      queueRuntimeLoaded: typeof window.AegisOfflineQueue !== 'undefined',
+    };
+  });
+}
+
 test('profissional autorizado admite, transfere e dá alta sem perder consistência do mapa', async ({
   page,
 }, testInfo) => {
@@ -152,4 +171,63 @@ test('mapa e formulários ADT mantêm WCAG 2.1 AA essencial em telefone e tablet
   await expect(page.getByRole('heading', { name: 'Registrar alta' })).toBeVisible();
   await expectNoSeriousAxeViolations(page);
   await expectNoPageOverflow(page);
+});
+
+test('mutações ADT permanecem network-only e não entram no cache ou fila offline', async ({
+  page,
+  context,
+}) => {
+  const mutationPaths = ['/admissoes/nova/', '/transferencias/nova/', '/altas/nova/'];
+
+  await login(page, OPERATOR);
+  await page.goto('/leitos/');
+  await page.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) throw new Error('Service Worker indisponível');
+    await navigator.serviceWorker.ready;
+  });
+  await expect.poll(async () => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+
+  for (const path of mutationPaths) {
+    await page.goto(path);
+    expect(page.url()).toContain(path);
+  }
+
+  const beforeOffline = await inspectOfflineState(page);
+  expect(beforeOffline.queueRuntimeLoaded).toBe(false);
+  expect(beforeOffline.queueDatabaseExists).toBe(false);
+  for (const path of mutationPaths) {
+    expect(beforeOffline.cachedPaths).not.toContain(path);
+  }
+
+  await context.setOffline(true);
+  const offlineAttempts = await page.evaluate(async (paths) =>
+    Promise.all(
+      paths.map(async (path) => {
+        try {
+          await fetch(path, {
+            method: 'POST',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'offline_probe=1',
+          });
+          return { path, resolved: true };
+        } catch (error) {
+          return { path, resolved: false, errorName: error.name };
+        }
+      })
+    )
+  , mutationPaths);
+  await context.setOffline(false);
+
+  for (const attempt of offlineAttempts) {
+    expect(attempt.resolved, `${attempt.path} não pode ser resolvida offline`).toBe(false);
+  }
+
+  const afterOffline = await inspectOfflineState(page);
+  expect(afterOffline.queueRuntimeLoaded).toBe(false);
+  expect(afterOffline.queueDatabaseExists).toBe(false);
+  for (const path of mutationPaths) {
+    expect(afterOffline.cachedPaths).not.toContain(path);
+  }
 });
