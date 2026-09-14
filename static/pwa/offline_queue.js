@@ -47,7 +47,13 @@
                     db.createObjectStore(KEY_STORE, { keyPath: 'name' });
                 }
             };
-            request.onsuccess = () => resolve(request.result);
+            request.onsuccess = () => {
+                const db = request.result;
+                // Uma exclusão/upgrade iniciado por logout ou outra aba precisa poder
+                // prosseguir sem ficar preso em um handle antigo desta página.
+                db.onversionchange = () => db.close();
+                resolve(db);
+            };
             request.onerror = () => reject(request.error || new Error('Não foi possível abrir o armazenamento offline.'));
             request.onblocked = () => reject(new Error('O armazenamento offline está bloqueado por outra aba.'));
         });
@@ -197,8 +203,15 @@
             const transaction = db.transaction(QUEUE_STORE, 'readwrite');
             const done = transactionDone(transaction);
             const addRequest = transaction.objectStore(QUEUE_STORE).add(record);
-            await requestAsPromise(addRequest);
-            await done;
+            try {
+                await requestAsPromise(addRequest);
+                await done;
+            } catch (error) {
+                // ConstraintError de uma chave idempotente duplicada aborta a
+                // transação. Aguarde o aborto terminar antes de fechar/excluir o DB.
+                await done.catch(() => {});
+                throw error;
+            }
         } finally {
             db.close();
         }
@@ -301,9 +314,28 @@
         encryptionKeyPromise = null;
         await new Promise((resolve, reject) => {
             const request = window.indexedDB.deleteDatabase(DB_NAME);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error || new Error('Falha ao limpar dados offline.'));
-            request.onblocked = () => reject(new Error('A limpeza offline foi bloqueada por outra aba.'));
+            let blockedTimer = null;
+            const cancelBlockedTimer = () => {
+                if (blockedTimer !== null) window.clearTimeout(blockedTimer);
+            };
+            request.onsuccess = () => {
+                cancelBlockedTimer();
+                resolve();
+            };
+            request.onerror = () => {
+                cancelBlockedTimer();
+                reject(request.error || new Error('Falha ao limpar dados offline.'));
+            };
+            // `blocked` pode ser transitório enquanto uma transação da própria aba
+            // termina. Só reporte falha se o bloqueio realmente persistir.
+            request.onblocked = () => {
+                if (blockedTimer === null) {
+                    blockedTimer = window.setTimeout(
+                        () => reject(new Error('A limpeza offline foi bloqueada por outra aba.')),
+                        2000
+                    );
+                }
+            };
         });
     }
 
