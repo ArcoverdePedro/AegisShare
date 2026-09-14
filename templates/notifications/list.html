@@ -1,13 +1,43 @@
 {% extends 'navbar/navbar.html' %}
-{% load icon %}
+{% load icon static %}
 {% block title %}Notificacoes - AegisShare{% endblock %}
 {% block page_content %}
 <section class="section pt-4"><div class="container is-max-desktop">
 <div class="level mb-4"><div class="level-left"><div><p class="heading">Atividade</p><h1 class="title is-3">Notificacoes</h1></div></div><div class="level-right"><form method="post" action="{% url 'mark_notifications_read' %}">{% csrf_token %}<button class="button is-small" type="submit">Marcar todas como lidas</button></form></div></div>
+
+<div
+    id="webPushControls"
+    class="box aegis-card mb-4"
+    data-config-url="{% url 'pwa:push_config' %}"
+    data-subscribe-url="{% url 'pwa:push_subscribe' %}"
+    data-unsubscribe-url="{% url 'pwa:push_unsubscribe' %}"
+>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    <div class="level is-mobile">
+        <div class="level-left">
+            <div>
+                <p class="has-text-weight-semibold">Notificações no dispositivo</p>
+                <p class="is-size-7 muted">O Push mostra apenas um aviso genérico, sem nome de paciente, documento ou conteúdo clínico.</p>
+                <p class="help is-info mt-2" data-push-status>Verificando compatibilidade...</p>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="buttons are-small">
+                <button class="button is-link" type="button" data-push-enable hidden>Ativar</button>
+                <button class="button is-light" type="button" data-push-disable hidden>Desativar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="box aegis-card p-0" style="overflow:hidden">
 {% for notification in notifications %}<a {% if notification.link %}href="{{ notification.link }}"{% endif %} class="media p-4 {% if not notification.read_at %}has-background-link-light{% endif %}" style="border-bottom:1px solid #eef0f4;color:inherit">
     <div class="media-left"><span class="icon {% if not notification.read_at %}has-text-link{% else %}has-text-grey{% endif %}">{% icon 'bell' %}</span></div><div class="media-content"><p><strong>{{ notification.title }}</strong></p>{% if notification.body %}<p class="is-size-7">{{ notification.body }}</p>{% endif %}<p class="is-size-7 muted mt-1">{{ notification.created_at|date:'d/m/Y H:i' }}</p></div>
 </a>{% empty %}<div class="p-6 has-text-centered muted">Nenhuma notificacao.</div>{% endfor %}
 </div>
 </div></section>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="{% static 'pwa/push.js' %}"></script>
 {% endblock %}
