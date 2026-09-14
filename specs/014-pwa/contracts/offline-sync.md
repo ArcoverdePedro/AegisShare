@@ -29,6 +29,21 @@ retry_count
 9. Sucesso confirmado remove ou minimiza o payload local conforme política de retenção.
 10. Logout limpa payloads locais da sessão, salvo mecanismo institucional explicitamente aprovado para recuperação segura.
 
+## Fundação local implementada
+
+`static/pwa/offline_queue.js` implementa o armazenamento local protegido sem habilitar nenhum fluxo clínico automaticamente.
+
+- o IndexedDB canônico é `aegisshare-offline`, o mesmo removido pelo service worker durante a limpeza local;
+- cada payload é serializado e cifrado com AES-GCM 256 antes da persistência;
+- a chave é criada pela Web Crypto API como `CryptoKey` não extraível e persistida no próprio IndexedDB;
+- um IV aleatório de 96 bits é usado por operação;
+- `idempotency_key`, `operation_type` e `user_session_fingerprint` entram como Additional Authenticated Data (AAD), portanto alteração desses metadados invalida a autenticação do ciphertext;
+- o object store usa `idempotency_key` como chave primária, rejeitando duplicatas no dispositivo;
+- listagens comuns retornam somente metadados; a leitura do payload exige descriptografia explícita;
+- nenhum listener intercepta formulários e nenhum envio de rede é feito pelo helper nesta etapa.
+
+A chave no IndexedDB protege o conteúdo contra persistência em texto claro e inspeção casual do armazenamento bruto, mas **não é uma fronteira contra XSS ou código comprometido executando na mesma origem**, que poderia solicitar a descriptografia pela Web Crypto API. CSP, prevenção de XSS, autorização no servidor e limpeza no logout continuam obrigatórias.
+
 ## Fluxos inicialmente elegíveis
 
 Nenhum até aprovação da spec clínica correspondente. O primeiro piloto recomendado é sinais vitais da Spec 004 Enfermagem, após contratos de dados e risco aprovados.
