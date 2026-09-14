@@ -3,6 +3,8 @@ from django.db.models.signals import pre_delete, pre_save
 from django.dispatch import receiver
 
 from .models import (
+    DoseRule,
+    Interaction,
     Lot,
     MedicationDispense,
     MedicationDispenseItem,
@@ -21,6 +23,39 @@ _LOT_BALANCE_ERROR = "Saldo de lote só pode ser alterado por movimentação de 
 _LOT_IDENTITY_ERROR = "Lote com movimentação não pode ter sua identidade histórica reescrita."
 _STOCK_IDENTITY_ERROR = "Estoque com lotes não pode ter medicamento ou localização reescritos."
 _APPEND_ONLY_DELETE_ERROR = "Registros farmacêuticos append-only não podem ser excluídos."
+_APPROVED_REFERENCE_MUTATION_ERROR = "Referência clínica aprovada não pode ser reescrita."
+_APPROVED_REFERENCE_DELETE_ERROR = "Referência clínica aprovada não pode ser excluída."
+_APPROVED_REFERENCE_REACTIVATION_ERROR = (
+    "Referência clínica aprovada e desativada exige uma nova versão para voltar ao uso."
+)
+_INTERACTION_GOVERNED_FIELDS = (
+    "drug_a_id",
+    "drug_b_id",
+    "severity",
+    "blocking",
+    "summary",
+    "reference_source",
+    "reference_version",
+    "approved_by_id",
+    "approved_at",
+)
+_DOSE_RULE_GOVERNED_FIELDS = (
+    "drug_id",
+    "rule_code",
+    "basis",
+    "min_age_days",
+    "max_age_days",
+    "min_weight_kg",
+    "max_weight_kg",
+    "min_dose",
+    "max_dose",
+    "dose_unit",
+    "per_kg",
+    "reference_source",
+    "reference_version",
+    "approved_by_id",
+    "approved_at",
+)
 
 
 def _persisted_request_status(instance):
@@ -31,6 +66,38 @@ def _persisted_request_status(instance):
         .values_list("status", flat=True)
         .first()
     )
+
+
+def _preserve_approved_reference(sender, instance, governed_fields):
+    if instance._state.adding or not instance.pk:
+        return
+    persisted = sender.objects.filter(pk=instance.pk).values(
+        *governed_fields,
+        "active",
+    ).first()
+    if not persisted or persisted["approved_at"] is None:
+        return
+    if any(persisted[field] != getattr(instance, field) for field in governed_fields):
+        raise ValidationError(_APPROVED_REFERENCE_MUTATION_ERROR)
+    if not persisted["active"] and instance.active:
+        raise ValidationError(_APPROVED_REFERENCE_REACTIVATION_ERROR)
+
+
+@receiver(pre_save, sender=Interaction)
+def preserve_approved_interaction(sender, instance, **kwargs):
+    _preserve_approved_reference(sender, instance, _INTERACTION_GOVERNED_FIELDS)
+
+
+@receiver(pre_save, sender=DoseRule)
+def preserve_approved_dose_rule(sender, instance, **kwargs):
+    _preserve_approved_reference(sender, instance, _DOSE_RULE_GOVERNED_FIELDS)
+
+
+@receiver(pre_delete, sender=Interaction)
+@receiver(pre_delete, sender=DoseRule)
+def prevent_approved_reference_delete(sender, instance, **kwargs):
+    if instance.pk and sender.objects.filter(pk=instance.pk, approved_at__isnull=False).exists():
+        raise ValidationError(_APPROVED_REFERENCE_DELETE_ERROR)
 
 
 @receiver(pre_save, sender=MedicationRequestItem)
