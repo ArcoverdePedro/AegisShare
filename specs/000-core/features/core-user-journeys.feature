@@ -29,10 +29,11 @@ Funcionalidade: Jornadas essenciais do Core
     Dado que estou autenticado como administrador
     E abri o documento de teste
     Quando crio um link temporário protegido por senha
-    E desabilito visualização e download nesse link
+    E mantenho a visualização permitida e desabilito o download nesse link
     Então o token completo é exibido apenas após a criação
     Quando acesso o link sem estar autenticado
     Então preciso informar a senha do link
     Quando informo a senha correta
     Então vejo os metadados do documento
-    E não vejo ações de visualização ou download
+    E vejo a ação de visualização
+    E não vejo a ação de download
