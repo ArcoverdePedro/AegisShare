@@ -11,6 +11,12 @@
     const decoder = new TextDecoder();
     let encryptionKeyPromise = null;
 
+    function assertSupported() {
+        if (!window.indexedDB || !window.crypto?.subtle) {
+            throw new Error('Armazenamento offline protegido indisponível neste navegador.');
+        }
+    }
+
     function requestAsPromise(request) {
         return new Promise((resolve, reject) => {
             request.onsuccess = () => resolve(request.result);
@@ -27,8 +33,9 @@
     }
 
     function openDatabase() {
+        assertSupported();
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            const request = window.indexedDB.open(DB_NAME, DB_VERSION);
             request.onupgradeneeded = () => {
                 const db = request.result;
                 if (!db.objectStoreNames.contains(QUEUE_STORE)) {
@@ -64,29 +71,45 @@
         return bytes;
     }
 
+    async function readStoredEncryptionKey(db) {
+        const transaction = db.transaction(KEY_STORE, 'readonly');
+        const done = transactionDone(transaction);
+        const existing = await requestAsPromise(
+            transaction.objectStore(KEY_STORE).get(PAYLOAD_KEY_NAME)
+        );
+        await done;
+        return existing?.key || null;
+    }
+
     async function loadOrCreateEncryptionKey() {
         const db = await openDatabase();
         try {
-            const readTransaction = db.transaction(KEY_STORE, 'readonly');
-            const existing = await requestAsPromise(
-                readTransaction.objectStore(KEY_STORE).get(PAYLOAD_KEY_NAME)
-            );
-            await transactionDone(readTransaction);
-            if (existing?.key) return existing.key;
+            const existingKey = await readStoredEncryptionKey(db);
+            if (existingKey) return existingKey;
 
-            const key = await crypto.subtle.generateKey(
+            const key = await window.crypto.subtle.generateKey(
                 { name: 'AES-GCM', length: 256 },
                 false,
                 ['encrypt', 'decrypt']
             );
             const writeTransaction = db.transaction(KEY_STORE, 'readwrite');
-            writeTransaction.objectStore(KEY_STORE).put({
+            const done = transactionDone(writeTransaction);
+            const addRequest = writeTransaction.objectStore(KEY_STORE).add({
                 name: PAYLOAD_KEY_NAME,
                 key,
                 created_at: new Date().toISOString(),
             });
-            await transactionDone(writeTransaction);
-            return key;
+            try {
+                await requestAsPromise(addRequest);
+                await done;
+                return key;
+            } catch (error) {
+                await done.catch(() => {});
+                if (error?.name !== 'ConstraintError') throw error;
+                const winnerKey = await readStoredEncryptionKey(db);
+                if (!winnerKey) throw error;
+                return winnerKey;
+            }
         } finally {
             db.close();
         }
@@ -109,6 +132,13 @@
         return value.trim();
     }
 
+    function generateIdempotencyKey() {
+        assertSupported();
+        if (typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+        return `offline-${bytesToBase64(bytes).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')}`;
+    }
+
     function makeAdditionalData(record) {
         return encoder.encode([
             'aegisshare-offline-v1',
@@ -122,17 +152,18 @@
         operationType,
         userSessionFingerprint,
         payload,
-        idempotencyKey = crypto.randomUUID(),
+        idempotencyKey = null,
     }) {
-        if (!crypto?.subtle || !indexedDB) {
-            throw new Error('Armazenamento offline protegido indisponível neste navegador.');
-        }
+        assertSupported();
         const operation_type = validateText(operationType, 'operationType');
         const user_session_fingerprint = validateText(
             userSessionFingerprint,
             'userSessionFingerprint'
         );
-        const idempotency_key = validateText(idempotencyKey, 'idempotencyKey');
+        const idempotency_key = validateText(
+            idempotencyKey || generateIdempotencyKey(),
+            'idempotencyKey'
+        );
         if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
             throw new TypeError('payload deve ser um objeto.');
         }
@@ -147,8 +178,8 @@
             crypto_version: 1,
         };
         const key = await getEncryptionKey();
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const ciphertext = await crypto.subtle.encrypt(
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const ciphertext = await window.crypto.subtle.encrypt(
             {
                 name: 'AES-GCM',
                 iv,
@@ -164,8 +195,10 @@
         const db = await openDatabase();
         try {
             const transaction = db.transaction(QUEUE_STORE, 'readwrite');
-            transaction.objectStore(QUEUE_STORE).add(record);
-            await transactionDone(transaction);
+            const done = transactionDone(transaction);
+            const addRequest = transaction.objectStore(QUEUE_STORE).add(record);
+            await requestAsPromise(addRequest);
+            await done;
         } finally {
             db.close();
         }
@@ -177,10 +210,11 @@
         const db = await openDatabase();
         try {
             const transaction = db.transaction(QUEUE_STORE, 'readonly');
+            const done = transactionDone(transaction);
             const record = await requestAsPromise(
                 transaction.objectStore(QUEUE_STORE).get(idempotency_key)
             );
-            await transactionDone(transaction);
+            await done;
             return record || null;
         } finally {
             db.close();
@@ -191,7 +225,7 @@
         const record = await getRecord(idempotencyKey);
         if (!record) return null;
         const key = await getEncryptionKey();
-        const plaintext = await crypto.subtle.decrypt(
+        const plaintext = await window.crypto.subtle.decrypt(
             {
                 name: 'AES-GCM',
                 iv: base64ToBytes(record.payload_iv),
@@ -211,8 +245,9 @@
         const db = await openDatabase();
         try {
             const transaction = db.transaction(QUEUE_STORE, 'readonly');
+            const done = transactionDone(transaction);
             const records = await requestAsPromise(transaction.objectStore(QUEUE_STORE).getAll());
-            await transactionDone(transaction);
+            await done;
             return records
                 .filter((record) => status === null || record.status === status)
                 .map((record) => ({
@@ -239,8 +274,9 @@
         const db = await openDatabase();
         try {
             const transaction = db.transaction(QUEUE_STORE, 'readwrite');
+            const done = transactionDone(transaction);
             transaction.objectStore(QUEUE_STORE).put(record);
-            await transactionDone(transaction);
+            await done;
         } finally {
             db.close();
         }
@@ -252,17 +288,19 @@
         const db = await openDatabase();
         try {
             const transaction = db.transaction(QUEUE_STORE, 'readwrite');
+            const done = transactionDone(transaction);
             transaction.objectStore(QUEUE_STORE).delete(idempotency_key);
-            await transactionDone(transaction);
+            await done;
         } finally {
             db.close();
         }
     }
 
     async function clear() {
+        assertSupported();
         encryptionKeyPromise = null;
         await new Promise((resolve, reject) => {
-            const request = indexedDB.deleteDatabase(DB_NAME);
+            const request = window.indexedDB.deleteDatabase(DB_NAME);
             request.onsuccess = () => resolve();
             request.onerror = () => reject(request.error || new Error('Falha ao limpar dados offline.'));
             request.onblocked = () => reject(new Error('A limpeza offline foi bloqueada por outra aba.'));
