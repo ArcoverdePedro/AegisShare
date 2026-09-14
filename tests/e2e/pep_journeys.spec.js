@@ -103,12 +103,12 @@ test('profissional percorre paciente, encontro, evolução e adendo sem perder o
 
 test('PEP não apresenta violações sérias e mantém layout essencial em telefone e tablet', async ({
   page,
-}) => {
+}, testInfo) => {
   const patientName = 'Pessoa Sintética Acessibilidade E2E';
 
   await login(page, PROFESSIONAL);
   const patientUrl = await createPatient(page, {
-    identifier: 'E2E-PEP-A11Y-001',
+    identifier: `E2E-PEP-A11Y-${String(testInfo.retry).padStart(3, '0')}`,
     name: patientName,
   });
 
