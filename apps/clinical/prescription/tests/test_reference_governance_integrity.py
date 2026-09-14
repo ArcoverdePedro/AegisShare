@@ -100,7 +100,7 @@ class ApprovedReferenceApplicationIntegrityTests(ApprovedReferenceFixtureMixin, 
     def test_approved_reference_cannot_be_deleted_through_orm(self):
         rule = self.approved_dose_rule()
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError), transaction.atomic():
             rule.delete()
 
         self.assertTrue(DoseRule.objects.filter(pk=rule.pk).exists())
