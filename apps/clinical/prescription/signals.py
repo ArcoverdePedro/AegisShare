@@ -2,14 +2,24 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import pre_delete, pre_save
 from django.dispatch import receiver
 
-from .models import Lot, MedicationRequest, MedicationRequestItem, StockItem, StockMovement
+from .models import (
+    Lot,
+    MedicationDispense,
+    MedicationDispenseItem,
+    MedicationRequest,
+    MedicationRequestItem,
+    MedicationSafetyFinding,
+    MedicationSafetyReview,
+    StockItem,
+    StockMovement,
+)
 
 _ITEM_MUTATION_ERROR = "Itens só podem ser alterados enquanto a prescrição está em rascunho."
 _ITEM_DELETE_ERROR = "Itens submetidos não podem ser excluídos."
 _LOT_BALANCE_ERROR = "Saldo de lote só pode ser alterado por movimentação de estoque."
 _LOT_IDENTITY_ERROR = "Lote com movimentação não pode ter sua identidade histórica reescrita."
 _STOCK_IDENTITY_ERROR = "Estoque com lotes não pode ter medicamento ou localização reescritos."
-_MOVEMENT_DELETE_ERROR = "Movimentos de estoque são append-only e não podem ser excluídos."
+_APPEND_ONLY_DELETE_ERROR = "Registros farmacêuticos append-only não podem ser excluídos."
 
 
 def _persisted_request_status(instance):
@@ -77,6 +87,10 @@ def preserve_lot_ledger_boundary(sender, instance, **kwargs):
         raise ValidationError(_LOT_IDENTITY_ERROR)
 
 
+@receiver(pre_delete, sender=MedicationSafetyReview)
+@receiver(pre_delete, sender=MedicationSafetyFinding)
+@receiver(pre_delete, sender=MedicationDispense)
+@receiver(pre_delete, sender=MedicationDispenseItem)
 @receiver(pre_delete, sender=StockMovement)
-def prevent_stock_movement_delete(sender, instance, **kwargs):
-    raise ValidationError(_MOVEMENT_DELETE_ERROR)
+def prevent_append_only_record_delete(sender, instance, **kwargs):
+    raise ValidationError(_APPEND_ONLY_DELETE_ERROR)
