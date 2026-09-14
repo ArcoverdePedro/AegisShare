@@ -2,138 +2,131 @@
 
 ## Princípio de ownership
 
-`Patient` e `Encounter` permanecem canônicos no módulo PEP. O ADT não duplica essas entidades; referencia seus UUIDs por `ForeignKey`.
+`Patient` e `Encounter` permanecem canônicos no módulo PEP. O ADT não duplica essas entidades; referencia seus UUIDs por relações Django protegidas.
 
 ## Location
 
 Representa unidade, setor, ala, quarto ou outro agrupador operacional.
 
-Campos previstos:
+Campos implementados:
 
 - `id: UUID PK`;
-- `code: CharField` único por escopo organizacional;
+- `code: CharField` único;
 - `name: CharField`;
-- `kind: TextChoices` (`UNIT`, `WARD`, `ROOM`, `OTHER`);
-- `parent: FK self nullable`;
+- `kind: UNIT|WARD|ROOM|OTHER`;
+- `parent: FK self nullable PROTECT`;
 - `active: bool`;
 - timestamps.
 
-Regras:
+Regras: código normalizado e não vazio, hierarquia não referencia a si própria e desativação não apaga histórico.
 
-- código normalizado e não vazio;
-- hierarquia não pode referenciar a si própria;
-- desativação não apaga histórico.
+## UserLocationAccess
+
+Escopo operacional explícito usuário↔local para RBAC + ABAC ADT.
+
+- `id: UUID PK`;
+- `user: FK User`;
+- `location: FK Location`;
+- `granted_by: FK User nullable`;
+- `created_at`;
+- `UniqueConstraint(user, location)`.
+
+`FUNC` sem associação explícita não herda acesso a um local.
 
 ## Bed
 
 Representa o recurso físico/lógico ocupável.
 
-Campos previstos:
-
 - `id: UUID PK`;
 - `location: FK Location PROTECT`;
-- `code: CharField`;
-- `label: CharField`;
+- `code`, `label`;
 - `operational_status: AVAILABLE|BLOCKED|OUT_OF_SERVICE`;
-- `active: bool`;
-- timestamps.
+- `active` e timestamps;
+- `UniqueConstraint(location, code)`.
 
-Constraints:
-
-- `UniqueConstraint(location, code)`;
-- índices por `location`, `operational_status`, `active`.
-
-`OCCUPIED` não é gravado em `operational_status`; é derivado da existência de `BedOccupancy` ativa. Assim evitamos divergência entre um boolean/estado gravado e a ocupação real.
+`OCCUPIED` é derivado da existência de `BedOccupancy` ativa; não é duplicado em `operational_status`.
 
 ## Admission
 
-Marca o início administrativo da internação vinculada a um `Encounter` PEP.
-
-Campos previstos:
+Início administrativo da internação vinculada a um `Encounter` PEP.
 
 - `id: UUID PK`;
 - `encounter: OneToOneField(pep.Encounter, PROTECT)`;
-- `admitted_at: DateTimeField`;
+- `admitted_at`;
 - `admitted_by: FK User PROTECT`;
-- `operation_key: UUID` único para idempotência;
+- `operation_key: UUID unique`;
 - `created_at`.
 
-Regras:
-
-- `Encounter.encounter_type == INPATIENT`;
-- `Encounter.status == OPEN`;
-- `admitted_at >= Encounter.started_at` salvo ajuste administrativo explicitamente auditado no futuro;
-- um encontro possui no máximo uma admissão ADT.
+Regras: encontro `INPATIENT`, aberto, `admitted_at >= Encounter.started_at` e uma admissão por encontro. O serviço usa chave de operação para idempotência e bloqueio transacional.
 
 ## BedOccupancy
 
 Intervalo de ocupação de um leito por uma admissão.
 
-Campos previstos:
-
 - `id: UUID PK`;
 - `admission: FK Admission PROTECT`;
 - `bed: FK Bed PROTECT`;
-- `started_at: DateTimeField`;
-- `ended_at: DateTimeField nullable`;
-- `started_by: FK User PROTECT`;
-- `ended_by: FK User PROTECT nullable`;
-- `end_reason: ADMISSION_TRANSFER|TRANSFER|DISCHARGE|CORRECTION`;
-- timestamps.
+- `started_at`, `ended_at nullable`;
+- `started_by`, `ended_by nullable`;
+- `end_reason: TRANSFER|DISCHARGE|CORRECTION`;
+- `created_at`.
 
 Constraints/regras:
 
 - `ended_at >= started_at`;
-- somente uma ocupação ativa (`ended_at IS NULL`) por `bed`;
-- somente uma ocupação ativa por `admission`;
-- constraint condicional deve ser aplicada no PostgreSQL via `UniqueConstraint(..., condition=Q(ended_at__isnull=True))` se compatível com o schema final;
-- registros concluídos não são editados/excluídos pela interface comum.
+- uma ocupação ativa (`ended_at IS NULL`) por `bed`;
+- uma ocupação ativa por `admission`;
+- constraints parciais PostgreSQL constituem a última barreira contra dupla ocupação;
+- encerramento exige `ended_by` e `end_reason`.
 
 ## Transfer
 
 Registro append-only do movimento entre ocupações.
 
-Campos previstos:
+Campos implementados:
 
 - `id: UUID PK`;
 - `admission: FK Admission PROTECT`;
-- `from_occupancy: OneToOneField BedOccupancy PROTECT`;
-- `to_occupancy: OneToOneField BedOccupancy PROTECT`;
-- `transferred_at: DateTimeField`;
-- `reason: CharField` curto, tratado como dado sensível e excluído de payloads de evento/auditlog serializado;
-- `performed_by: FK User PROTECT`;
+- `source_occupancy: OneToOneField BedOccupancy PROTECT`;
+- `destination_occupancy: OneToOneField BedOccupancy PROTECT`;
+- `transferred_at`;
+- `transferred_by: FK User PROTECT`;
+- `reason: CharField(255)` opcional e sensível;
 - `operation_key: UUID unique`;
 - `created_at`.
 
 Regras:
 
 - origem e destino pertencem à mesma admissão;
-- leitos de origem/destino devem ser diferentes;
-- `from_occupancy.ended_at == transferred_at` e `to_occupancy.started_at == transferred_at` na operação de serviço;
-- não permitir alteração destrutiva após persistência.
+- leitos são diferentes;
+- `source_occupancy.ended_at == transferred_at` e `destination_occupancy.started_at == transferred_at` no serviço;
+- a criação ocorre junto do encerramento da origem e abertura do destino em `transaction.atomic()`;
+- `reason` é excluído do auditlog serializado;
+- registro persistido não pode ser editado/excluído pelo modelo.
 
 ## Discharge
 
 Encerramento administrativo da internação.
 
-Campos previstos:
+Campos implementados:
 
 - `id: UUID PK`;
 - `admission: OneToOneField Admission PROTECT`;
-- `discharged_at: DateTimeField`;
+- `final_occupancy: OneToOneField BedOccupancy PROTECT`;
+- `discharged_at`;
 - `disposition: HOME|TRANSFER_EXTERNAL|DEATH|OTHER`;
-- `reason: CharField/TextField` opcional e sensível;
-- `performed_by: FK User PROTECT`;
+- `reason: CharField(255)` opcional e sensível;
+- `discharged_by: FK User PROTECT`;
 - `operation_key: UUID unique`;
 - `created_at`.
 
 Regras:
 
-- só existe para admissão sem alta anterior;
+- uma alta por admissão;
 - encerra a ocupação ativa no mesmo timestamp;
-- fecha o `Encounter` PEP no mesmo bloco transacional;
-- `Encounter.ended_at` recebe `discharged_at`;
-- uma alta concluída não é editada/excluída; correções futuras devem usar mecanismo de adendo/correção auditável definido por nova tarefa/spec.
+- fecha o `Encounter` PEP no mesmo bloco transacional e atribui `Encounter.ended_at = discharged_at`;
+- `reason` é excluído do auditlog serializado;
+- alta persistida não pode ser editada/excluída pelo modelo.
 
 ## Relações
 
@@ -144,15 +137,17 @@ Patient (PEP)
               ├── BedOccupancy 1..N ──> Bed ──> Location
               ├── Transfer 0..N
               └── Discharge 0..1
+
+User ──> UserLocationAccess ──> Location
 ```
 
 ## Auditoria e dados sensíveis
 
-- `Location.code/name` e `Bed.code/label` são dados operacionais, mas podem revelar localização do paciente quando combinados com ocupação;
-- `reason` de admissão/transferência/alta não deve entrar em eventos WebSocket, logs técnicos ou serialização ampla de auditlog;
-- leituras que exibam paciente identificável devem gerar `ACCESS` auditável;
-- retenção jurídica definitiva é delegada à Spec 013; esta spec proíbe exclusão automática de histórico ADT.
+- `Location.code/name` e `Bed.code/label` são operacionais, porém sua combinação com ocupação pode revelar localização do paciente;
+- `reason` de transferência/alta não entra em payload amplo de auditlog e não deverá entrar em eventos WebSocket/logs técnicos;
+- leituras identificáveis ainda dependem da entrega T-ADT-09 para auditoria explícita de acesso;
+- retenção jurídica definitiva pertence à Spec 013; esta spec proíbe exclusão automática de histórico ADT.
 
 ## Rollback
 
-As migrations iniciais criam somente tabelas ADT e relações para PEP. Nenhuma migration inicial renomeia ou move `Encounter`. Em ambientes com dados reais, rollback operacional deve reverter código/feature flag sem destruir tabelas históricas.
+As migrations ADT criam tabelas próprias e relações para o PEP sem mover ou renomear `Encounter`. `0003_transfer_discharge` é estruturalmente reversível enquanto não houver dependências posteriores; em ambiente com dados reais, rollback operacional deve preferir reversão de código/feature flag e preservar tabelas históricas.
