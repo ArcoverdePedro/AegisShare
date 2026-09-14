@@ -72,11 +72,17 @@ class PrescriptionPermissionTests(TestCase):
             reason="Cobertura assistencial sintética",
         )
 
-    def test_admin_has_prescription_access_without_explicit_permission(self):
-        self.assertTrue(can_prescribe_for_encounter(self.admin, self.encounter))
+    def test_admin_role_alone_does_not_grant_clinical_capability(self):
+        self.assertFalse(can_prescribe_for_encounter(self.admin, self.encounter))
+        self.assertFalse(can_view_prescription(self.admin, self.request))
+        self.assertFalse(can_validate_prescription(self.admin, self.request))
+        self.assertFalse(can_dispense_prescription(self.admin, self.request))
+
+    def test_admin_with_explicit_capability_keeps_global_pep_scope(self):
+        self._grant_permission(self.admin, "view_medication_request")
+        self._grant_permission(self.admin, "prescribe_medication")
         self.assertTrue(can_view_prescription(self.admin, self.request))
-        self.assertTrue(can_validate_prescription(self.admin, self.request))
-        self.assertTrue(can_dispense_prescription(self.admin, self.request))
+        self.assertTrue(can_prescribe_for_encounter(self.admin, self.encounter))
 
     def test_employee_role_alone_does_not_grant_capability(self):
         self._grant_patient(self.employee)
@@ -84,18 +90,18 @@ class PrescriptionPermissionTests(TestCase):
         self.assertFalse(can_view_prescription(self.employee, self.request))
 
     def test_permission_without_pep_scope_does_not_expose_prescription(self):
-        self._grant_permission(self.employee, "view_prescription")
+        self._grant_permission(self.employee, "view_medication_request")
         self.assertFalse(can_view_prescription(self.employee, self.request))
 
     def test_permission_and_pep_scope_are_both_required(self):
-        self._grant_permission(self.employee, "view_prescription")
+        self._grant_permission(self.employee, "view_medication_request")
         self._grant_permission(self.employee, "prescribe_medication")
         self._grant_patient(self.employee)
         self.assertTrue(can_view_prescription(self.employee, self.request))
         self.assertTrue(can_prescribe_for_encounter(self.employee, self.encounter))
 
     def test_client_remains_denied_even_if_permission_is_misassigned(self):
-        self._grant_permission(self.client_user, "view_prescription")
+        self._grant_permission(self.client_user, "view_medication_request")
         self._grant_permission(self.client_user, "prescribe_medication")
         self._grant_patient(self.client_user)
         self.assertFalse(can_view_prescription(self.client_user, self.request))
