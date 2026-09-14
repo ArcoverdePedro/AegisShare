@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import PermissionDenied
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -25,6 +25,11 @@ from ..models import (
     MedicationRequest,
     MedicationRequestItem,
 )
+
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
 class CatalogServiceTests(TestCase):
@@ -246,9 +251,14 @@ class CatalogServiceTests(TestCase):
         self.assertEqual(rule.rule_code, "SYNTHETIC-AGE-RULE")
 
 
+@override_settings(STORAGES=TEST_STORAGES)
 class DrugCatalogViewTests(TestCase):
     def setUp(self):
         self.admin = make_user("rx-catalog-view-admin", role="ADM")
+        self.admin.is_superuser = True
+        self.admin.is_staff = True
+        self.admin.save(update_fields=["is_superuser", "is_staff"])
+
         self.viewer = make_user("rx-catalog-viewer", role="FUNC")
         self.manager = make_user("rx-catalog-view-manager", role="FUNC")
         self.denied = make_user("rx-catalog-view-denied", role="FUNC")
