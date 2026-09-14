@@ -1,0 +1,60 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Prescrições - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="mb-5">
+            <p class="heading">Prescrição e Farmácia</p>
+            <h1 class="title is-3 mb-1">Prescrições</h1>
+            <p class="muted">Prescrições visíveis conforme capacidade e escopo PEP.</p>
+        </div>
+
+        <div class="box aegis-card">
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Encontro</th>
+                            <th>Status</th>
+                            <th>Itens</th>
+                            <th>Autor</th>
+                            <th>Criada em</th>
+                            <th class="has-text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prescription in prescriptions %}
+                            <tr>
+                                <td>{{ prescription.encounter.patient.full_name }}</td>
+                                <td>{{ prescription.encounter_id }}</td>
+                                <td><span class="tag is-light">{{ prescription.get_status_display }}</span></td>
+                                <td>{{ prescription.item_count }}</td>
+                                <td>{{ prescription.authored_by.get_username }}</td>
+                                <td>{{ prescription.created_at|date:'d/m/Y H:i' }}</td>
+                                <td class="has-text-right">
+                                    <a class="button is-small is-link is-light" href="{% url 'prescription:prescription_detail' prescription.pk %}">Abrir</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="7" class="has-text-centered muted py-6">Nenhuma prescrição disponível no seu escopo.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if is_paginated %}
+            <nav class="pagination is-centered mt-5" aria-label="paginação">
+                {% if page_obj.has_previous %}<a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                {% if page_obj.has_next %}<a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+                <ul class="pagination-list"><li><span class="pagination-link is-current">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li></ul>
+            </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
