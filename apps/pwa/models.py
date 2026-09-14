@@ -13,6 +13,7 @@ class PushSubscription(models.Model):
     )
     endpoint = models.TextField()
     endpoint_hash = models.CharField(max_length=64, unique=True, editable=False)
+    session_fingerprint = models.CharField(max_length=64, db_index=True, editable=False)
     p256dh = models.TextField()
     auth = models.TextField()
     active = models.BooleanField(default=True, db_index=True)
@@ -31,6 +32,10 @@ class PushSubscription(models.Model):
     @staticmethod
     def hash_endpoint(endpoint: str) -> str:
         return hashlib.sha256(endpoint.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def hash_session_key(session_key: str) -> str:
+        return hashlib.sha256(session_key.encode("utf-8")).hexdigest()
 
     def save(self, *args, **kwargs):
         self.endpoint_hash = self.hash_endpoint(self.endpoint)
