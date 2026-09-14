@@ -163,6 +163,7 @@ jobs:
         run: |
           docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_core_journeys.py
           docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_pep_users.py
+          docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_adt_journeys.py
 
       - name: Instalar ferramentas de navegador
         run: npm install --no-save --no-audit --no-fund @playwright/test@1.63.0 @axe-core/playwright@4.10.2 @lhci/cli@0.15.1
@@ -170,7 +171,7 @@ jobs:
       - name: Instalar Chromium do Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Validar jornadas Core, PEP e PWA com Playwright
+      - name: Validar jornadas Core, PEP, ADT e PWA com Playwright
         env:
           PWA_BASE_URL: http://127.0.0.1:8000
         run: npx playwright test --config=playwright.config.cjs
