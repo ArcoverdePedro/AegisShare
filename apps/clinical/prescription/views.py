@@ -1,16 +1,26 @@
+from decimal import Decimal
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import DecimalField, Prefetch, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.cache import patch_vary_headers
 from django.views.generic import FormView, ListView
 
 from .catalog_services import CatalogStateError, create_drug, update_drug
 from .forms import DrugForm
-from .models import Drug
-from .permissions import can_manage_reference_data, can_view_drug_catalog
+from .models import Drug, Lot, StockItem
+from .permissions import (
+    can_manage_reference_data,
+    can_manage_stock,
+    can_view_drug_catalog,
+    can_view_stock,
+)
 
 
 class NoStoreResponseMixin:
@@ -91,3 +101,44 @@ class DrugUpdateView(LoginRequiredMixin, NoStoreResponseMixin, FormView):
             return self.form_invalid(form)
         messages.success(self.request, "Medicamento atualizado com sucesso.")
         return HttpResponseRedirect(reverse("prescription:drug_catalog"))
+
+
+class PharmacyStockView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
+    template_name = "clinical/prescription/pharmacy_stock.html"
+    context_object_name = "stock_items"
+    paginate_by = 30
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not can_view_stock(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        today = timezone.localdate()
+        quantity_field = DecimalField(max_digits=14, decimal_places=4)
+        lots = Lot.objects.select_related("stock_item").order_by("expires_on", "lot_number")
+        return (
+            StockItem.objects.select_related("drug")
+            .prefetch_related(Prefetch("lots", queryset=lots))
+            .annotate(
+                eligible_quantity=Coalesce(
+                    Sum(
+                        "lots__quantity_available",
+                        filter=Q(lots__active=True, lots__expires_on__gte=today),
+                    ),
+                    Value(Decimal("0"), output_field=quantity_field),
+                    output_field=quantity_field,
+                )
+            )
+            .order_by("drug__name", "storage_location")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        today = timezone.localdate()
+        for stock_item in context["stock_items"]:
+            stock_item.is_low = stock_item.eligible_quantity <= stock_item.minimum_level
+            for lot in stock_item.lots.all():
+                lot.is_expired = lot.expires_on < today
+        context["can_manage_stock"] = can_manage_stock(self.request.user)
+        return context
