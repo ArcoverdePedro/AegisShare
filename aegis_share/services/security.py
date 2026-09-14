@@ -10,7 +10,6 @@ from aegis_share.models import APIToken, UserSecuritySettings
 
 from .crypto import decrypt_secret, encrypt_secret
 
-
 API_TOKEN_HASH_SALT = "aegis_share.api_token"
 
 

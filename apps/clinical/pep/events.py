@@ -3,7 +3,6 @@ from channels.layers import get_channel_layer
 from django.db import transaction
 from django.utils import timezone
 
-
 CLINICAL_EVENT_TYPES = {
     "encounter.created",
     "evolution.created",

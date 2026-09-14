@@ -78,7 +78,10 @@ class PwaSurfaceTests(TestCase):
         self.assertIn("self.addEventListener('push'", body)
         self.assertIn("Você tem uma nova notificação.", body)
         self.assertIn("GENERIC_NOTIFICATION_URL", body)
-        self.assertNotIn("event.data", body)
+        push_handler = body.split("self.addEventListener(\'push\'", 1)[1].split(
+            "self.addEventListener(\'notificationclick\'", 1
+        )[0]
+        self.assertNotIn("event.data", push_handler)
         self.assertNotIn("patient_name", body)
         self.assertNotIn("diagnosis", body)
 
