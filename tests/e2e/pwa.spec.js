@@ -63,3 +63,91 @@ test('manifest exposes installable standalone metadata and both required icons',
     expect(iconResponse.headers()['content-type']).toContain('image/png');
   }
 });
+
+test('offline queue stores only encrypted payloads and keeps the local key non-extractable', async ({ page }) => {
+  await page.goto('/');
+  await page.addScriptTag({ url: '/static/pwa/offline_queue.js' });
+
+  const result = await page.evaluate(async () => {
+    const sensitiveMarker = 'SYNTHETIC-PHI-MARKER-DO-NOT-PERSIST-IN-PLAINTEXT';
+    const idempotencyKey = 'ci-pwa-encrypted-queue-001';
+    const payload = {
+      synthetic_patient_marker: sensitiveMarker,
+      measurement: 123,
+    };
+
+    await window.AegisOfflineQueue.clear().catch(() => {});
+    const envelope = await window.AegisOfflineQueue.enqueue({
+      operationType: 'ci.synthetic.offline',
+      userSessionFingerprint: 'ci-session-fingerprint',
+      payload,
+      idempotencyKey,
+    });
+    const decrypted = await window.AegisOfflineQueue.readPayload(idempotencyKey);
+    const metadata = await window.AegisOfflineQueue.listMetadata({ status: 'pending' });
+
+    const raw = await new Promise((resolve, reject) => {
+      const openRequest = indexedDB.open(window.AegisOfflineQueue.databaseName, 1);
+      openRequest.onerror = () => reject(openRequest.error);
+      openRequest.onsuccess = () => {
+        const db = openRequest.result;
+        const transaction = db.transaction(['queue', 'keys'], 'readonly');
+        const queueRequest = transaction.objectStore('queue').get(idempotencyKey);
+        const keyRequest = transaction.objectStore('keys').get('payload-aes-gcm-v1');
+        transaction.onerror = () => reject(transaction.error);
+        transaction.oncomplete = () => {
+          const rawRecord = queueRequest.result;
+          const keyRecord = keyRequest.result;
+          db.close();
+          resolve({
+            rawRecord,
+            serializedRecord: JSON.stringify(rawRecord),
+            keyExtractable: keyRecord.key.extractable,
+          });
+        };
+      };
+    });
+
+    let duplicateRejected = false;
+    try {
+      await window.AegisOfflineQueue.enqueue({
+        operationType: 'ci.synthetic.offline',
+        userSessionFingerprint: 'ci-session-fingerprint',
+        payload,
+        idempotencyKey,
+      });
+    } catch (_error) {
+      duplicateRejected = true;
+    }
+
+    await window.AegisOfflineQueue.clear();
+
+    return {
+      sensitiveMarker,
+      envelope,
+      decrypted,
+      metadata,
+      raw,
+      duplicateRejected,
+    };
+  });
+
+  expect(result.envelope.status).toBe('pending');
+  expect(result.envelope.retry_count).toBe(0);
+  expect(result.envelope.payload_ciphertext).toBeTruthy();
+  expect(result.envelope.payload_iv).toBeTruthy();
+  expect(result.raw.rawRecord.payload).toBeUndefined();
+  expect(result.raw.serializedRecord).not.toContain(result.sensitiveMarker);
+  expect(result.raw.keyExtractable).toBe(false);
+  expect(result.decrypted.synthetic_patient_marker).toBe(result.sensitiveMarker);
+  expect(result.metadata).toEqual([
+    expect.objectContaining({
+      idempotency_key: 'ci-pwa-encrypted-queue-001',
+      operation_type: 'ci.synthetic.offline',
+      status: 'pending',
+      retry_count: 0,
+      crypto_version: 1,
+    }),
+  ]);
+  expect(result.duplicateRejected).toBe(true);
+});
