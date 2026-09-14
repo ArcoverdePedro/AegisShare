@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 
 from .catalog_services import (
+    CatalogStateError,
     set_dose_rule_reference_active,
     set_interaction_reference_active,
 )
@@ -29,33 +31,42 @@ class GovernedReferenceAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         fields = list(super().get_readonly_fields(request, obj))
-        if obj and obj.active:
+        if obj and obj.approved_at:
             fields.extend(self.governed_fields)
         return tuple(dict.fromkeys(fields))
 
+    def _apply_active_state(self, request, queryset, *, active):
+        updated = 0
+        rejected = 0
+        for obj in queryset:
+            try:
+                self.set_reference_active(obj=obj, actor=request.user, active=active)
+            except (CatalogStateError, ValidationError):
+                rejected += 1
+                continue
+            updated += 1
+
+        if updated:
+            action = "ativada(s) com aprovação registrada" if active else "desativada(s)"
+            self.message_user(
+                request,
+                f"{updated} referência(s) {action}.",
+                level=messages.SUCCESS,
+            )
+        if rejected:
+            self.message_user(
+                request,
+                f"{rejected} referência(s) não puderam ser alteradas pelas regras de governança.",
+                level=messages.WARNING,
+            )
+
     @admin.action(description="Ativar referências selecionadas com aprovação do usuário atual")
     def activate_selected(self, request, queryset):
-        count = 0
-        for obj in queryset:
-            self.set_reference_active(obj=obj, actor=request.user, active=True)
-            count += 1
-        self.message_user(
-            request,
-            f"{count} referência(s) ativada(s) com aprovação registrada.",
-            level=messages.SUCCESS,
-        )
+        self._apply_active_state(request, queryset, active=True)
 
     @admin.action(description="Desativar referências selecionadas")
     def deactivate_selected(self, request, queryset):
-        count = 0
-        for obj in queryset:
-            self.set_reference_active(obj=obj, actor=request.user, active=False)
-            count += 1
-        self.message_user(
-            request,
-            f"{count} referência(s) desativada(s).",
-            level=messages.SUCCESS,
-        )
+        self._apply_active_state(request, queryset, active=False)
 
 
 @admin.register(Interaction)
