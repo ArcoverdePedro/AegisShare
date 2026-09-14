@@ -1,0 +1,21 @@
+# Tasks — Spec 003 Prescrição e Farmácia
+
+> Status: proposta; nenhuma tarefa de runtime pode iniciar antes da aprovação do mantenedor desta spec e dos contratos.
+
+- [ ] **T-RX-01** Aprovar `spec.md`, `plan.md`, `data-model.md` e contratos. Gate SDD para qualquer código.
+- [ ] **T-RX-02** Validar com governança clínica/farmacêutica o formato e a procedência das referências de `Interaction` e `DoseRule`; manter somente fixtures sintéticas até essa validação. RF-RX-05/07, RNF-RX-06.
+- [ ] **T-RX-03** Definir extensão PEP para `AllergyIntolerance` em spec própria antes de habilitar checagem automática de alergias; até lá implementar estado explícito `UNAVAILABLE`/revisão manual, sem falso negativo. RF-RX-06.
+- [ ] **T-RX-04** Criar `apps/clinical/prescription`, models e migrations reversíveis para catálogo, prescrição, safety review, estoque/lotes e dispensação. RF-RX-01/02/03/09/11.
+- [ ] **T-RX-05** Implementar RBAC + ABAC deny-by-default, selectors autorizados e negações sem exposição de PHI. RF-RX-12.
+- [ ] **T-RX-06** Implementar catálogo `Drug` e manutenção de referências `Interaction`/`DoseRule` com procedência/versionamento/aprovação. RF-RX-01/05/07.
+- [ ] **T-RX-07** Implementar criação DRAFT, itens estruturados, submissão e histórico imutável/substituição de `MedicationRequest`. RF-RX-02/03/04.
+- [ ] **T-RX-08** Implementar safety engine determinístico para interações e dose, incluindo `NOT_EVALUABLE` para peso/fato ausente e sem lógica clínica hardcoded. RF-RX-05/07.
+- [ ] **T-RX-09** Implementar tela/serviço de validação farmacêutica com `MedicationSafetyReview`, gate explícito de alergia e separação da assinatura jurídica T-PEP-08. RF-RX-06/08.
+- [ ] **T-RX-10** Implementar `StockItem`, `Lot` e `StockMovement` append-only, validação de validade/saldo e alerta técnico de estoque baixo. RF-RX-09/11/13.
+- [ ] **T-RX-11** Implementar dispensação transacional/idempotente por lote com `select_for_update()` e constraint de não-negatividade. RF-RX-10/11.
+- [ ] **T-RX-12** Implementar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual; formalizar AsyncAPI final. RF-RX-13.
+- [ ] **T-RX-13** Criar testes PostgreSQL de concorrência disputando o último saldo e provar rollback limpo da operação perdedora. RF-RX-10, RNF-RX-02/08.
+- [ ] **T-RX-14** Criar Gherkin + Playwright das jornadas: prescrever, validar, bloquear por referência sintética, dispensar, negar acesso e preservar histórico. Critérios de aceitação da Spec 003.
+- [ ] **T-RX-15** Executar axe-core e validação mobile/tablet das telas essenciais. RNF-RX-05.
+- [ ] **T-RX-16** Garantir por arquitetura/E2E que não há nova API REST pública e que mutações de prescrição/dispensação permanecem fora de cache/fila offline PWA. RF-RX-14, RNF-RX-03.
+- [ ] **T-RX-17** Fechar documentação/rastreabilidade final e integração futura com Spec 004/009 sem duplicar fonte de verdade. Definition of Done.
