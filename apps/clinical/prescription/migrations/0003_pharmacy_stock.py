@@ -24,7 +24,10 @@ class Migration(migrations.Migration):
                 ("drug", models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name="stock_items", to="prescription.drug")),
             ],
             options={
-                "permissions": [("manage_pharmacy_stock", "Pode gerenciar estoque farmacêutico")],
+                "permissions": [
+                    ("view_pharmacy_stock", "Pode consultar estoque farmacêutico"),
+                    ("manage_pharmacy_stock", "Pode gerenciar estoque farmacêutico"),
+                ],
                 "constraints": [
                     models.UniqueConstraint(fields=("drug", "storage_location"), name="uniq_rx_stock_location"),
                     models.CheckConstraint(condition=models.Q(minimum_level__gte=0), name="rx_stock_min_nonnegative"),
@@ -63,7 +66,10 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ["-dispensed_at", "-created_at"],
-                "permissions": [("dispense_medication", "Pode dispensar medicamentos")],
+                "permissions": [
+                    ("view_medication_dispense", "Pode visualizar dispensações"),
+                    ("dispense_medication", "Pode dispensar medicamentos"),
+                ],
                 "indexes": [models.Index(fields=["medication_request", "dispensed_at"], name="rx_dispense_request_idx")],
             },
         ),
@@ -96,7 +102,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ["created_at"],
-                "permissions": [("adjust_pharmacy_stock", "Pode ajustar estoque farmacêutico")],
                 "indexes": [
                     models.Index(fields=["lot", "created_at"], name="rx_stock_move_lot_idx"),
                     models.Index(fields=["operation_key"], name="rx_stock_move_operation_idx"),
