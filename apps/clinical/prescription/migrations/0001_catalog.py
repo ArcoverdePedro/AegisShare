@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ["name", "presentation", "code"],
-                "permissions": [("manage_medication_reference", "Pode gerenciar referências farmacêuticas")],
+                "permissions": [("manage_drug_catalog", "Pode manter catálogo farmacêutico")],
                 "indexes": [models.Index(fields=["active", "name"], name="rx_drug_active_name_idx")],
             },
         ),
