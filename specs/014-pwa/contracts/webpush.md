@@ -12,7 +12,9 @@ Rotas internas autenticadas por sessão Django e protegidas por CSRF:
 - `POST /pwa/push/subscribe/` — registra `endpoint`, `keys.p256dh` e `keys.auth` da `PushSubscription` do navegador;
 - `POST /pwa/push/unsubscribe/` — desativa a subscription pertencente ao usuário atual.
 
-O endpoint deve ser HTTPS. O servidor armazena um SHA-256 do endpoint para unicidade e nunca registra endpoint/chaves em logs de aplicação.
+O endpoint deve ser HTTPS. O servidor armazena um SHA-256 do endpoint para unicidade e um SHA-256 da chave de sessão para vincular a subscription à sessão autenticada sem persistir a chave de sessão em claro. Endpoint, chaves e fingerprint nunca são escritos nos logs de aplicação.
+
+Ao fazer logout, somente subscriptions ligadas àquela sessão são desativadas; subscriptions de outros dispositivos/sessões permanecem ativas. `Clear-Site-Data` continua limpando cache/storage locais.
 
 ## Payload
 
@@ -52,8 +54,10 @@ Se o trio não estiver presente, Web Push permanece desabilitado. A chave privad
 
 ## Testes obrigatórios
 
-- endpoint privado VAPID nunca aparece na resposta de configuração;
+- chave privada VAPID nunca aparece na resposta de configuração;
 - inscrição exige autenticação, CSRF e endpoint HTTPS;
+- vínculo de sessão é persistido somente como hash;
+- logout desativa apenas a subscription vinculada à sessão encerrada;
 - remetente usa `data=None`;
 - service worker não lê `event.data` e usa cópia genérica fixa;
 - 404/410 desativam a subscription;
