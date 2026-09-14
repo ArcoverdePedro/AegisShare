@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.test import SimpleTestCase
+from django.test import TestCase
 from django.urls import URLPattern, URLResolver, reverse
 
 from apps.clinical.prescription.urls import urlpatterns as prescription_urlpatterns
@@ -27,7 +27,7 @@ def _collect_routes(patterns, prefix=""):
     return routes
 
 
-class PrescriptionArchitectureBoundaryTests(SimpleTestCase):
+class PrescriptionArchitectureBoundaryTests(TestCase):
     def test_prescription_urlconf_exposes_no_api_routes(self):
         routes = _collect_routes(prescription_urlpatterns)
 
