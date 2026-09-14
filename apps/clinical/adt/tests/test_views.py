@@ -22,7 +22,11 @@ TEST_STORAGES = {
 @override_settings(STORAGES=TEST_STORAGES)
 class AdtViewTests(TestCase):
     def setUp(self):
-        self.admin = User.objects.create_user(
+        # FirstAccessRedirectMiddleware considera a instalação configurada apenas
+        # quando existe um superusuário. Este ator também serve como administrador
+        # técnico dos dados de teste, enquanto as autorizações exercitadas abaixo
+        # permanecem concentradas no usuário FUNC.
+        self.admin = User.objects.create_superuser(
             username="adt-view-admin",
             password="test-password",
             nivel_permissao="ADM",
@@ -142,7 +146,12 @@ class AdtViewTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(BedOccupancy.objects.filter(bed=self.bed, ended_at__isnull=True).exists())
+        self.assertTrue(
+            BedOccupancy.objects.filter(
+                bed=self.bed,
+                ended_at__isnull=True,
+            ).exists()
+        )
 
     def test_employee_without_bed_map_permission_gets_403(self):
         self.client.force_login(self.employee)
