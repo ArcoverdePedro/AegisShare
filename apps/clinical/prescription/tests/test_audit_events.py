@@ -1,8 +1,12 @@
+import re
+import uuid
 from datetime import timedelta
 from decimal import Decimal
+from pathlib import Path
 from unittest.mock import patch
 
 from auditlog.models import LogEntry
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -12,8 +16,8 @@ from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter, Patient, PatientAccessGrant
 
-from ..events import PRESCRIPTION_EVENT_GROUP, emit_prescription_event
-from ..models import Drug, Lot, MedicationRequest, StockItem, StockMovement
+from ..events import PRESCRIPTION_EVENT_GROUP, PRESCRIPTION_EVENT_TYPES, emit_prescription_event
+from ..models import Drug, MedicationRequest, StockMovement
 from ..services import add_medication_request_item, create_medication_request, submit_medication_request
 from ..stock_services import adjust_stock, create_lot, create_stock_item
 
@@ -36,8 +40,8 @@ class _RecordingChannelLayer:
 class PrescriptionEventTests(TestCase):
     def test_prescription_event_contains_only_operational_identifiers(self):
         layer = _RecordingChannelLayer()
-        prescription_id = MedicationRequest._meta.pk.to_python("00000000-0000-0000-0000-000000000001")
-        encounter_id = Encounter._meta.pk.to_python("00000000-0000-0000-0000-000000000002")
+        prescription_id = uuid.uuid4()
+        encounter_id = uuid.uuid4()
 
         with (
             patch("apps.clinical.prescription.events.get_channel_layer", return_value=layer),
@@ -75,10 +79,25 @@ class PrescriptionEventTests(TestCase):
         with self.assertRaises(ValueError):
             emit_prescription_event(
                 event_type="prescription.unknown",
-                prescription_id="00000000-0000-0000-0000-000000000001",
-                encounter_id="00000000-0000-0000-0000-000000000002",
+                prescription_id=uuid.uuid4(),
+                encounter_id=uuid.uuid4(),
                 status=MedicationRequest.Status.SUBMITTED,
             )
+
+    def test_asyncapi_event_names_match_runtime_allowlist(self):
+        contract_path = (
+            Path(settings.BASE_DIR)
+            / "specs"
+            / "003-prescricao-farmacia"
+            / "contracts"
+            / "events.asyncapi.yaml"
+        )
+        body = contract_path.read_text(encoding="utf-8")
+        documented_names = set(
+            re.findall(r"^\s+name:\s+([a-z.]+)\s*$", body, flags=re.MULTILINE)
+        )
+
+        self.assertEqual(documented_names, PRESCRIPTION_EVENT_TYPES)
 
 
 class PrescriptionSubmissionEventTests(TestCase):
