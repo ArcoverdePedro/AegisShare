@@ -10,7 +10,7 @@ from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter, Patient, PatientAccessGrant
 
-from ..lifecycle import DischargeStateError, transfer_patient, discharge_patient
+from ..lifecycle import DischargeStateError, discharge_patient, transfer_patient
 from ..models import (
     Admission,
     Bed,
