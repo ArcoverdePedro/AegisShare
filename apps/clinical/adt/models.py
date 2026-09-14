@@ -54,6 +54,45 @@ class Location(models.Model):
         return f"Local {self.code}"
 
 
+class UserLocationAccess(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="adt_location_accesses",
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.CASCADE,
+        related_name="user_accesses",
+    )
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="adt_location_accesses_granted",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "location"],
+                name="uniq_adt_user_location_access",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["user", "location"],
+                name="adt_user_location_idx",
+            )
+        ]
+
+    def __str__(self):
+        return f"Escopo ADT {self.id}"
+
+
 class Bed(models.Model):
     class OperationalStatus(models.TextChoices):
         AVAILABLE = "AVAILABLE", "Disponível"
@@ -235,6 +274,7 @@ class BedOccupancy(models.Model):
 
 
 auditlog.register(Location)
+auditlog.register(UserLocationAccess)
 auditlog.register(Bed)
 auditlog.register(Admission)
 auditlog.register(BedOccupancy)

@@ -1,0 +1,54 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Admissões - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="heading">ADT</p>
+                    <h1 class="title is-3 mb-1">Admissões</h1>
+                    <p class="muted">Internações dentro do seu escopo clínico e operacional.</p>
+                </div>
+            </div>
+            <div class="level-right">
+                <a class="button" href="{% url 'adt:bed_map' %}">{% icon 'grid' %}<span>Mapa de leitos</span></a>
+                {% if perms.adt.admit_patient or user.is_admin %}
+                    <a class="button is-link" href="{% url 'adt:admission_create' %}">{% icon 'plus' %}<span>Nova admissão</span></a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="box aegis-card">
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead><tr><th>Paciente</th><th>Admitido em</th><th>Encontro</th><th>Responsável</th></tr></thead>
+                    <tbody>
+                    {% for admission in admissions %}
+                        <tr>
+                            <td><a href="{% url 'pep:patient_detail' admission.encounter.patient.id %}">{{ admission.encounter.patient.full_name }}</a></td>
+                            <td>{{ admission.admitted_at|date:'d/m/Y H:i' }}</td>
+                            <td class="mono is-size-7">{{ admission.encounter.id }}</td>
+                            <td>{{ admission.admitted_by.username }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="has-text-centered muted py-5">Nenhuma admissão disponível no seu escopo.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <nav class="pagination is-centered mt-4" aria-label="paginação">
+                    {% if page_obj.has_previous %}<a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                    {% if page_obj.has_next %}<a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+                    <ul class="pagination-list"><li><span class="pagination-link is-current">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li></ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
