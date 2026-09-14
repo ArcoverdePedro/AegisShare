@@ -12,7 +12,7 @@ from django.utils import timezone
 from aegis_share.tests.helpers import make_user
 
 from ..events import PRESCRIPTION_EVENT_GROUP, emit_stock_low_event
-from ..models import Drug, Lot, StockMovement
+from ..models import Drug, StockMovement
 from ..stock_services import (
     StockStateError,
     adjust_stock,
