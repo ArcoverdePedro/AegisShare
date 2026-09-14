@@ -34,7 +34,7 @@ class AdtBedMapConsumer(AsyncWebsocketConsumer):
             return
 
         location_id = event.get("location_id")
-        if location_id and not await self.user_can_access_location(location_id):
+        if not location_id or not await self.user_can_access_location(location_id):
             return
 
         payload = {
@@ -45,9 +45,6 @@ class AdtBedMapConsumer(AsyncWebsocketConsumer):
                 "event_id",
                 "event_type",
                 "occurred_at",
-                "encounter_id",
-                "admission_id",
-                "occupancy_id",
                 "bed_id",
                 "location_id",
                 "state",
