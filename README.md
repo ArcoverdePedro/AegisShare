@@ -163,7 +163,7 @@ docker compose -f compose.no-postgres-no-redis.yml up -d --build
 
 ```env
 EXTERNAL_DATABASE_URL=postgresql://usuario:senha@host:5432/aegisshare
-EXTERNAL_REDIS_URL=redis://host:6379/0
+EXTERNAL_REDIS_URL=redis://redis.example:6379/0
 ```
 
 `EXTERNAL_REDIS_URL` pode ficar vazio para execução com um único worker.
@@ -288,12 +288,14 @@ uv run python manage.py runserver
 Validações:
 
 ```bash
-uv run ruff check aegis_share mysite
-uv run ruff format --check aegis_share mysite
+uv run ruff check aegis_share apps mysite
+uv run ruff format --check aegis_share apps mysite
 uv run python manage.py check
 uv run python manage.py makemigrations --check --dry-run
 uv run python manage.py test --verbosity 2
 ```
+
+O CI executa o lint sem `--fix`; o checkout precisa estar limpo antes do merge.
 
 ## Manutenção
 
