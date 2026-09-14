@@ -70,7 +70,6 @@ test('compartilhamento direto e link publico protegido preservam autorizacao', a
   const linkBox = page.locator('.box').filter({ hasText: 'Link temporario' });
   await linkBox.locator('select[name="expires_in_hours"]').selectOption('1');
   await linkBox.locator('input[name="password"]').fill(PUBLIC_LINK_PASSWORD);
-  await linkBox.locator('input[name="allow_preview"]').uncheck();
   await linkBox.locator('input[name="allow_download"]').uncheck();
   await linkBox.getByRole('button', { name: 'Criar link seguro' }).click();
 
@@ -87,8 +86,8 @@ test('compartilhamento direto e link publico protegido preservam autorizacao', a
   await publicPage.getByRole('button', { name: 'Continuar' }).click();
   await expect(publicPage.getByRole('heading', { name: 'Compartilhamento seguro' })).toBeVisible();
   await expect(publicPage.getByText(FILE_NAME)).toBeVisible();
+  await expect(publicPage.getByRole('link', { name: 'Visualizar' })).toBeVisible();
   await expect(publicPage.getByRole('link', { name: 'Baixar' })).toHaveCount(0);
-  await expect(publicPage.getByRole('link', { name: 'Visualizar' })).toHaveCount(0);
   await publicContext.close();
 
   const recipientContext = await browser.newContext();
