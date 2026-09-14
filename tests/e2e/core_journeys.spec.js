@@ -27,7 +27,9 @@ test('login rejeita credenciais invalidas e aceita o administrador E2E', async (
   await page.getByRole('button', { name: 'Entrar' }).click();
 
   await expect(page).toHaveURL(/\/login\/$/);
-  await expect(page.getByText('Usuario ou senha invalidos.')).toBeVisible();
+  await expect(
+    page.locator('#message-container').getByText('Usuario ou senha invalidos.', { exact: true })
+  ).toBeVisible();
 
   await login(page, ADMIN);
   await expect(page.getByRole('link', { name: /Arquivos/ })).toBeVisible();
@@ -44,7 +46,7 @@ test('administrador localiza e abre documento acessivel', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: FILE_NAME })).toBeVisible();
   await expect(page.getByText('Seguranca e integridade')).toBeVisible();
-  await expect(page.getByText('Arquivo legado')).toBeVisible();
+  await expect(page.getByText('Arquivo legado', { exact: true })).toBeVisible();
 });
 
 test('compartilhamento direto e link publico protegido preservam autorizacao', async ({ page, browser }) => {
@@ -56,9 +58,11 @@ test('compartilhamento direto e link publico protegido preservam autorizacao', a
 
   const shareBox = page.locator('.box').filter({ hasText: 'Compartilhar com usuario' });
   await expect(shareBox).toBeVisible();
-  const recipientOption = shareBox.locator('option').filter({ hasText: RECIPIENT.username });
+  const recipientOption = shareBox.locator('option').filter({ hasText: RECIPIENT.username }).first();
   if (await recipientOption.count()) {
-    await shareBox.locator('select[name="usuario_id"]').selectOption({ label: /ci-e2e-recipient/ });
+    const recipientValue = await recipientOption.getAttribute('value');
+    expect(recipientValue).toBeTruthy();
+    await shareBox.locator('select[name="usuario_id"]').selectOption(recipientValue);
     await shareBox.getByRole('button', { name: 'Conceder acesso' }).click();
   }
   await expect(shareBox).toContainText(RECIPIENT.username);
