@@ -18,7 +18,13 @@ from ..catalog_services import (
     set_interaction_reference_active,
     update_drug,
 )
-from ..models import DoseRule, Drug, Interaction, MedicationRequest, MedicationRequestItem
+from ..models import (
+    DoseRule,
+    Drug,
+    Interaction,
+    MedicationRequest,
+    MedicationRequestItem,
+)
 
 
 class CatalogServiceTests(TestCase):
@@ -189,6 +195,34 @@ class CatalogServiceTests(TestCase):
         self.assertEqual(activated.approved_by, self.manager)
         self.assertIsNotNone(activated.approved_at)
 
+    def test_approved_reference_requires_new_version_after_deactivation(self):
+        drug_a = self._create_drug(code="SYN-VERSION-A", name="Sintético Versão A")
+        drug_b = self._create_drug(code="SYN-VERSION-B", name="Sintético Versão B")
+        interaction = create_interaction_reference(
+            actor=self.manager,
+            drug_a_id=drug_a.pk,
+            drug_b_id=drug_b.pk,
+            severity=Interaction.Severity.INFO,
+            blocking=False,
+            summary="Referência sintética versionada para teste.",
+            reference_source="Fonte sintética de teste",
+            reference_version="TEST-VERSION-1",
+            active=True,
+        )
+
+        set_interaction_reference_active(
+            interaction_id=interaction.pk,
+            actor=self.manager,
+            active=False,
+        )
+
+        with self.assertRaises(CatalogStateError):
+            set_interaction_reference_active(
+                interaction_id=interaction.pk,
+                actor=self.manager,
+                active=True,
+            )
+
     def test_active_dose_rule_is_stamped_without_executable_formula(self):
         drug = self._create_drug(code="SYN-DOSE-1", name="Sintético Dose")
         rule = create_dose_rule_reference(
@@ -214,6 +248,7 @@ class CatalogServiceTests(TestCase):
 
 class DrugCatalogViewTests(TestCase):
     def setUp(self):
+        self.admin = make_user("rx-catalog-view-admin", role="ADM")
         self.viewer = make_user("rx-catalog-viewer", role="FUNC")
         self.manager = make_user("rx-catalog-view-manager", role="FUNC")
         self.denied = make_user("rx-catalog-view-denied", role="FUNC")
