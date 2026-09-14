@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import DrugCatalogView, DrugCreateView, DrugUpdateView
+from .views import DrugCatalogView, DrugCreateView, DrugUpdateView, PharmacyStockView
 
 app_name = "prescription"
 
@@ -12,4 +12,5 @@ urlpatterns = [
         DrugUpdateView.as_view(),
         name="drug_update",
     ),
+    path("estoque-farmacia/", PharmacyStockView.as_view(), name="pharmacy_stock"),
 ]
