@@ -11,6 +11,6 @@
 - [x] **T-PEP-07** Implementar evolução clínica e histórico imutável com adendos append-only. RF-PEP-05.
 - [ ] **T-PEP-08** Definir e implementar assinatura após validação jurídica/operacional. RF-PEP-06.
 - [x] **T-PEP-09** Integrar auditoria de leitura/escrita e notificações internas WebSocket sem PHI no payload. RF-PEP-07/09.
-- [ ] **T-PEP-10** Consolidar testes de autorização, auditoria e jornadas clínicas restantes.
-- [ ] **T-PEP-11** Criar cenários Gherkin e E2E das jornadas principais.
-- [ ] **T-PEP-12** Executar axe-core e validação mobile/tablet.
+- [x] **T-PEP-10** Consolidar testes de autorização, auditoria e jornadas clínicas restantes. As fronteiras de grant expirado, papel cliente e encontro encerrado foram adicionadas a `tests/test_security_boundaries.py`, complementando a cobertura de auditlog/eventos existente.
+- [x] **T-PEP-11** Criar cenários Gherkin e E2E das jornadas principais. Os cenários estão em `features/clinical-journeys.feature` e são executados no CI com Playwright, cobrindo cadastro, encontro, evolução, adendo e negação por ausência de vínculo.
+- [x] **T-PEP-12** Executar axe-core e validação mobile/tablet. O CI executa axe-core nas telas clínicas essenciais e verifica overflow/ações principais em viewports de telefone e tablet.
