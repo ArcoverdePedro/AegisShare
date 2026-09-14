@@ -7,6 +7,7 @@ const PRECACHE_URLS = [
     '{% url "pwa:icon" 192 %}',
     '{% url "pwa:icon" 512 %}',
 ];
+const GENERIC_NOTIFICATION_URL = '/notificacoes/';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -64,6 +65,38 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(fetch(request, { cache: 'no-store' }));
+});
+
+// O conteúdo da notificação é deliberadamente fixo no cliente. O servidor envia
+// apenas o sinal de Push sem payload, evitando que PHI seja transportada ou exibida
+// pela infraestrutura externa de Web Push.
+self.addEventListener('push', (event) => {
+    event.waitUntil(
+        self.registration.showNotification('AegisShare', {
+            body: 'Você tem uma nova notificação.',
+            icon: '{% url "pwa:icon" 192 %}',
+            badge: '{% url "pwa:icon" 192 %}',
+            tag: 'aegisshare-generic-notification',
+            renotify: false,
+            data: { url: GENERIC_NOTIFICATION_URL },
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(async (clients) => {
+                for (const client of clients) {
+                    const current = new URL(client.url);
+                    if (current.origin !== self.location.origin) continue;
+                    if ('navigate' in client) await client.navigate(GENERIC_NOTIFICATION_URL);
+                    return client.focus();
+                }
+                return self.clients.openWindow(GENERIC_NOTIFICATION_URL);
+            })
+    );
 });
 
 function deleteIndexedDb(name) {

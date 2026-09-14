@@ -21,6 +21,7 @@ env = environ.Env(
     CLAMAV_REQUIRED=(bool, False),
     CLAMAV_PORT=(int, 3310),
     SENTRY_TRACES_SAMPLE_RATE=(float, 0.05),
+    WEBPUSH_SEND_TIMEOUT_SECONDS=(int, 5),
 )
 
 ENV_FILE = env.str("ENV_FILE", default=str(BASE_DIR / ".env"))
@@ -240,6 +241,27 @@ PINATA_GATEWAY_URL = env.str(
 )
 PINATA_TIMEOUT_SECONDS = env.int("PINATA_TIMEOUT_SECONDS")
 
+WEBPUSH_VAPID_PUBLIC_KEY = env.str("WEBPUSH_VAPID_PUBLIC_KEY", default="").strip()
+WEBPUSH_VAPID_PRIVATE_KEY = env.str("WEBPUSH_VAPID_PRIVATE_KEY", default="").strip()
+WEBPUSH_VAPID_SUBJECT = env.str("WEBPUSH_VAPID_SUBJECT", default="").strip()
+WEBPUSH_SEND_TIMEOUT_SECONDS = env.int("WEBPUSH_SEND_TIMEOUT_SECONDS")
+_webpush_parts = (
+    WEBPUSH_VAPID_PUBLIC_KEY,
+    WEBPUSH_VAPID_PRIVATE_KEY,
+    WEBPUSH_VAPID_SUBJECT,
+)
+if any(_webpush_parts) and not all(_webpush_parts):
+    raise ImproperlyConfigured(
+        "Web Push exige WEBPUSH_VAPID_PUBLIC_KEY, WEBPUSH_VAPID_PRIVATE_KEY e "
+        "WEBPUSH_VAPID_SUBJECT em conjunto."
+    )
+WEBPUSH_ENABLED = all(_webpush_parts)
+if WEBPUSH_ENABLED and not WEBPUSH_VAPID_SUBJECT.startswith(("mailto:", "https://")):
+    raise ImproperlyConfigured(
+        "WEBPUSH_VAPID_SUBJECT deve iniciar com mailto: ou https://."
+    )
+del _webpush_parts
+
 CLAMAV_ENABLED = env.bool("CLAMAV_ENABLED")
 CLAMAV_REQUIRED = env.bool("CLAMAV_REQUIRED")
 CLAMAV_HOST = env.str("CLAMAV_HOST", default="clamav")
@@ -276,6 +298,11 @@ LOGGING = {
             "propagate": False,
         },
         "aegis_share": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+            "propagate": False,
+        },
+        "apps.pwa": {
             "handlers": ["console"],
             "level": LOG_LEVEL,
             "propagate": False,

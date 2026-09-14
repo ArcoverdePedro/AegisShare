@@ -1,7 +1,6 @@
 from django.test import SimpleTestCase
 from django.urls import URLPattern, URLResolver, get_resolver
 
-
 LEGACY_PUBLIC_API_ROUTES = {
     "api/v1/files/",
     "api/v1/files/<int:file_id>/",

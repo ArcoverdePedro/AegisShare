@@ -14,7 +14,6 @@ from ..consumers import PatientClinicalConsumer
 from ..events import emit_clinical_event, patient_group_name
 from ..models import ClinicalEvolution, Encounter, Patient, PatientAccessGrant
 
-
 TEST_STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},

@@ -97,8 +97,8 @@ Specs 000 Core, 001 PEP, 002 ADT e 004 Enfermagem conforme cada fluxo for implem
 |---|---|---|---|
 | RF-PWA-01 | manifest/service worker | manifest + ícones | Playwright/Lighthouse |
 | RF-PWA-02 | `/offline/` + rotas permitidas | `pwa/offline.html` | E2E modo offline |
-| RF-PWA-03 | views internas sincronizáveis | `sync.js` | pytest-bdd + E2E |
-| RF-PWA-04 | fluxo interno webpush | service worker | unit + E2E quando suportado |
+| RF-PWA-03 | views internas sincronizáveis | `offline_queue.js` + futuro `sync.js` | E2E fila cifrada + futuro teste do fluxo piloto |
+| RF-PWA-04 | `/pwa/push/config/`, `subscribe/`, `unsubscribe/` + `apps.pwa.push` | `service-worker.js` + `static/pwa/push.js` | `apps.pwa.tests.WebPush*` |
 | RF-PWA-05 | `/offline/` | `pwa/offline.html` | E2E |
 | RF-PWA-07 | todas as telas | CSS/theme tokens | a11y + E2E |
-| RF-PWA-08 | logout | SW/IndexedDB | security test |
+| RF-PWA-08 | logout | SW/IndexedDB + vínculo hash da sessão Push | security tests |

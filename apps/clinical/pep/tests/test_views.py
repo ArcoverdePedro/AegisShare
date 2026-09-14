@@ -8,7 +8,6 @@ from aegis_share.tests.helpers import make_user
 
 from ..models import Patient, PatientAccessGrant
 
-
 TEST_STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
