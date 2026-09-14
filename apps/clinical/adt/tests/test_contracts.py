@@ -6,7 +6,6 @@ from django.test import SimpleTestCase
 from apps.clinical.adt.events import ADT_EVENT_TYPES
 from apps.clinical.adt.urls import urlpatterns as adt_urlpatterns
 
-
 CONTRACT_PATH = (
     Path(__file__).resolve().parents[4]
     / "specs"

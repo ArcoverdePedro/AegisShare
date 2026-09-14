@@ -18,7 +18,11 @@ from apps.clinical.pep.models import Encounter, Patient, PatientAccessGrant
 
 from ..events import PRESCRIPTION_EVENT_GROUP, PRESCRIPTION_EVENT_TYPES, emit_prescription_event
 from ..models import Drug, MedicationRequest, StockMovement
-from ..services import add_medication_request_item, create_medication_request, submit_medication_request
+from ..services import (
+    add_medication_request_item,
+    create_medication_request,
+    submit_medication_request,
+)
 from ..stock_services import adjust_stock, create_lot, create_stock_item
 
 User = get_user_model()

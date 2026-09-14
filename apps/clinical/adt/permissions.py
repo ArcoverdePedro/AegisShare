@@ -2,7 +2,6 @@ from apps.clinical.pep.permissions import accessible_patients, can_access_patien
 
 from .models import Location, UserLocationAccess
 
-
 PERM_VIEW_ADMISSION = "adt.view_admission"
 PERM_VIEW_BED_MAP = "adt.view_bed_map"
 PERM_ADMIT = "adt.admit_patient"

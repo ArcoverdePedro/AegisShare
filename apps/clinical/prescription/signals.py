@@ -4,7 +4,6 @@ from django.dispatch import receiver
 
 from .models import Lot, MedicationRequest, MedicationRequestItem, StockItem, StockMovement
 
-
 _ITEM_MUTATION_ERROR = "Itens só podem ser alterados enquanto a prescrição está em rascunho."
 _ITEM_DELETE_ERROR = "Itens submetidos não podem ser excluídos."
 _LOT_BALANCE_ERROR = "Saldo de lote só pode ser alterado por movimentação de estoque."

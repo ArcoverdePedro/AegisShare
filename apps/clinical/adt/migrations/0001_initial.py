@@ -1,7 +1,8 @@
 # Generated manually from Spec 002 ADT foundation.
 
-import django.db.models.deletion
 import uuid
+
+import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
