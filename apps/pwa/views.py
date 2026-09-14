@@ -62,6 +62,16 @@ def _valid_subscription_payload(payload):
     return endpoint, p256dh, auth
 
 
+def _session_fingerprint(request):
+    session_key = request.session.session_key
+    if not session_key:
+        request.session.save()
+        session_key = request.session.session_key
+    if not session_key:
+        return None
+    return PushSubscription.hash_session_key(session_key)
+
+
 class ManifestView(View):
     def get(self, request, *args, **kwargs):
         response = JsonResponse(
@@ -169,6 +179,10 @@ class PushSubscribeView(LoginRequiredMixin, View):
                 JsonResponse({"error": "invalid_subscription"}, status=400)
             )
 
+        session_fingerprint = _session_fingerprint(request)
+        if not session_fingerprint:
+            return _no_store(JsonResponse({"error": "invalid_session"}, status=409))
+
         endpoint, p256dh, auth = parsed
         endpoint_hash = PushSubscription.hash_endpoint(endpoint)
         subscription, created = PushSubscription.objects.update_or_create(
@@ -176,6 +190,7 @@ class PushSubscribeView(LoginRequiredMixin, View):
             defaults={
                 "user": request.user,
                 "endpoint": endpoint,
+                "session_fingerprint": session_fingerprint,
                 "p256dh": p256dh,
                 "auth": auth,
                 "active": True,
@@ -209,9 +224,18 @@ class PushUnsubscribeView(LoginRequiredMixin, View):
 
 
 class PwaLogoutView(LogoutView):
-    """Limpa dados locais do PWA ao encerrar a sessão em navegadores compatíveis."""
+    """Revoga Push da sessão atual e limpa dados locais ao encerrar a sessão."""
 
     def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and request.session.session_key:
+            now = timezone.now()
+            fingerprint = PushSubscription.hash_session_key(request.session.session_key)
+            PushSubscription.objects.filter(
+                user=request.user,
+                session_fingerprint=fingerprint,
+                active=True,
+            ).update(active=False, disabled_at=now, updated_at=now)
+
         response = super().dispatch(request, *args, **kwargs)
         response["Clear-Site-Data"] = '"cache", "storage"'
         response["Cache-Control"] = "no-store"
