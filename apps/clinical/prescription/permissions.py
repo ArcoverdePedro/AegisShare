@@ -1,6 +1,5 @@
 from apps.clinical.pep.permissions import can_access_patient
 
-
 PERM_VIEW = "prescription.view_medication_request"
 PERM_PRESCRIBE = "prescription.prescribe_medication"
 PERM_VALIDATE = "prescription.validate_medication_request"
