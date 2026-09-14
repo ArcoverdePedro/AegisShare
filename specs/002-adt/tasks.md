@@ -10,8 +10,8 @@
 - [x] **T-ADT-06** Implementar mapa de leitos server-rendered + partial HTMX sem exposição indevida de PHI. RF-ADT-03/07. O mapa é `no-store`, filtra local no servidor e só renderiza identificação do ocupante quando o usuário também possui escopo PEP válido.
 - [x] **T-ADT-07** Implementar transferência append-only, encerrando origem e ocupando destino atomicamente. RF-ADT-04/06/11. `transfer_patient()` bloqueia admissão, encontro, ocupação e destino, encerra a origem com motivo `TRANSFER`, cria a nova ocupação e persiste `Transfer` imutável na mesma transação.
 - [x] **T-ADT-08** Implementar alta transacional, liberação do leito e fechamento consistente do `Encounter`. RF-ADT-05/06. `discharge_patient()` encerra a ocupação com motivo `DISCHARGE`, cria `Discharge` imutável e fecha o `Encounter` com o mesmo timestamp dentro da transação.
-- [ ] **T-ADT-09** Integrar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual. RF-ADT-08/10.
-- [ ] **T-ADT-10** Implementar atualização do mapa via Channels como sinal de invalidação, com revalidação de autorização. RF-ADT-09.
+- [x] **T-ADT-09** Integrar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual. RF-ADT-08/10. Leituras identificáveis do mapa/lista emitem `ACCESS`; mutações continuam no `django-auditlog`; `emit_adt_event()` usa `transaction.on_commit()` e payload técnico minimizado.
+- [x] **T-ADT-10** Implementar atualização do mapa via Channels como sinal de invalidação, com revalidação de autorização. RF-ADT-09. `AdtBedMapConsumer` revalida capacidade e escopo local em cada evento; o navegador apenas dispara novo GET HTMX autorizado e não persiste payload clínico.
 - [ ] **T-ADT-11** Criar testes de concorrência PostgreSQL para admissão/transferência simultânea. RF-ADT-02/11.
 - [ ] **T-ADT-12** Criar Gherkin + Playwright das jornadas principais e negações de acesso. RF-ADT-01/03/04/05/07.
 - [ ] **T-ADT-13** Executar axe-core e validação mobile/tablet do mapa e formulários críticos. RNF-ADT-06.
