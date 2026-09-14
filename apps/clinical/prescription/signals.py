@@ -4,6 +4,7 @@ from django.dispatch import receiver
 
 from .models import (
     DoseRule,
+    Drug,
     Interaction,
     Lot,
     MedicationDispense,
@@ -27,6 +28,17 @@ _APPROVED_REFERENCE_MUTATION_ERROR = "Referência clínica aprovada não pode se
 _APPROVED_REFERENCE_DELETE_ERROR = "Referência clínica aprovada não pode ser excluída."
 _APPROVED_REFERENCE_REACTIVATION_ERROR = (
     "Referência clínica aprovada e desativada exige uma nova versão para voltar ao uso."
+)
+_USED_DRUG_MUTATION_ERROR = (
+    "Medicamento já utilizado em prescrição não pode ter seus dados históricos reescritos."
+)
+_DRUG_HISTORICAL_FIELDS = (
+    "code",
+    "name",
+    "presentation",
+    "strength_text",
+    "route_hint",
+    "dispense_unit",
 )
 _INTERACTION_GOVERNED_FIELDS = (
     "drug_a_id",
@@ -81,6 +93,19 @@ def _preserve_approved_reference(sender, instance, governed_fields):
         raise ValidationError(_APPROVED_REFERENCE_MUTATION_ERROR)
     if not persisted["active"] and instance.active:
         raise ValidationError(_APPROVED_REFERENCE_REACTIVATION_ERROR)
+
+
+@receiver(pre_save, sender=Drug)
+def preserve_used_drug_history(sender, instance, **kwargs):
+    if instance._state.adding or not instance.pk:
+        return
+    if not MedicationRequestItem.objects.filter(drug_id=instance.pk).exists():
+        return
+    persisted = sender.objects.filter(pk=instance.pk).values(*_DRUG_HISTORICAL_FIELDS).first()
+    if persisted and any(
+        persisted[field] != getattr(instance, field) for field in _DRUG_HISTORICAL_FIELDS
+    ):
+        raise ValidationError(_USED_DRUG_MUTATION_ERROR)
 
 
 @receiver(pre_save, sender=Interaction)
