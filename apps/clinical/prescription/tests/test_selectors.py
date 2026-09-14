@@ -44,7 +44,7 @@ class PrescriptionSelectorTests(TestCase):
             authored_by=self.admin,
         )
         permission = Permission.objects.get(
-            codename="view_prescription",
+            codename="view_medication_request",
             content_type__app_label="prescription",
         )
         self.employee.user_permissions.add(permission)
