@@ -315,7 +315,9 @@ class Transfer(models.Model):
         self.reason = " ".join((self.reason or "").split())
         if self.source_occupancy_id and self.destination_occupancy_id:
             if self.source_occupancy_id == self.destination_occupancy_id:
-                raise ValidationError("Origem e destino da transferência devem ser distintos.")
+                raise ValidationError(
+                    "Origem e destino da transferência devem ser distintos."
+                )
             if self.source_occupancy.admission_id != self.admission_id:
                 raise ValidationError({"source_occupancy": "A ocupação de origem é inválida."})
             if self.destination_occupancy.admission_id != self.admission_id:
@@ -331,7 +333,9 @@ class Transfer(models.Model):
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
-            raise ValidationError("Transferências são append-only e não podem ser editadas.")
+            raise ValidationError(
+                "Transferências são append-only e não podem ser editadas."
+            )
         self.full_clean()
         return super().save(*args, **kwargs)
 
@@ -379,16 +383,22 @@ class Discharge(models.Model):
     def clean(self):
         super().clean()
         self.reason = " ".join((self.reason or "").split())
-        if self.admission_id and self.discharged_at:
-            if self.discharged_at < self.admission.admitted_at:
-                raise ValidationError(
-                    {"discharged_at": "A alta não pode anteceder a admissão."}
-                )
-        if self.final_occupancy_id and self.admission_id:
-            if self.final_occupancy.admission_id != self.admission_id:
-                raise ValidationError(
-                    {"final_occupancy": "A ocupação final não pertence à admissão."}
-                )
+        if (
+            self.admission_id
+            and self.discharged_at
+            and self.discharged_at < self.admission.admitted_at
+        ):
+            raise ValidationError(
+                {"discharged_at": "A alta não pode anteceder a admissão."}
+            )
+        if (
+            self.final_occupancy_id
+            and self.admission_id
+            and self.final_occupancy.admission_id != self.admission_id
+        ):
+            raise ValidationError(
+                {"final_occupancy": "A ocupação final não pertence à admissão."}
+            )
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
