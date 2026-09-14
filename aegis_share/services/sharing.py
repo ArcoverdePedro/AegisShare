@@ -49,14 +49,7 @@ def create_shared_link(
     return link, token
 
 
-def resolve_shared_link(
-    token: str,
-    *,
-    password=None,
-    for_download=False,
-    password_verified=False,
-    require_preview=True,
-):
+def resolve_shared_link(token: str, *, password=None, for_download=False, password_verified=False):
     link = (
         SharedLink.objects.select_related("file", "file__dono_arquivo")
         .filter(token_hash=token_hash(token))
@@ -64,13 +57,11 @@ def resolve_shared_link(
     )
     if not link or not link.is_active or link.file.deleted_at:
         raise SharedLinkError("Link invalido, expirado ou revogado.")
-    if link.password_hash and not password_verified and not check_password(
-        password or "", link.password_hash
-    ):
+    if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
         raise SharedLinkError("Senha do link invalida.")
     if for_download and not link.allow_download:
         raise SharedLinkError("Este link nao permite download.")
-    if not for_download and require_preview and not link.allow_preview:
+    if not for_download and not link.allow_preview:
         raise SharedLinkError("Este link nao permite visualizacao.")
     return link
 
@@ -85,9 +76,7 @@ def consume_download(token: str, *, password=None, password_verified=False):
         )
         if not link or not link.is_active or link.file.deleted_at:
             raise SharedLinkError("Link invalido, expirado ou sem downloads disponiveis.")
-        if link.password_hash and not password_verified and not check_password(
-            password or "", link.password_hash
-        ):
+        if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
             raise SharedLinkError("Senha do link invalida.")
         if not link.allow_download:
             raise SharedLinkError("Este link nao permite download.")
