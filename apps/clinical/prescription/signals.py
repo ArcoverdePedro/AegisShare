@@ -16,6 +16,7 @@ from .models import (
 
 _ITEM_MUTATION_ERROR = "Itens só podem ser alterados enquanto a prescrição está em rascunho."
 _ITEM_DELETE_ERROR = "Itens submetidos não podem ser excluídos."
+_REQUEST_DELETE_ERROR = "Prescrições submetidas não podem ser excluídas."
 _LOT_BALANCE_ERROR = "Saldo de lote só pode ser alterado por movimentação de estoque."
 _LOT_IDENTITY_ERROR = "Lote com movimentação não pode ter sua identidade histórica reescrita."
 _STOCK_IDENTITY_ERROR = "Estoque com lotes não pode ter medicamento ou localização reescritos."
@@ -46,6 +47,16 @@ def enforce_draft_request_on_item_delete(sender, instance, **kwargs):
     status = _persisted_request_status(instance)
     if status is not None and status != MedicationRequest.Status.DRAFT:
         raise ValidationError(_ITEM_DELETE_ERROR)
+
+
+@receiver(pre_delete, sender=MedicationRequest)
+def preserve_submitted_request_history(sender, instance, **kwargs):
+    """Consulta o estado persistido para impedir bypass por instância stale ou bulk delete."""
+    if not instance.pk:
+        return
+    status = sender.objects.filter(pk=instance.pk).values_list("status", flat=True).first()
+    if status is not None and status != MedicationRequest.Status.DRAFT:
+        raise ValidationError(_REQUEST_DELETE_ERROR)
 
 
 @receiver(pre_save, sender=StockItem)
