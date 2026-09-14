@@ -101,9 +101,8 @@ class PharmacyAppendOnlyIntegrityTests(TestCase):
         )
 
     def _assert_bulk_delete_rejected(self, queryset):
-        with self.assertRaises(ValidationError):
-            with transaction.atomic():
-                queryset.delete()
+        with self.assertRaises(ValidationError), transaction.atomic():
+            queryset.delete()
 
     def test_safety_review_cannot_be_bulk_deleted(self):
         review = self._review()
