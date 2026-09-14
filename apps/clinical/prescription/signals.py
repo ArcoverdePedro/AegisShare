@@ -20,6 +20,7 @@ from .models import (
 _ITEM_MUTATION_ERROR = "Itens só podem ser alterados enquanto a prescrição está em rascunho."
 _ITEM_DELETE_ERROR = "Itens submetidos não podem ser excluídos."
 _REQUEST_DELETE_ERROR = "Prescrições submetidas não podem ser excluídas."
+_REQUEST_HISTORY_ERROR = "A identidade histórica da prescrição submetida não pode ser reescrita."
 _LOT_BALANCE_ERROR = "Saldo de lote só pode ser alterado por movimentação de estoque."
 _LOT_IDENTITY_ERROR = "Lote com movimentação não pode ter sua identidade histórica reescrita."
 _STOCK_IDENTITY_ERROR = "Estoque com lotes não pode ter medicamento ou localização reescritos."
@@ -31,6 +32,12 @@ _APPROVED_REFERENCE_REACTIVATION_ERROR = (
 )
 _USED_DRUG_MUTATION_ERROR = (
     "Medicamento já utilizado em prescrição não pode ter seus dados históricos reescritos."
+)
+_REQUEST_IDENTITY_FIELDS = (
+    "encounter_id",
+    "authored_by_id",
+    "replaces_id",
+    "created_at",
 )
 _DRUG_HISTORICAL_FIELDS = (
     "code",
@@ -123,6 +130,31 @@ def preserve_approved_dose_rule(sender, instance, **kwargs):
 def prevent_approved_reference_delete(sender, instance, **kwargs):
     if instance.pk and sender.objects.filter(pk=instance.pk, approved_at__isnull=False).exists():
         raise ValidationError(_APPROVED_REFERENCE_DELETE_ERROR)
+
+
+@receiver(pre_save, sender=MedicationRequest)
+def preserve_submitted_request_identity(sender, instance, **kwargs):
+    if instance._state.adding or not instance.pk:
+        return
+    persisted = sender.objects.filter(pk=instance.pk).values(
+        *_REQUEST_IDENTITY_FIELDS,
+        "status",
+        "submitted_at",
+    ).first()
+    if not persisted:
+        return
+
+    persisted_is_draft = persisted["status"] == MedicationRequest.Status.DRAFT
+    leaving_draft = persisted_is_draft and instance.status != MedicationRequest.Status.DRAFT
+    history_locked = not persisted_is_draft
+    identity_changed = any(
+        persisted[field] != getattr(instance, field) for field in _REQUEST_IDENTITY_FIELDS
+    )
+
+    if identity_changed and (history_locked or leaving_draft):
+        raise ValidationError(_REQUEST_HISTORY_ERROR)
+    if history_locked and persisted["submitted_at"] != instance.submitted_at:
+        raise ValidationError(_REQUEST_HISTORY_ERROR)
 
 
 @receiver(pre_save, sender=MedicationRequestItem)
