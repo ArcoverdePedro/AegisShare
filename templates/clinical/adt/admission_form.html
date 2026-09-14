@@ -1,0 +1,54 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Nova admissão - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 820px">
+        <div class="mb-5">
+            <p class="heading">ADT</p>
+            <h1 class="title is-3 mb-1">Nova admissão</h1>
+            <p class="muted">A disponibilidade do leito e o acesso clínico serão validados novamente no momento da confirmação.</p>
+        </div>
+
+        <div class="box aegis-card">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {{ form.operation_key }}
+
+                {% if form.non_field_errors %}
+                    <div class="notification is-danger is-light" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="field">
+                    <label class="label" for="{{ form.encounter.id_for_label }}">{{ form.encounter.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.encounter }}</div>
+                    {% for error in form.encounter.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="{{ form.bed.id_for_label }}">{{ form.bed.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.bed }}</div>
+                    {% for error in form.bed.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="field">
+                    <label class="label" for="{{ form.admitted_at.id_for_label }}">{{ form.admitted_at.label }}</label>
+                    <div class="control">{{ form.admitted_at }}</div>
+                    {% for error in form.admitted_at.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="buttons mt-5">
+                    <button class="button is-link" type="submit">
+                        {% icon 'check' %}<span>Confirmar admissão</span>
+                    </button>
+                    <a class="button" href="{% url 'adt:bed_map' %}">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
