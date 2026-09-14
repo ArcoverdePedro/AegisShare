@@ -1,0 +1,59 @@
+<div id="bedMapFragment"
+     hx-get="{% url 'adt:bed_map_partial' %}"
+     hx-trigger="every 5s"
+     hx-swap="outerHTML"
+     aria-live="polite">
+    {% for location, rows in bed_groups %}
+        <section class="box aegis-card mb-5" aria-labelledby="location-{{ location.id }}">
+            <div class="level mb-4">
+                <div class="level-left">
+                    <div>
+                        <p class="heading">{{ location.get_kind_display }}</p>
+                        <h2 class="title is-5 mb-1" id="location-{{ location.id }}">{{ location.name }}</h2>
+                        <p class="is-size-7 muted">Código {{ location.code }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="columns is-multiline">
+                {% for row in rows %}
+                    <div class="column is-12-mobile is-6-tablet is-4-desktop is-3-widescreen">
+                        <article class="box h-100" aria-label="Leito {{ row.bed.label }}: {{ row.status }}">
+                            <div class="is-flex is-justify-content-space-between is-align-items-flex-start" style="gap:.75rem">
+                                <div>
+                                    <p class="heading">Leito {{ row.bed.code }}</p>
+                                    <p class="has-text-weight-semibold">{{ row.bed.label }}</p>
+                                </div>
+                                {% if row.status == 'AVAILABLE' %}
+                                    <span class="tag is-success is-light">Disponível</span>
+                                {% elif row.status == 'OCCUPIED' %}
+                                    <span class="tag is-link is-light">Ocupado</span>
+                                {% elif row.status == 'BLOCKED' %}
+                                    <span class="tag is-warning is-light">Bloqueado</span>
+                                {% else %}
+                                    <span class="tag is-danger is-light">Fora de serviço</span>
+                                {% endif %}
+                            </div>
+
+                            {% if row.status == 'OCCUPIED' %}
+                                <hr class="my-3">
+                                {% if row.show_phi and row.patient %}
+                                    <p class="is-size-7 muted mb-1">Paciente</p>
+                                    <a href="{% url 'pep:patient_detail' row.patient.id %}" class="has-text-weight-semibold">
+                                        {{ row.patient.full_name }}
+                                    </a>
+                                {% else %}
+                                    <p class="is-size-7 muted">Identificação do ocupante restrita ao escopo clínico autorizado.</p>
+                                {% endif %}
+                            {% endif %}
+                        </article>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% empty %}
+        <div class="notification is-light">
+            Nenhum leito está disponível no seu escopo operacional.
+        </div>
+    {% endfor %}
+</div>
