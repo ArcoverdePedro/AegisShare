@@ -1,5 +1,4 @@
 from apps.clinical.pep.permissions import accessible_patients, can_access_patient
-
 from .models import Location, UserLocationAccess
 
 
