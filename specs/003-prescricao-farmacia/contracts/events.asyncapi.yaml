@@ -1,0 +1,135 @@
+asyncapi: 3.0.0
+info:
+  title: AegisShare HIS - Prescription and Pharmacy Internal Events
+  version: 0.1.0
+  description: >-
+    Contrato interno da Spec 003. Eventos são produzidos somente após commit e
+    nunca constituem API pública. Payloads não transportam nome, CPF, texto de
+    prescrição, alergia ou justificativa clínica livre.
+channels:
+  prescriptionEvents:
+    address: internal.prescription.events
+    messages:
+      prescriptionCreated:
+        $ref: '#/components/messages/PrescriptionCreated'
+      prescriptionValidated:
+        $ref: '#/components/messages/PrescriptionValidated'
+      medicationDispensed:
+        $ref: '#/components/messages/MedicationDispensed'
+      stockLow:
+        $ref: '#/components/messages/StockLow'
+operations:
+  publishPrescriptionEvent:
+    action: send
+    channel:
+      $ref: '#/channels/prescriptionEvents'
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    PrescriptionEventPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - prescription_id
+            - encounter_id
+            - status
+          properties:
+            prescription_id:
+              type: string
+              format: uuid
+            encounter_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum:
+                - DRAFT
+                - SUBMITTED
+                - VALIDATED
+                - CANCELLED
+            safety_review_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+    DispenseEventPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - dispense_id
+            - prescription_id
+            - encounter_id
+            - item_count
+          properties:
+            dispense_id:
+              type: string
+              format: uuid
+            prescription_id:
+              type: string
+              format: uuid
+            encounter_id:
+              type: string
+              format: uuid
+            item_count:
+              type: integer
+              minimum: 1
+    StockLowEventPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - stock_item_id
+            - drug_id
+            - storage_location
+            - quantity_available
+            - minimum_level
+          properties:
+            stock_item_id:
+              type: string
+              format: uuid
+            drug_id:
+              type: string
+              format: uuid
+            storage_location:
+              type: string
+            quantity_available:
+              type: number
+            minimum_level:
+              type: number
+  messages:
+    PrescriptionCreated:
+      name: prescription.created
+      payload:
+        $ref: '#/components/schemas/PrescriptionEventPayload'
+    PrescriptionValidated:
+      name: prescription.validated
+      payload:
+        $ref: '#/components/schemas/PrescriptionEventPayload'
+    MedicationDispensed:
+      name: medication.dispensed
+      payload:
+        $ref: '#/components/schemas/DispenseEventPayload'
+    StockLow:
+      name: stock.low
+      payload:
+        $ref: '#/components/schemas/StockLowEventPayload'
