@@ -43,7 +43,9 @@ class AdtPermissionTests(TestCase):
             content_type__app_label="adt",
         )
         user.user_permissions.add(permission)
-        user._perm_cache = set()
+        for cache_name in ("_perm_cache", "_user_perm_cache", "_group_perm_cache"):
+            if hasattr(user, cache_name):
+                delattr(user, cache_name)
 
     def test_administrator_has_operational_access_without_group_permission(self):
         self.assertTrue(can_view_bed_map(self.admin))
