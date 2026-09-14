@@ -2,6 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.test import TestCase
 from django.utils import timezone
 
@@ -99,11 +100,17 @@ class PharmacyAppendOnlyIntegrityTests(TestCase):
             dispensed_at=timezone.now(),
         )
 
+    def _assert_bulk_delete_rejected(self, queryset):
+        with self.assertRaises(ValidationError):
+            with transaction.atomic():
+                queryset.delete()
+
     def test_safety_review_cannot_be_bulk_deleted(self):
         review = self._review()
 
-        with self.assertRaises(ValidationError):
-            MedicationSafetyReview.objects.filter(pk=review.pk).delete()
+        self._assert_bulk_delete_rejected(
+            MedicationSafetyReview.objects.filter(pk=review.pk)
+        )
 
         self.assertTrue(MedicationSafetyReview.objects.filter(pk=review.pk).exists())
 
@@ -117,16 +124,18 @@ class PharmacyAppendOnlyIntegrityTests(TestCase):
             blocking=False,
         )
 
-        with self.assertRaises(ValidationError):
-            MedicationSafetyFinding.objects.filter(pk=finding.pk).delete()
+        self._assert_bulk_delete_rejected(
+            MedicationSafetyFinding.objects.filter(pk=finding.pk)
+        )
 
         self.assertTrue(MedicationSafetyFinding.objects.filter(pk=finding.pk).exists())
 
     def test_dispense_cannot_be_bulk_deleted(self):
         dispense = self._dispense()
 
-        with self.assertRaises(ValidationError):
-            MedicationDispense.objects.filter(pk=dispense.pk).delete()
+        self._assert_bulk_delete_rejected(
+            MedicationDispense.objects.filter(pk=dispense.pk)
+        )
 
         self.assertTrue(MedicationDispense.objects.filter(pk=dispense.pk).exists())
 
@@ -139,7 +148,8 @@ class PharmacyAppendOnlyIntegrityTests(TestCase):
             quantity=Decimal("1"),
         )
 
-        with self.assertRaises(ValidationError):
-            MedicationDispenseItem.objects.filter(pk=item.pk).delete()
+        self._assert_bulk_delete_rejected(
+            MedicationDispenseItem.objects.filter(pk=item.pk)
+        )
 
         self.assertTrue(MedicationDispenseItem.objects.filter(pk=item.pk).exists())
