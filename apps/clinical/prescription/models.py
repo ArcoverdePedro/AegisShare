@@ -270,9 +270,12 @@ class MedicationRequest(models.Model):
     def clean(self):
         super().clean()
         self.cancellation_reason = " ".join((self.cancellation_reason or "").split())
-        if self.encounter_id and self.status in {self.Status.DRAFT, self.Status.SUBMITTED}:
-            if self.encounter.status != Encounter.Status.OPEN:
-                raise ValidationError({"encounter": "Prescrição nova exige encontro aberto."})
+        if (
+            self.encounter_id
+            and self.status in {self.Status.DRAFT, self.Status.SUBMITTED}
+            and self.encounter.status != Encounter.Status.OPEN
+        ):
+            raise ValidationError({"encounter": "Prescrição nova exige encontro aberto."})
         if self.replaces_id and self.replaces.encounter_id != self.encounter_id:
             raise ValidationError({"replaces": "A substituição deve pertencer ao mesmo encontro."})
         if self.status == self.Status.SUBMITTED and not self.submitted_at:
@@ -623,9 +626,12 @@ class MedicationDispenseItem(models.Model):
         super().clean()
         if self.quantity is not None and self.quantity <= 0:
             raise ValidationError({"quantity": "A quantidade deve ser maior que zero."})
-        if self.lot_id and self.request_item_id:
-            if self.lot.stock_item.drug_id != self.request_item.drug_id:
-                raise ValidationError({"lot": "O lote não corresponde ao medicamento prescrito."})
+        if (
+            self.lot_id
+            and self.request_item_id
+            and self.lot.stock_item.drug_id != self.request_item.drug_id
+        ):
+            raise ValidationError({"lot": "O lote não corresponde ao medicamento prescrito."})
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
