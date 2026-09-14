@@ -60,7 +60,6 @@ def _enforce_approved_reference_immutability(sender, instance, governed_fields):
 
     persisted = sender.objects.filter(pk=instance.pk).values(
         "active",
-        "approved_at",
         *governed_fields,
     ).first()
     if not persisted or persisted["approved_at"] is None:
