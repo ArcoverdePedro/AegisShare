@@ -273,8 +273,140 @@ class BedOccupancy(models.Model):
         return f"Ocupação {self.id}"
 
 
+class Transfer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    admission = models.ForeignKey(
+        Admission,
+        on_delete=models.PROTECT,
+        related_name="transfers",
+    )
+    source_occupancy = models.OneToOneField(
+        BedOccupancy,
+        on_delete=models.PROTECT,
+        related_name="transfer_out",
+    )
+    destination_occupancy = models.OneToOneField(
+        BedOccupancy,
+        on_delete=models.PROTECT,
+        related_name="transfer_in",
+    )
+    transferred_at = models.DateTimeField()
+    transferred_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="adt_transfers_created",
+    )
+    reason = models.CharField(max_length=255, blank=True)
+    operation_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["transferred_at", "created_at"]
+        indexes = [
+            models.Index(
+                fields=["admission", "transferred_at"],
+                name="adt_transfer_adm_time_idx",
+            )
+        ]
+        permissions = [("transfer_patient", "Pode transferir paciente")]
+
+    def clean(self):
+        super().clean()
+        self.reason = " ".join((self.reason or "").split())
+        if self.source_occupancy_id and self.destination_occupancy_id:
+            if self.source_occupancy_id == self.destination_occupancy_id:
+                raise ValidationError("Origem e destino da transferência devem ser distintos.")
+            if self.source_occupancy.admission_id != self.admission_id:
+                raise ValidationError({"source_occupancy": "A ocupação de origem é inválida."})
+            if self.destination_occupancy.admission_id != self.admission_id:
+                raise ValidationError(
+                    {"destination_occupancy": "A ocupação de destino é inválida."}
+                )
+            if self.source_occupancy.bed_id == self.destination_occupancy.bed_id:
+                raise ValidationError("A transferência exige mudança de leito.")
+            if self.transferred_at and self.transferred_at < self.source_occupancy.started_at:
+                raise ValidationError(
+                    {"transferred_at": "A transferência não pode anteceder a ocupação atual."}
+                )
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Transferências são append-only e não podem ser editadas.")
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Transferências concluídas não podem ser excluídas.")
+
+    def __str__(self):
+        return f"Transferência {self.id}"
+
+
+class Discharge(models.Model):
+    class Disposition(models.TextChoices):
+        HOME = "HOME", "Domicílio"
+        TRANSFER_EXTERNAL = "TRANSFER_EXTERNAL", "Transferência externa"
+        DEATH = "DEATH", "Óbito"
+        OTHER = "OTHER", "Outro"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    admission = models.OneToOneField(
+        Admission,
+        on_delete=models.PROTECT,
+        related_name="discharge",
+    )
+    final_occupancy = models.OneToOneField(
+        BedOccupancy,
+        on_delete=models.PROTECT,
+        related_name="discharge",
+    )
+    discharged_at = models.DateTimeField()
+    disposition = models.CharField(max_length=24, choices=Disposition.choices)
+    reason = models.CharField(max_length=255, blank=True)
+    discharged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="adt_discharges_created",
+    )
+    operation_key = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-discharged_at", "-created_at"]
+        indexes = [models.Index(fields=["discharged_at"], name="adt_discharge_time_idx")]
+        permissions = [("discharge_patient", "Pode registrar alta de paciente")]
+
+    def clean(self):
+        super().clean()
+        self.reason = " ".join((self.reason or "").split())
+        if self.admission_id and self.discharged_at:
+            if self.discharged_at < self.admission.admitted_at:
+                raise ValidationError(
+                    {"discharged_at": "A alta não pode anteceder a admissão."}
+                )
+        if self.final_occupancy_id and self.admission_id:
+            if self.final_occupancy.admission_id != self.admission_id:
+                raise ValidationError(
+                    {"final_occupancy": "A ocupação final não pertence à admissão."}
+                )
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Altas são append-only e não podem ser editadas.")
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Altas concluídas não podem ser excluídas.")
+
+    def __str__(self):
+        return f"Alta {self.id}"
+
+
 auditlog.register(Location)
 auditlog.register(UserLocationAccess)
 auditlog.register(Bed)
 auditlog.register(Admission)
 auditlog.register(BedOccupancy)
+auditlog.register(Transfer, exclude_fields=["reason"])
+auditlog.register(Discharge, exclude_fields=["reason"])
