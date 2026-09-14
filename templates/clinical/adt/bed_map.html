@@ -11,7 +11,7 @@
                 <div>
                     <p class="heading">ADT</p>
                     <h1 class="title is-3 mb-1">Mapa de leitos</h1>
-                    <p class="muted">Atualização automática a cada 5 segundos. Dados identificáveis respeitam o escopo PEP.</p>
+                    <p class="muted">Atualização em tempo real por sinal de invalidação. Dados identificáveis respeitam o escopo PEP.</p>
                 </div>
             </div>
             <div class="level-right">
@@ -32,4 +32,58 @@
         {% include 'clinical/adt/_bed_map.html' %}
     </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+    let socket;
+    let reconnectTimer;
+    let stopped = false;
+
+    const scheduleReconnect = () => {
+        if (stopped || reconnectTimer) return;
+        reconnectTimer = window.setTimeout(() => {
+            reconnectTimer = null;
+            connect();
+        }, 5000);
+    };
+
+    const connect = () => {
+        if (stopped || document.hidden) return;
+        const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        socket = new WebSocket(`${scheme}://${window.location.host}/ws/clinical/adt/bed-map/`);
+
+        socket.addEventListener('message', (event) => {
+            try {
+                const payload = JSON.parse(event.data);
+                if (payload.type === 'adt_event') {
+                    htmx.trigger(document.body, 'adt-map-refresh');
+                }
+            } catch (_error) {
+                // Payload inválido é ignorado; nenhum dado é persistido no navegador.
+            }
+        });
+
+        socket.addEventListener('close', scheduleReconnect);
+        socket.addEventListener('error', () => socket.close());
+    };
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (socket) socket.close();
+            return;
+        }
+        connect();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        stopped = true;
+        if (reconnectTimer) window.clearTimeout(reconnectTimer);
+        if (socket) socket.close();
+    });
+
+    connect();
+})();
+</script>
 {% endblock %}

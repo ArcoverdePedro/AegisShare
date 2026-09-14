@@ -1,3 +1,4 @@
+from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
@@ -38,6 +39,17 @@ def _success_url(user, admission):
     )
 
 
+def _audit_access(instance):
+    accessed.send(instance.__class__, instance=instance)
+
+
+def _audit_patient_once(patient, seen):
+    if patient.pk in seen:
+        return
+    seen.add(patient.pk)
+    _audit_access(patient)
+
+
 class AdmissionListView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
     template_name = "clinical/adt/admission_list.html"
     context_object_name = "admissions"
@@ -55,6 +67,11 @@ class AdmissionListView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["can_transfer"] = can_transfer(self.request.user)
         context["can_discharge"] = can_discharge(self.request.user)
+
+        seen_patients = set()
+        for admission in context["admissions"]:
+            _audit_access(admission)
+            _audit_patient_once(admission.encounter.patient, seen_patients)
         return context
 
 
@@ -169,10 +186,21 @@ class BedMapView(LoginRequiredMixin, NoStoreResponseMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["bed_groups"] = bed_map_groups(self.request.user)
+        groups = bed_map_groups(self.request.user)
+        context["bed_groups"] = groups
         context["can_admit"] = can_admit(self.request.user)
         context["can_transfer"] = can_transfer(self.request.user)
         context["can_discharge"] = can_discharge(self.request.user)
+
+        seen_patients = set()
+        for _location, rows in groups:
+            for row in rows:
+                occupancy = row["occupancy"]
+                if occupancy is not None:
+                    _audit_access(occupancy)
+                patient = row["patient"]
+                if row["show_phi"] and patient is not None:
+                    _audit_patient_once(patient, seen_patients)
         return context
 
 

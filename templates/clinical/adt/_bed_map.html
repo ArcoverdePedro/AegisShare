@@ -1,6 +1,6 @@
 <div id="bedMapFragment"
      hx-get="{% url 'adt:bed_map_partial' %}"
-     hx-trigger="every 5s"
+     hx-trigger="adt-map-refresh from:body"
      hx-swap="outerHTML"
      aria-live="polite">
     {% for location, rows in bed_groups %}

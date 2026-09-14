@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter
 
+from .events import emit_adt_event
 from .models import Admission, Bed, BedOccupancy
 from .permissions import can_admit_to_bed
 
@@ -102,11 +103,25 @@ def admit_patient(*, encounter_id, bed_id, actor, operation_key, admitted_at=Non
                 admitted_by=actor,
                 operation_key=operation_key,
             )
-            BedOccupancy.objects.create(
+            occupancy = BedOccupancy.objects.create(
                 admission=admission,
                 bed=bed,
                 started_at=admitted_at,
                 started_by=actor,
+            )
+            emit_adt_event(
+                event_type="encounter.admitted",
+                encounter_id=encounter.pk,
+                admission_id=admission.pk,
+                occupancy_id=occupancy.pk,
+                bed_id=bed.pk,
+                location_id=bed.location_id,
+            )
+            emit_adt_event(
+                event_type="bed.occupied",
+                bed_id=bed.pk,
+                location_id=bed.location_id,
+                state="OCCUPIED",
             )
             return admission
     except IntegrityError as exc:
