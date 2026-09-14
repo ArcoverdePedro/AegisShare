@@ -1,0 +1,118 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Prescrição - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="heading">Prescrição e Farmácia</p>
+                    <h1 class="title is-3 mb-1">Prescrição</h1>
+                    <p class="muted">Registro clínico somente leitura após submissão.</p>
+                </div>
+            </div>
+            <div class="level-right">
+                <a class="button is-light" href="{% url 'prescription:prescription_list' %}">Voltar</a>
+            </div>
+        </div>
+
+        <div class="columns is-multiline">
+            <div class="column is-12-tablet is-7-desktop">
+                <div class="box aegis-card">
+                    <div class="level mb-4">
+                        <div class="level-left">
+                            <div>
+                                <p class="heading">Paciente</p>
+                                <h2 class="title is-5 mb-1">{{ prescription.encounter.patient.full_name }}</h2>
+                                <p class="is-size-7 muted">Encontro {{ prescription.encounter_id }}</p>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <span class="tag is-link is-light">{{ prescription.get_status_display }}</span>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table is-fullwidth">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Medicamento</th>
+                                    <th>Dose</th>
+                                    <th>Via</th>
+                                    <th>Frequência</th>
+                                    <th>Duração</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in prescription.items.all %}
+                                    <tr>
+                                        <td>{{ item.sequence }}</td>
+                                        <td>
+                                            <strong>{{ item.drug.name }}</strong><br>
+                                            <span class="is-size-7 muted">{{ item.drug.presentation }}{% if item.drug.strength_text %} · {{ item.drug.strength_text }}{% endif %}</span>
+                                        </td>
+                                        <td>{{ item.dose }} {{ item.dose_unit }}</td>
+                                        <td>{{ item.route }}</td>
+                                        <td>{{ item.frequency }}</td>
+                                        <td>
+                                            {% if item.duration_value %}
+                                                {{ item.duration_value }} {{ item.duration_unit }}
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% if item.instructions %}
+                                        <tr>
+                                            <td></td>
+                                            <td colspan="5">
+                                                <p class="heading mb-1">Instruções</p>
+                                                <div class="content is-small">{{ item.instructions|linebreaksbr }}</div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% empty %}
+                                    <tr><td colspan="6" class="has-text-centered muted py-5">Nenhum item registrado.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column is-12-tablet is-5-desktop">
+                <div class="box aegis-card">
+                    <h2 class="title is-5">Rastreabilidade</h2>
+                    <dl>
+                        <dt class="heading mt-3">ID da prescrição</dt>
+                        <dd class="is-family-monospace is-size-7">{{ prescription.pk }}</dd>
+                        <dt class="heading mt-3">Autor</dt>
+                        <dd>{{ prescription.authored_by.get_username }}</dd>
+                        <dt class="heading mt-3">Criada em</dt>
+                        <dd>{{ prescription.created_at|date:'d/m/Y H:i' }}</dd>
+                        {% if prescription.submitted_at %}
+                            <dt class="heading mt-3">Submetida em</dt>
+                            <dd>{{ prescription.submitted_at|date:'d/m/Y H:i' }}</dd>
+                        {% endif %}
+                        {% if prescription.validated_at %}
+                            <dt class="heading mt-3">Validada em</dt>
+                            <dd>{{ prescription.validated_at|date:'d/m/Y H:i' }}</dd>
+                        {% endif %}
+                        {% if prescription.validated_by %}
+                            <dt class="heading mt-3">Validada por</dt>
+                            <dd>{{ prescription.validated_by.get_username }}</dd>
+                        {% endif %}
+                        {% if prescription.replaces_id %}
+                            <dt class="heading mt-3">Substitui</dt>
+                            <dd class="is-family-monospace is-size-7">{{ prescription.replaces_id }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
