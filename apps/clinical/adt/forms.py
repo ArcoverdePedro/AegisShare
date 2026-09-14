@@ -3,6 +3,8 @@ import uuid
 from django import forms
 from django.utils import timezone
 
+from apps.clinical.pep.models import Encounter
+
 from .models import Bed
 from .selectors import admissible_encounters_for_user, available_beds_for_user
 
@@ -19,8 +21,11 @@ class BedChoiceField(forms.ModelChoiceField):
 
 
 class AdmissionForm(forms.Form):
-    encounter = EncounterChoiceField(queryset=None, label="Encontro de internação")
-    bed = BedChoiceField(queryset=None, label="Leito disponível")
+    encounter = EncounterChoiceField(
+        queryset=Encounter.objects.none(),
+        label="Encontro de internação",
+    )
+    bed = BedChoiceField(queryset=Bed.objects.none(), label="Leito disponível")
     admitted_at = forms.DateTimeField(
         label="Data e hora da admissão",
         widget=forms.DateTimeInput(
