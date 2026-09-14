@@ -4,24 +4,27 @@ from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db.models import DecimalField, Prefetch, Q, Sum, Value
+from django.db.models import Count, DecimalField, Prefetch, Q, Sum, Value
 from django.db.models.functions import Coalesce
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.cache import patch_vary_headers
-from django.views.generic import FormView, ListView
+from django.views.generic import DetailView, FormView, ListView
 
 from .catalog_services import CatalogStateError, create_drug, update_drug
 from .forms import DrugForm
-from .models import Drug, Lot, StockItem
+from .models import Drug, Lot, MedicationRequest, StockItem
 from .permissions import (
+    PERM_VIEW,
     can_manage_reference_data,
     can_manage_stock,
     can_view_drug_catalog,
     can_view_stock,
+    has_rx_permission,
 )
+from .selectors import visible_medication_requests
 
 
 class NoStoreResponseMixin:
@@ -30,6 +33,46 @@ class NoStoreResponseMixin:
         response["Cache-Control"] = "private, no-store, max-age=0"
         patch_vary_headers(response, ("Cookie", "HX-Request"))
         return response
+
+
+class MedicationRequestListView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
+    template_name = "clinical/prescription/prescription_list.html"
+    context_object_name = "prescriptions"
+    paginate_by = 25
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not has_rx_permission(request.user, PERM_VIEW):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return visible_medication_requests(self.request.user).annotate(item_count=Count("items"))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for medication_request in context["prescriptions"]:
+            accessed.send(medication_request.__class__, instance=medication_request)
+        return context
+
+
+class MedicationRequestDetailView(LoginRequiredMixin, NoStoreResponseMixin, DetailView):
+    template_name = "clinical/prescription/detail.html"
+    context_object_name = "prescription"
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not has_rx_permission(request.user, PERM_VIEW):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return visible_medication_requests(self.request.user).prefetch_related("items__drug")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        accessed.send(self.object.__class__, instance=self.object)
+        for item in self.object.items.all():
+            accessed.send(item.__class__, instance=item)
+        return context
 
 
 class DrugCatalogView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
