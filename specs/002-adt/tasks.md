@@ -12,7 +12,7 @@
 - [x] **T-ADT-08** Implementar alta transacional, liberação do leito e fechamento consistente do `Encounter`. RF-ADT-05/06. `discharge_patient()` encerra a ocupação com motivo `DISCHARGE`, cria `Discharge` imutável e fecha o `Encounter` com o mesmo timestamp dentro da transação.
 - [x] **T-ADT-09** Integrar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual. RF-ADT-08/10. Leituras identificáveis do mapa/lista emitem `ACCESS`; mutações continuam no `django-auditlog`; `emit_adt_event()` usa `transaction.on_commit()` e payload técnico minimizado.
 - [x] **T-ADT-10** Implementar atualização do mapa via Channels como sinal de invalidação, com revalidação de autorização. RF-ADT-09. `AdtBedMapConsumer` revalida capacidade e escopo local em cada evento; o navegador apenas dispara novo GET HTMX autorizado e não persiste payload clínico.
-- [ ] **T-ADT-11** Criar testes de concorrência PostgreSQL para admissão/transferência simultânea. RF-ADT-02/11.
+- [x] **T-ADT-11** Criar testes de concorrência PostgreSQL para admissão/transferência simultânea. RF-ADT-02/11. `AdmissionConcurrencyTests` e `TransferConcurrencyTests` usam `TransactionTestCase`, conexões independentes e barreira entre threads para provar que apenas uma ocupação vence e que a operação perdedora não deixa estado parcial.
 - [ ] **T-ADT-12** Criar Gherkin + Playwright das jornadas principais e negações de acesso. RF-ADT-01/03/04/05/07.
 - [ ] **T-ADT-13** Executar axe-core e validação mobile/tablet do mapa e formulários críticos. RNF-ADT-06.
 - [ ] **T-ADT-14** Garantir via testes que mutações ADT permanecem fora de cache/fila offline PWA. RF-ADT-12.
