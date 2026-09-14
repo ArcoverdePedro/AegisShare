@@ -6,8 +6,15 @@ from django.urls import reverse
 from django.utils.cache import patch_vary_headers
 from django.views.generic import FormView, ListView, TemplateView
 
-from .forms import AdmissionForm
-from .permissions import can_admit, can_view_admissions, can_view_bed_map
+from .forms import AdmissionForm, DischargeForm, TransferForm
+from .lifecycle import discharge_patient, transfer_patient
+from .permissions import (
+    can_admit,
+    can_discharge,
+    can_transfer,
+    can_view_admissions,
+    can_view_bed_map,
+)
 from .selectors import admissions_for_user, bed_map_groups
 from .services import AdtConflictError, admit_patient
 
@@ -18,6 +25,17 @@ class NoStoreResponseMixin:
         response["Cache-Control"] = "private, no-store, max-age=0"
         patch_vary_headers(response, ("Cookie", "HX-Request"))
         return response
+
+
+def _success_url(user, admission):
+    if can_view_bed_map(user):
+        return reverse("adt:bed_map")
+    if can_view_admissions(user):
+        return reverse("adt:admission_list")
+    return reverse(
+        "pep:patient_detail",
+        kwargs={"pk": admission.encounter.patient_id},
+    )
 
 
 class AdmissionListView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
@@ -32,6 +50,12 @@ class AdmissionListView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
 
     def get_queryset(self):
         return admissions_for_user(self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_transfer"] = can_transfer(self.request.user)
+        context["can_discharge"] = can_discharge(self.request.user)
+        return context
 
 
 class AdmissionCreateView(LoginRequiredMixin, NoStoreResponseMixin, FormView):
@@ -66,14 +90,73 @@ class AdmissionCreateView(LoginRequiredMixin, NoStoreResponseMixin, FormView):
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
-        if can_view_bed_map(self.request.user):
-            return reverse("adt:bed_map")
-        if can_view_admissions(self.request.user):
-            return reverse("adt:admission_list")
-        return reverse(
-            "pep:patient_detail",
-            kwargs={"pk": self.admission.encounter.patient_id},
-        )
+        return _success_url(self.request.user, self.admission)
+
+
+class TransferCreateView(LoginRequiredMixin, NoStoreResponseMixin, FormView):
+    template_name = "clinical/adt/transfer_form.html"
+    form_class = TransferForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not can_transfer(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        try:
+            transfer = transfer_patient(
+                admission_id=form.cleaned_data["admission"].pk,
+                destination_bed_id=form.cleaned_data["destination_bed"].pk,
+                actor=self.request.user,
+                operation_key=form.cleaned_data["operation_key"],
+                transferred_at=form.cleaned_data["transferred_at"],
+                reason=form.cleaned_data["reason"],
+            )
+        except AdtConflictError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        self.admission = transfer.admission
+        messages.success(self.request, "Transferência registrada com sucesso.")
+        return HttpResponseRedirect(_success_url(self.request.user, self.admission))
+
+
+class DischargeCreateView(LoginRequiredMixin, NoStoreResponseMixin, FormView):
+    template_name = "clinical/adt/discharge_form.html"
+    form_class = DischargeForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not can_discharge(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        try:
+            discharge = discharge_patient(
+                admission_id=form.cleaned_data["admission"].pk,
+                disposition=form.cleaned_data["disposition"],
+                actor=self.request.user,
+                operation_key=form.cleaned_data["operation_key"],
+                discharged_at=form.cleaned_data["discharged_at"],
+                reason=form.cleaned_data["reason"],
+            )
+        except AdtConflictError as exc:
+            form.add_error(None, str(exc))
+            return self.form_invalid(form)
+
+        self.admission = discharge.admission
+        messages.success(self.request, "Alta registrada com sucesso.")
+        return HttpResponseRedirect(_success_url(self.request.user, self.admission))
 
 
 class BedMapView(LoginRequiredMixin, NoStoreResponseMixin, TemplateView):
@@ -88,6 +171,8 @@ class BedMapView(LoginRequiredMixin, NoStoreResponseMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context["bed_groups"] = bed_map_groups(self.request.user)
         context["can_admit"] = can_admit(self.request.user)
+        context["can_transfer"] = can_transfer(self.request.user)
+        context["can_discharge"] = can_discharge(self.request.user)
         return context
 
 

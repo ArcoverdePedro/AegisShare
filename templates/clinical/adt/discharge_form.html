@@ -1,0 +1,53 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Registrar alta - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 820px">
+        <div class="mb-5">
+            <p class="heading">ADT</p>
+            <h1 class="title is-3 mb-1">Registrar alta</h1>
+            <p class="muted">A alta libera o leito e encerra o encontro clínico na mesma transação. Esta operação exige conexão.</p>
+        </div>
+
+        <div class="box aegis-card">
+            <form method="post" novalidate autocomplete="off">
+                {% csrf_token %}
+                {{ form.operation_key }}
+                {% if form.non_field_errors %}<div class="notification is-danger is-light" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="field">
+                    <label class="label" for="{{ form.admission.id_for_label }}">{{ form.admission.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.admission }}</div>
+                    {% for error in form.admission.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.discharged_at.id_for_label }}">{{ form.discharged_at.label }}</label>
+                    <div class="control">{{ form.discharged_at }}</div>
+                    {% for error in form.discharged_at.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.disposition.id_for_label }}">{{ form.disposition.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.disposition }}</div>
+                    {% for error in form.disposition.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+                    <div class="control">{{ form.reason }}</div>
+                    {% for error in form.reason.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="notification is-warning is-light mt-5">
+                    Confirme somente após validar que a alta deve encerrar a internação e liberar o leito atual.
+                </div>
+                <div class="buttons">
+                    <button class="button is-danger" type="submit">{% icon 'log-out' %}<span>Confirmar alta</span></button>
+                    <a class="button" href="{% url 'adt:bed_map' %}">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

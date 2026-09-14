@@ -69,6 +69,40 @@ def can_admit_to_bed(user, encounter, bed):
     )
 
 
+def can_transfer(user):
+    return has_adt_permission(user, PERM_TRANSFER)
+
+
+def can_transfer_admission(user, admission, destination_bed=None):
+    if not can_transfer(user) or not can_access_patient(user, admission.encounter.patient):
+        return False
+    current = (
+        admission.occupancies.filter(ended_at__isnull=True)
+        .select_related("bed__location")
+        .first()
+    )
+    if not current or not can_access_bed(user, current.bed):
+        return False
+    if destination_bed is None:
+        return True
+    return destination_bed.pk != current.bed_id and can_access_bed(user, destination_bed)
+
+
+def can_discharge(user):
+    return has_adt_permission(user, PERM_DISCHARGE)
+
+
+def can_discharge_admission(user, admission):
+    if not can_discharge(user) or not can_access_patient(user, admission.encounter.patient):
+        return False
+    current = (
+        admission.occupancies.filter(ended_at__isnull=True)
+        .select_related("bed__location")
+        .first()
+    )
+    return bool(current and can_access_bed(user, current.bed))
+
+
 def can_manage_bed_status(user):
     return has_adt_permission(user, PERM_MANAGE_BED)
 

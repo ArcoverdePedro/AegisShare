@@ -1,0 +1,50 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Nova transferência - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 820px">
+        <div class="mb-5">
+            <p class="heading">ADT</p>
+            <h1 class="title is-3 mb-1">Transferir internação</h1>
+            <p class="muted">A ocupação atual, o leito de destino e as autorizações serão revalidados na confirmação. Esta operação exige conexão.</p>
+        </div>
+
+        <div class="box aegis-card">
+            <form method="post" novalidate autocomplete="off">
+                {% csrf_token %}
+                {{ form.operation_key }}
+                {% if form.non_field_errors %}<div class="notification is-danger is-light" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+                <div class="field">
+                    <label class="label" for="{{ form.admission.id_for_label }}">{{ form.admission.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.admission }}</div>
+                    {% for error in form.admission.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.destination_bed.id_for_label }}">{{ form.destination_bed.label }}</label>
+                    <div class="control select is-fullwidth">{{ form.destination_bed }}</div>
+                    {% for error in form.destination_bed.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.transferred_at.id_for_label }}">{{ form.transferred_at.label }}</label>
+                    <div class="control">{{ form.transferred_at }}</div>
+                    {% for error in form.transferred_at.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="field">
+                    <label class="label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+                    <div class="control">{{ form.reason }}</div>
+                    {% for error in form.reason.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="buttons mt-5">
+                    <button class="button is-warning" type="submit">{% icon 'repeat' %}<span>Confirmar transferência</span></button>
+                    <a class="button" href="{% url 'adt:bed_map' %}">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

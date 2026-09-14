@@ -14,13 +14,19 @@
                     <p class="muted">Atualização automática a cada 5 segundos. Dados identificáveis respeitam o escopo PEP.</p>
                 </div>
             </div>
-            {% if can_admit %}
-                <div class="level-right">
-                    <a class="button is-link" href="{% url 'adt:admission_create' %}">
-                        {% icon 'log-in' %}<span>Nova admissão</span>
-                    </a>
+            <div class="level-right">
+                <div class="buttons">
+                    {% if can_transfer %}
+                        <a class="button is-warning" href="{% url 'adt:transfer_create' %}">{% icon 'repeat' %}<span>Transferir</span></a>
+                    {% endif %}
+                    {% if can_discharge %}
+                        <a class="button is-danger is-light" href="{% url 'adt:discharge_create' %}">{% icon 'log-out' %}<span>Registrar alta</span></a>
+                    {% endif %}
+                    {% if can_admit %}
+                        <a class="button is-link" href="{% url 'adt:admission_create' %}">{% icon 'log-in' %}<span>Nova admissão</span></a>
+                    {% endif %}
                 </div>
-            {% endif %}
+            </div>
         </div>
 
         {% include 'clinical/adt/_bed_map.html' %}

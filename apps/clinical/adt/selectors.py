@@ -50,6 +50,33 @@ def admissions_for_user(user):
     return queryset.select_related("encounter__patient", "admitted_by").distinct()
 
 
+def active_admissions_for_user(user):
+    active_occupancy = BedOccupancy.objects.filter(
+        admission_id=OuterRef("pk"),
+        ended_at__isnull=True,
+        bed__location__in=accessible_locations(user),
+    )
+    return (
+        Admission.objects.filter(
+            encounter__patient__in=accessible_patients(user),
+            encounter__status=Encounter.Status.OPEN,
+            discharge__isnull=True,
+        )
+        .annotate(has_active_occupancy=Exists(active_occupancy))
+        .filter(has_active_occupancy=True)
+        .select_related("encounter__patient", "admitted_by")
+        .order_by("-admitted_at")
+    )
+
+
+def transferable_admissions_for_user(user):
+    return active_admissions_for_user(user)
+
+
+def dischargeable_admissions_for_user(user):
+    return active_admissions_for_user(user)
+
+
 def bed_map_groups(user):
     active_occupancies = BedOccupancy.objects.filter(ended_at__isnull=True).select_related(
         "admission__encounter__patient"

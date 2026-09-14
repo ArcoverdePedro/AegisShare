@@ -6,10 +6,10 @@
 - [x] **T-ADT-02** Fechar matriz RBAC + ABAC e capacidades ADT, incluindo exposição mínima do mapa sem grant clínico. RF-ADT-03/07/08. A política está em `contracts/access-policy.md`, usando permissões/grupos Django para capacidades finas e escopo PEP/local como ABAC deny-by-default.
 - [x] **T-ADT-03** Criar `apps/clinical/adt` e migrations iniciais reversíveis. RF-ADT-01/03/04/05. O app está registrado em `INSTALLED_APPS`; a migration `0001_initial` cria somente tabelas ADT e referencia o `Encounter` canônico sem alterar o schema do PEP.
 - [x] **T-ADT-04** Implementar `Location`, `Bed` e `BedOccupancy` com prevenção de dupla ocupação ativa. RF-ADT-02/03/11. O estado `OCCUPIED` é derivado da ocupação ativa e constraints parciais impedem dois leitos ativos por admissão ou dois ocupantes ativos no mesmo leito.
-- [ ] **T-ADT-05** Implementar admissão transacional e idempotente usando `Encounter` PEP aberto/internação. RF-ADT-01/02/11.
-- [ ] **T-ADT-06** Implementar mapa de leitos server-rendered + partial HTMX sem exposição indevida de PHI. RF-ADT-03/07.
-- [ ] **T-ADT-07** Implementar transferência append-only, encerrando origem e ocupando destino atomicamente. RF-ADT-04/06/11.
-- [ ] **T-ADT-08** Implementar alta transacional, liberação do leito e fechamento consistente do `Encounter`. RF-ADT-05/06.
+- [x] **T-ADT-05** Implementar admissão transacional e idempotente usando `Encounter` PEP aberto/internação. RF-ADT-01/02/11. `admit_patient()` usa `transaction.atomic()`, `select_for_update()`, chave UUID idempotente e revalidação de PEP, local e disponibilidade.
+- [x] **T-ADT-06** Implementar mapa de leitos server-rendered + partial HTMX sem exposição indevida de PHI. RF-ADT-03/07. O mapa é `no-store`, filtra local no servidor e só renderiza identificação do ocupante quando o usuário também possui escopo PEP válido.
+- [x] **T-ADT-07** Implementar transferência append-only, encerrando origem e ocupando destino atomicamente. RF-ADT-04/06/11. `transfer_patient()` bloqueia admissão, encontro, ocupação e destino, encerra a origem com motivo `TRANSFER`, cria a nova ocupação e persiste `Transfer` imutável na mesma transação.
+- [x] **T-ADT-08** Implementar alta transacional, liberação do leito e fechamento consistente do `Encounter`. RF-ADT-05/06. `discharge_patient()` encerra a ocupação com motivo `DISCHARGE`, cria `Discharge` imutável e fecha o `Encounter` com o mesmo timestamp dentro da transação.
 - [ ] **T-ADT-09** Integrar auditoria explícita de leitura/escrita e eventos pós-commit sem PHI textual. RF-ADT-08/10.
 - [ ] **T-ADT-10** Implementar atualização do mapa via Channels como sinal de invalidação, com revalidação de autorização. RF-ADT-09.
 - [ ] **T-ADT-11** Criar testes de concorrência PostgreSQL para admissão/transferência simultânea. RF-ADT-02/11.
