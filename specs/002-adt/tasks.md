@@ -1,9 +1,9 @@
 # Tasks — Spec 002 ADT
 
-> Status: aguardando aprovação explícita da Spec 002 e ADR-0008 antes de qualquer implementação.
+> Status: documentação e contratos preparados; aguardando aprovação explícita da Spec 002 e ADR-0008 antes de qualquer implementação de runtime.
 
-- [ ] **T-ADT-01** Fechar `data-model.md`, constraints PostgreSQL e ownership do `Encounter`. RF-ADT-01/02/04/05/06.
-- [ ] **T-ADT-02** Fechar matriz RBAC + ABAC e capacidades ADT, incluindo exposição mínima do mapa sem grant clínico. RF-ADT-03/07/08.
+- [x] **T-ADT-01** Fechar `data-model.md`, constraints PostgreSQL e ownership do `Encounter`. RF-ADT-01/02/04/05/06. O modelo mantém `Encounter` canônico no PEP conforme ADR-0008, define ocupação ativa com `UniqueConstraint(..., condition=Q(ended_at__isnull=True))` por leito e por admissão e preserva histórico append-only.
+- [x] **T-ADT-02** Fechar matriz RBAC + ABAC e capacidades ADT, incluindo exposição mínima do mapa sem grant clínico. RF-ADT-03/07/08. A política está em `contracts/access-policy.md`, usando permissões/grupos Django para capacidades finas e escopo PEP/local como ABAC deny-by-default.
 - [ ] **T-ADT-03** Criar `apps/clinical/adt` e migrations iniciais reversíveis. RF-ADT-01/03/04/05.
 - [ ] **T-ADT-04** Implementar `Location`, `Bed` e `BedOccupancy` com prevenção de dupla ocupação ativa. RF-ADT-02/03/11.
 - [ ] **T-ADT-05** Implementar admissão transacional e idempotente usando `Encounter` PEP aberto/internação. RF-ADT-01/02/11.
