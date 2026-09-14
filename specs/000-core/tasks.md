@@ -10,7 +10,7 @@
 - [x] **T-CORE-06** Criar plano de migração incremental dos apps com rollback. Vinculado a RNF-CORE-05. O plano preserva tabelas físicas, histórico de migrations/content types e define rollback/gates por lote em `contracts/model-boundaries-and-migration.md`.
 - [x] **T-CORE-07** Revisar autorização por objeto nas views de arquivos, workspaces e chat. Vinculado a RF-CORE-02. Uploads agora validam escopo de cliente/workspace/pasta, `can_upload` e links; lixeira e chat deixam de expor objetos após perda de acesso; testes de regressão cobrem os limites revisados.
 - [x] **T-CORE-08** Formalizar eventos internos do Core em AsyncAPI. Vinculado a RF-CORE-06/07.
-- [ ] **T-CORE-09** Definir inventário LGPD e política de retenção inicial. Vinculado a RNF-CORE-01/03.
+- [x] **T-CORE-09** Definir inventário LGPD e política de retenção inicial. Vinculado a RNF-CORE-01/03. O baseline técnico, inventário, retenção da lixeira, gaps e gates para expurgos estão documentados em `contracts/privacy-retention.md`; prazos jurídicos, direitos do titular e retenção clínica permanecem para a Spec 013.
 - [ ] **T-CORE-10** Decidir e executar mudança de licença MIT -> AGPL-3.0 somente após aprovação do mantenedor.
 - [x] **T-CORE-11** Planejar migração visual Bulma -> Tailwind/daisyUI por componente, com testes de regressão. O plano por lotes, coexistência, rollback e gates está em `contracts/frontend-migration.md`.
 - [ ] **T-CORE-12** Criar testes Gherkin/E2E das jornadas de login, arquivos e compartilhamento.
