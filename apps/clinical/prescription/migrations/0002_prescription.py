@@ -32,7 +32,12 @@ class Migration(migrations.Migration):
             ],
             options={
                 "ordering": ["-created_at"],
-                "permissions": [("view_prescription", "Pode visualizar prescrições"), ("prescribe_medication", "Pode prescrever medicamentos"), ("validate_prescription", "Pode validar prescrições")],
+                "permissions": [
+                    ("view_medication_request", "Pode visualizar prescrições"),
+                    ("prescribe_medication", "Pode prescrever medicamentos"),
+                    ("validate_medication_request", "Pode validar prescrições"),
+                    ("cancel_medication_request", "Pode cancelar prescrições"),
+                ],
                 "indexes": [
                     models.Index(fields=["encounter", "created_at"], name="rx_request_enc_created_idx"),
                     models.Index(fields=["status", "created_at"], name="rx_request_status_idx"),
