@@ -23,6 +23,11 @@ TEST_STORAGES = {
 class VitalSignsOfflineSyncTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
+        self.bootstrap_admin = user_model.objects.create_superuser(
+            username="nursing-offline-bootstrap-admin",
+            email="nursing-offline-bootstrap@example.invalid",
+            password="StrongPass!2026",
+        )
         self.nurse = user_model.objects.create_user(
             username="nursing-offline-user",
             password="test-password",
@@ -109,7 +114,10 @@ class VitalSignsOfflineSyncTests(TestCase):
         response = self._post(conflict)
 
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "idempotency_conflict"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "idempotency_conflict"},
+        )
         self.assertEqual(VitalSignsRecord.objects.count(), 1)
         self.assertEqual(str(VitalSignsRecord.objects.get().temperature_c), "36.50")
 
@@ -119,12 +127,17 @@ class VitalSignsOfflineSyncTests(TestCase):
         self.encounter.ended_at = ended_at
         self.encounter.save()
         body = self._body(encounter=self.encounter)
-        body["payload"]["recorded_at"] = self._recorded_at(ended_at - timedelta(minutes=1))
+        body["payload"]["recorded_at"] = self._recorded_at(
+            ended_at - timedelta(minutes=1)
+        )
 
         response = self._post(body)
 
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "encounter_unavailable"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "encounter_unavailable"},
+        )
         self.assertFalse(VitalSignsRecord.objects.exists())
 
     def test_lost_pep_scope_becomes_conflict_without_disclosing_patient(self):
@@ -153,7 +166,10 @@ class VitalSignsOfflineSyncTests(TestCase):
         response = self._post(body)
 
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "encounter_unavailable"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "encounter_unavailable"},
+        )
         self.assertNotContains(response, patient.full_name, status_code=409)
         self.assertFalse(VitalSignsRecord.objects.exists())
 
@@ -163,7 +179,10 @@ class VitalSignsOfflineSyncTests(TestCase):
         response = self._post(body)
 
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "session_changed"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "session_changed"},
+        )
         self.assertFalse(VitalSignsRecord.objects.exists())
 
     def test_permission_loss_blocks_sync(self):
@@ -173,7 +192,10 @@ class VitalSignsOfflineSyncTests(TestCase):
         response = self._post(body)
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "permission_denied"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "permission_denied"},
+        )
         self.assertFalse(VitalSignsRecord.objects.exists())
 
     def test_missing_replacement_becomes_conflict_without_insert(self):
@@ -183,7 +205,10 @@ class VitalSignsOfflineSyncTests(TestCase):
         response = self._post(body)
 
         self.assertEqual(response.status_code, 409)
-        self.assertEqual(response.json(), {"status": "conflict", "reason": "replacement_unavailable"})
+        self.assertEqual(
+            response.json(),
+            {"status": "conflict", "reason": "replacement_unavailable"},
+        )
         self.assertFalse(VitalSignsRecord.objects.exists())
 
     def test_sync_requires_csrf(self):
