@@ -170,13 +170,15 @@ class EventCommitSemanticsTests(TransactionTestCase):
         for event_name, emit in _event_emitters().items():
             with self.subTest(event=event_name):
                 layer = _RecordingChannelLayer()
-                with patch(
-                    "apps.clinical.prescription.events.get_channel_layer",
-                    return_value=layer,
+                with (
+                    patch(
+                        "apps.clinical.prescription.events.get_channel_layer",
+                        return_value=layer,
+                    ),
+                    self.assertRaises(RuntimeError),
+                    transaction.atomic(),
                 ):
-                    with self.assertRaises(RuntimeError):
-                        with transaction.atomic():
-                            emit()
-                            raise RuntimeError("rollback sintético")
+                    emit()
+                    raise RuntimeError("rollback sintético")
 
                 self.assertEqual(layer.calls, [])
