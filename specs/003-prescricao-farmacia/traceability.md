@@ -1,6 +1,6 @@
 # Rastreabilidade — Spec 003 Prescrição e Farmácia
 
-> Baseline técnica: `master` em `92e08c97bf14dae00472fc1b44a9f78e6c44da95`, 2026-09-14.  
+> Baseline técnica: `master` em `32e7991461ff4cf5bbcb8c2b286e19c8fe0f55e2`, 2026-09-14.  
 > Esta matriz descreve o estado efetivamente disponível no repositório. Rotas/telas previstas na `spec.md` não são tratadas como implementadas até existirem no `urls.py` e possuírem cobertura correspondente.
 
 ## Legenda
@@ -25,7 +25,7 @@
 | **RF-RX-09 — Estoque farmacêutico** | **Implementado** | `StockItem`, `Lot`, `StockMovement`; `stock_services.py`; `/estoque-farmacia/`; `tests/test_stock.py`; E2E/a11y atual. `0007_stock_identity_guards.py` impede reescrever medicamento/localização de estoque depois da existência de lotes e identidade de lote depois do primeiro movimento, sem bloquear `quantity_available`; `test_stock_identity_db_guards.py` cobre bypass por bulk/SQL e os casos ainda editáveis. | Dispensação ainda não consome o estoque porque T-RX-11 está pendente. |
 | **RF-RX-10 — Dispensação transacional** | **Parcial** | Primitivas de saldo usam `transaction.atomic()` + `select_for_update()`; T-RX-13 prova concorrência do último saldo no PostgreSQL. Modelos de dispensação e `operation_key` existem. | T-RX-11: serviço de dispensação idempotente ligando `MedicationDispenseItem` + `StockMovement` na mesma transação. |
 | **RF-RX-11 — Rastreabilidade por lote** | **Parcial** | FKs `MedicationDispenseItem -> request_item/lot` e `StockMovement -> dispense_item` já modelam a cadeia; proteção append-only existe em aplicação/PostgreSQL e a identidade do lote após movimentação é protegida por `0007_stock_identity_guards.py`. | T-RX-11: criar o fluxo operacional que persiste essa cadeia na dispensação real. |
-| **RF-RX-12 — Autorização** | **Implementado** | `permissions.py` e selectors aplicam RBAC+ABAC deny-by-default; `tests/test_permissions.py`/`test_selectors.py`. Catálogo/estoque usam permissões explícitas. | Futuras views de prescrição/validação/dispensação devem reutilizar as mesmas fronteiras e ganhar E2E de negação. |
+| **RF-RX-12 — Autorização** | **Implementado** | `permissions.py` e selectors aplicam RBAC+ABAC deny-by-default; `tests/test_permissions.py`/`test_selectors.py`. Catálogo/estoque usam permissões explícitas. `tests/e2e/prescription_authorization.spec.js` prova em navegador que papel `CLI` continua recebendo HTTP 403 nas superfícies RX atuais mesmo quando permissões de catálogo/estoque são deliberadamente atribuídas por engano. | Futuras views de prescrição/validação/dispensação devem reutilizar as mesmas fronteiras e ganhar a mesma prova E2E de negação. |
 | **RF-RX-13 — Auditoria e eventos** | **Parcial** | `events.py` emite payload técnico pós-commit; `prescription.created` e `stock.low` ativos. O catálogo registra `ACCESS` somente para `Drug` efetivamente renderizados e as escritas HTTP de criação/edição ficam atribuídas ao ator autenticado; estoque/lotes também geram `ACCESS`. `tests/test_audit_events.py` cobre essas superfícies e o contrato `contracts/events.asyncapi.yaml` é conferido contra o allowlist runtime. | T-RX-12: `prescription.validated` e `medication.dispensed`, além de leitura/escrita das futuras telas de prescrição, validação e dispensação. |
 | **RF-RX-14 — PWA network-only** | **Parcial** | `tests/test_architecture.py` proíbe API REST/cache/fila offline RX; `tests/e2e/prescription_pwa_boundary.spec.js` comprova em runtime que catálogo/estoque não entram em Cache Storage/IndexedDB, usam fallback genérico offline, que create/update de medicamento permanecem network-only e que um `POST` offline falha sem persistir nem ser enfileirado. | T-RX-16: repetir a prova E2E nas futuras mutações de prescrição e dispensação. |
 
@@ -58,7 +58,7 @@ As telas de lista/detalhe/criação de prescrição, validação farmacêutica e
 - Catálogo/governança: `apps/clinical/prescription/tests/test_catalog.py`, `test_reference_governance_integrity.py`, `test_used_drug_integrity.py`.
 - Modelos/invariantes: `test_models.py`, `test_append_only_integrity.py`, `test_request_history_integrity.py`, `test_database_integrity_guards.py`, `test_request_identity_integrity.py`.
 - Prescrição DRAFT/SUBMITTED: `test_services.py`.
-- RBAC/ABAC: `test_permissions.py`, `test_selectors.py`.
+- RBAC/ABAC: `test_permissions.py`, `test_selectors.py`, `tests/e2e/prescription_authorization.spec.js`.
 - Estoque/ledger: `test_stock.py`, `test_stock_identity_db_guards.py`.
 - Concorrência PostgreSQL: `test_stock_concurrency.py`.
 - Auditoria/eventos: `test_audit_events.py`.
