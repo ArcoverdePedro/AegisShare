@@ -28,14 +28,16 @@ class PharmacyStockAuditActorTests(TestCase):
             dispense_unit="unidade",
         )
 
-    def assert_create_actor(self, instance):
+    def _create_entry(self, instance):
         content_type = ContentType.objects.get_for_model(instance.__class__)
-        entry = LogEntry.objects.filter(
+        return LogEntry.objects.filter(
             content_type=content_type,
             object_pk=str(instance.pk),
             action=LogEntry.Action.CREATE,
         ).latest("timestamp")
-        self.assertEqual(entry.actor, self.manager)
+
+    def assert_create_actor(self, instance):
+        self.assertEqual(self._create_entry(instance).actor, self.manager)
 
     def test_stock_service_writes_are_attributed_to_explicit_actor(self):
         stock = create_stock_item(
@@ -65,3 +67,20 @@ class PharmacyStockAuditActorTests(TestCase):
         for instance in (stock, lot, receipt, adjustment):
             with self.subTest(model=instance.__class__.__name__):
                 self.assert_create_actor(instance)
+
+    def test_stock_service_actor_context_does_not_leak_to_later_writes(self):
+        create_stock_item(
+            actor=self.manager,
+            drug_id=self.drug.pk,
+            storage_location="Farmácia escopo",
+            minimum_level=Decimal("1"),
+        )
+
+        outside_context = Drug.objects.create(
+            code="RX-STOCK-AUDIT-OUTSIDE",
+            name="Medicamento Fora do Contexto de Estoque",
+            presentation="Apresentação sintética",
+            dispense_unit="unidade",
+        )
+
+        self.assertIsNone(self._create_entry(outside_context).actor)
