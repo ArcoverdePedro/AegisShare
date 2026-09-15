@@ -1,0 +1,59 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Enfermagem - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="mb-5">
+            <p class="heading">Enfermagem</p>
+            <h1 class="title is-3 mb-1">Encontros assistenciais</h1>
+            <p class="muted">Encontros disponíveis no seu escopo PEP.</p>
+        </div>
+
+        <div class="box aegis-card">
+            <div class="table-container" role="region" aria-label="Encontros de enfermagem" tabindex="0">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Início</th>
+                            <th>Responsável</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for encounter in encounters %}
+                        <tr>
+                            <td>{{ encounter.patient.full_name }}</td>
+                            <td>{{ encounter.get_encounter_type_display }}</td>
+                            <td><span class="tag is-light">{{ encounter.get_status_display }}</span></td>
+                            <td>{{ encounter.started_at|date:'d/m/Y H:i' }}</td>
+                            <td>{{ encounter.responsible_professional|default:'—' }}</td>
+                            <td class="has-text-right">
+                                <a class="button is-small" href="{% url 'nursing:encounter' encounter.pk %}">
+                                    {% icon 'eye' %}<span>Abrir</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="has-text-centered muted py-5">Nenhum encontro disponível.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination is-centered mt-4" aria-label="paginação">
+                {% if page_obj.has_previous %}<a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+                {% if page_obj.has_next %}<a class="pagination-next" href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+                <ul class="pagination-list"><li><span class="pagination-link is-current">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li></ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
