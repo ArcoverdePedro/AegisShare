@@ -1,0 +1,72 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Validação farmacêutica - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <p class="heading">Prescrição e Farmácia</p>
+        <h1 class="title is-3">Validação farmacêutica</h1>
+        <p class="muted mb-5">A revisão usa apenas referências estruturadas, ativas e aprovadas.</p>
+
+        <div class="notification is-warning is-light" role="status">
+            <strong>Checagem automática de alergias indisponível.</strong>
+            O PEP ainda não possui fonte estruturada aprovada para alergias. O sistema não presume “sem alergias conhecidas”.
+        </div>
+
+        {% if safety %}
+        <div class="box aegis-card">
+            <h2 class="title is-5">Resultado determinístico</h2>
+            <p><strong>Dose:</strong> {{ safety.dose_status }}</p>
+            <p><strong>Achados bloqueantes:</strong> {{ safety.blocking_findings }}</p>
+            <p><strong>Avisos:</strong> {{ safety.warning_findings }}</p>
+            <hr>
+            {% for finding in safety.findings %}
+            <article class="message {% if finding.blocking %}is-danger{% else %}is-warning{% endif %} is-light">
+                <div class="message-body">
+                    <strong>{{ finding.kind }}</strong> — {{ finding.severity }}
+                    {% if finding.interaction %}
+                    <br>{{ finding.interaction.summary }}
+                    <br><small>Referência: {{ finding.interaction.reference_source }} · {{ finding.interaction.reference_version }}</small>
+                    {% elif finding.dose_rule %}
+                    <br><small>Regra: {{ finding.dose_rule.rule_code }} · {{ finding.dose_rule.reference_source }} · {{ finding.dose_rule.reference_version }}</small>
+                    {% else %}
+                    <br><small>Não há referência aprovada suficiente para avaliação automática deste item.</small>
+                    {% endif %}
+                </div>
+            </article>
+            {% empty %}
+            <p class="muted">Nenhum achado gerado pelas referências aprovadas disponíveis.</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if blocked_review %}
+        <div class="notification is-danger is-light" role="alert">
+            A tentativa foi registrada como revisão append-only, mas a prescrição permaneceu submetida por causa dos safety gates.
+        </div>
+        {% endif %}
+
+        <form method="post" class="box aegis-card" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="notification is-danger is-light">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="field">
+                <label class="checkbox" for="{{ form.manual_allergy_review_confirmed.id_for_label }}">
+                    {{ form.manual_allergy_review_confirmed }} {{ form.manual_allergy_review_confirmed.label }}
+                </label>
+                {{ form.manual_allergy_review_confirmed.errors }}
+            </div>
+            <div class="field">
+                <label class="checkbox" for="{{ form.confirm_validation.id_for_label }}">
+                    {{ form.confirm_validation }} {{ form.confirm_validation.label }}
+                </label>
+                {{ form.confirm_validation.errors }}
+            </div>
+            <div class="buttons mt-5">
+                <button class="button is-link" type="submit">Validar prescrição</button>
+                <a class="button" href="{% url 'prescription:prescription_detail' prescription.pk %}">Voltar</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
