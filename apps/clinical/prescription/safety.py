@@ -93,24 +93,22 @@ def evaluate_medication_safety(medication_request):
 
     findings = []
     blocking_findings = 0
-    warning_findings = 0
 
     for interaction in interactions:
         if interaction.drug_a_id == interaction.drug_b_id:
             continue
-        finding = {
-            "kind": MedicationSafetyFinding.Kind.INTERACTION,
-            "request_item": item_by_drug.get(interaction.drug_a_id),
-            "interaction": interaction,
-            "dose_rule": None,
-            "severity": interaction.severity,
-            "blocking": interaction.blocking,
-        }
-        findings.append(finding)
+        findings.append(
+            {
+                "kind": MedicationSafetyFinding.Kind.INTERACTION,
+                "request_item": item_by_drug.get(interaction.drug_a_id),
+                "interaction": interaction,
+                "dose_rule": None,
+                "severity": interaction.severity,
+                "blocking": interaction.blocking,
+            }
+        )
         if interaction.blocking:
             blocking_findings += 1
-        else:
-            warning_findings += 1
 
     age_days = _age_days(medication_request.encounter.patient)
     dose_status = MedicationSafetyReview.DoseStatus.PASS
@@ -198,6 +196,7 @@ def evaluate_medication_safety(medication_request):
         else:
             dose_status = MedicationSafetyReview.DoseStatus.PASS
 
+    warning_findings = sum(1 for finding in findings if not finding["blocking"])
     return {
         "findings": findings,
         "blocking_findings": blocking_findings,
