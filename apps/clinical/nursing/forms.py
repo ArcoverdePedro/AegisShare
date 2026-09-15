@@ -149,12 +149,14 @@ class MedicationAdministrationForm(forms.Form):
             )
         if self.dispense_item is not None:
             encounter = self.dispense_item.dispense.medication_request.encounter
-            if administered_at < encounter.started_at:
+            encounter_started_at = encounter.started_at.replace(microsecond=0)
+            dispensed_at = self.dispense_item.dispense.dispensed_at.replace(microsecond=0)
+            if administered_at < encounter_started_at:
                 self.add_error(
                     "administered_at",
                     "O momento da administração não pode ser anterior ao início do encontro.",
                 )
-            if administered_at < self.dispense_item.dispense.dispensed_at:
+            if administered_at < dispensed_at:
                 self.add_error(
                     "administered_at",
                     "O momento da administração não pode ser anterior à dispensação.",
