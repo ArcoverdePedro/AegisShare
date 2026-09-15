@@ -5,7 +5,10 @@ info:
   description: >-
     Contrato interno da Spec 003. Eventos são produzidos somente após commit e
     nunca constituem API pública. Payloads não transportam nome, CPF, texto de
-    prescrição, alergia ou justificativa clínica livre.
+    prescrição, alergia ou justificativa clínica livre. No transporte interno via
+    Django Channels, o objeto enviado por group_send inclui adicionalmente a chave
+    técnica `type=prescription_event_handler` usada apenas para roteamento; essa
+    chave de envelope não integra os payloads AsyncAPI descritos abaixo.
 channels:
   prescriptionEvents:
     address: internal.prescription.events

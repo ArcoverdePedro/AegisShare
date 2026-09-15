@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 PRESCRIPTION_EVENT_GROUP = "clinical_prescription_events"
+PRESCRIPTION_CHANNEL_EVENT_TYPE = "prescription_event_handler"
 PRESCRIPTION_EVENT_TYPES = {
     "prescription.created",
     "prescription.validated",
@@ -41,7 +42,7 @@ def emit_prescription_event(
 
     _schedule_event(
         {
-            "type": "prescription_event_handler",
+            "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),
             "event_type": event_type,
             "occurred_at": timezone.now().isoformat(),
@@ -64,7 +65,7 @@ def emit_stock_low_event(
     """Agenda alerta técnico pós-commit sem dados de paciente ou conteúdo clínico."""
     _schedule_event(
         {
-            "type": "prescription_event_handler",
+            "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),
             "event_type": "stock.low",
             "occurred_at": timezone.now().isoformat(),
