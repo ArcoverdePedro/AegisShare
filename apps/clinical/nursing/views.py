@@ -17,6 +17,7 @@ from .permissions import (
     can_record_vitals,
     has_nursing_permission,
 )
+from .services import record_vital_signs
 
 
 def _no_store(response):
@@ -95,10 +96,11 @@ def vitals_create(request, encounter_id):
         encounter=encounter,
     )
     if request.method == "POST" and form.is_valid():
-        record = form.save(commit=False)
-        record.encounter = encounter
-        record.recorded_by = request.user
-        record.save()
+        record_vital_signs(
+            encounter=encounter,
+            actor=request.user,
+            data=form.cleaned_data,
+        )
         messages.success(request, "Sinais vitais registrados com sucesso.")
         return _no_store(redirect("nursing:encounter", pk=encounter.pk))
 
@@ -142,11 +144,12 @@ def vitals_correct(request, record_id):
         initial=initial,
     )
     if request.method == "POST" and form.is_valid():
-        correction = form.save(commit=False)
-        correction.encounter = encounter
-        correction.recorded_by = request.user
-        correction.replaces = original
-        correction.save()
+        record_vital_signs(
+            encounter=encounter,
+            actor=request.user,
+            data=form.cleaned_data,
+            replaces=original,
+        )
         messages.success(request, "Correção de sinais vitais registrada com sucesso.")
         return _no_store(redirect("nursing:encounter", pk=encounter.pk))
 
