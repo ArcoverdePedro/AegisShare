@@ -51,6 +51,13 @@ async function expectNoRxCache(page) {
   }
 }
 
+async function expectNoOfflineQueueDatabase(page) {
+  const exists = await page.evaluate(async () =>
+    (await indexedDB.databases()).some((database) => database.name === 'aegisshare-offline'),
+  );
+  expect(exists).toBe(false);
+}
+
 test('superfícies RX atuais permanecem network-only e fora do cache/fila offline', async ({
   page,
   context,
@@ -67,11 +74,7 @@ test('superfícies RX atuais permanecem network-only e fora do cache/fila offlin
 
   await waitForServiceWorkerControl(page);
   await expectNoRxCache(page);
-
-  const offlineDatabaseBefore = await page.evaluate(async () =>
-    (await indexedDB.databases()).some((database) => database.name === 'aegisshare-offline'),
-  );
-  expect(offlineDatabaseBefore).toBe(false);
+  await expectNoOfflineQueueDatabase(page);
 
   await context.setOffline(true);
   await page.goto('/medicamentos/?pwa-rx-offline-ci=1');
@@ -81,8 +84,83 @@ test('superfícies RX atuais permanecem network-only e fora do cache/fila offlin
   await context.setOffline(false);
 
   await expectNoRxCache(page);
-  const offlineDatabaseAfter = await page.evaluate(async () =>
-    (await indexedDB.databases()).some((database) => database.name === 'aegisshare-offline'),
+  await expectNoOfflineQueueDatabase(page);
+});
+
+test('criação e edição de medicamento não entram em cache nem fila offline', async ({
+  page,
+  context,
+}) => {
+  await login(page);
+  await waitForServiceWorkerControl(page);
+
+  const suffix = Date.now().toString();
+  const code = `E2E-RX-NET-${suffix}`;
+  const name = `Medicamento Network Only ${suffix}`;
+  const updatedPresentation = `Comprimido atualizado ${suffix}`;
+  const offlineCode = `E2E-RX-OFFLINE-${suffix}`;
+  const offlineName = `Medicamento Offline Não Persistido ${suffix}`;
+
+  await page.goto('/medicamentos/novo/');
+  await expect(page.getByRole('heading', { name: 'Novo medicamento' })).toBeVisible();
+  await page.getByLabel('Código interno').fill(code);
+  await page.getByLabel('Medicamento').fill(name);
+  await page.getByLabel('Apresentação').fill('Comprimido');
+  await page.getByLabel('Concentração / força').fill('10 mg');
+  await page.getByLabel('Via sugerida (informativa)').fill('Oral');
+  await page.getByLabel('Unidade de dispensação').fill('unidade');
+  await page.getByRole('button', { name: 'Salvar medicamento' }).click();
+
+  await expect(page).toHaveURL(/\/medicamentos\/$/);
+  await expect(page.getByText('Medicamento cadastrado com sucesso.')).toBeVisible();
+  const createdRow = page.getByRole('row').filter({ hasText: name });
+  await expect(createdRow).toBeVisible();
+  await expectNoRxCache(page);
+  await expectNoOfflineQueueDatabase(page);
+
+  await createdRow.getByRole('link', { name: 'Editar' }).click();
+  await expect(page.getByRole('heading', { name: 'Editar medicamento' })).toBeVisible();
+  await page.getByLabel('Apresentação').fill(updatedPresentation);
+  await page.getByRole('button', { name: 'Salvar medicamento' }).click();
+
+  await expect(page).toHaveURL(/\/medicamentos\/$/);
+  await expect(page.getByText('Medicamento atualizado com sucesso.')).toBeVisible();
+  const updatedRow = page.getByRole('row').filter({ hasText: name });
+  await expect(updatedRow).toContainText(updatedPresentation);
+  await expectNoRxCache(page);
+  await expectNoOfflineQueueDatabase(page);
+
+  await context.setOffline(true);
+  const offlineMutation = await page.evaluate(
+    async ({ code: attemptedCode, name: attemptedName }) => {
+      try {
+        const payload = new URLSearchParams({
+          code: attemptedCode,
+          name: attemptedName,
+          presentation: 'Comprimido',
+          strength_text: '5 mg',
+          route_hint: 'Oral',
+          dispense_unit: 'unidade',
+          active: 'on',
+        });
+        const response = await fetch('/medicamentos/novo/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload.toString(),
+          credentials: 'same-origin',
+        });
+        return { resolved: true, status: response.status };
+      } catch (error) {
+        return { resolved: false, errorName: error.name };
+      }
+    },
+    { code: offlineCode, name: offlineName },
   );
-  expect(offlineDatabaseAfter).toBe(false);
+  expect(offlineMutation.resolved).toBe(false);
+  await context.setOffline(false);
+
+  await expectNoRxCache(page);
+  await expectNoOfflineQueueDatabase(page);
+  await page.goto('/medicamentos/');
+  await expect(page.getByText(offlineName)).toHaveCount(0);
 });
