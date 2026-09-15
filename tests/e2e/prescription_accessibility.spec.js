@@ -40,6 +40,33 @@ async function verifyCatalog(page) {
   await expectNoPageOverflow(page);
 }
 
+async function verifyDrugCreateForm(page) {
+  await page.goto('/medicamentos/novo/');
+  await expect(page.getByRole('heading', { name: 'Novo medicamento' })).toBeVisible();
+  await expect(page.getByLabel('Código interno')).toBeVisible();
+  await expect(page.getByLabel('Medicamento')).toBeVisible();
+  await expect(page.getByLabel('Apresentação')).toBeVisible();
+  await expect(page.getByLabel('Concentração / força')).toBeVisible();
+  await expect(page.getByLabel('Via sugerida (informativa)')).toBeVisible();
+  await expect(page.getByLabel('Unidade de dispensação')).toBeVisible();
+  await expect(page.getByLabel('Ativo para novas prescrições')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar medicamento' })).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
+async function verifyDrugEditForm(page) {
+  await page.goto('/medicamentos/');
+  const primaryRow = page
+    .getByRole('row')
+    .filter({ hasText: 'Medicamento Sintético Acessibilidade' });
+  await primaryRow.getByRole('link', { name: 'Editar' }).click();
+  await expect(page.getByRole('heading', { name: 'Editar medicamento' })).toBeVisible();
+  await expect(page.getByLabel('Código interno')).toHaveValue('E2E-RX-A11Y-001');
+  await expect(page.getByLabel('Medicamento')).toHaveValue('Medicamento Sintético Acessibilidade');
+  await expect(page.getByRole('button', { name: 'Salvar medicamento' })).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
 async function verifyStock(page) {
   await page.goto('/estoque-farmacia/');
   await expect(page.getByRole('heading', { name: 'Estoque farmacêutico' })).toBeVisible();
@@ -48,28 +75,31 @@ async function verifyStock(page) {
   await expectNoPageOverflow(page);
 }
 
-test('catálogo e estoque RX não apresentam violações sérias WCAG nas superfícies existentes', async ({ page }) => {
+async function verifyPublishedSurfaces(page) {
+  await verifyCatalog(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDrugCreateForm(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDrugEditForm(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyStock(page);
+  await expectNoSeriousAxeViolations(page);
+}
+
+test('superfícies RX publicadas não apresentam violações sérias WCAG', async ({ page }) => {
   await login(page);
-
-  await page.goto('/medicamentos/');
-  await expectNoSeriousAxeViolations(page);
-
-  await page.goto('/estoque-farmacia/');
-  await expectNoSeriousAxeViolations(page);
+  await verifyPublishedSurfaces(page);
 });
 
-test('catálogo e estoque RX preservam layout essencial em telefone e tablet', async ({ page }) => {
+test('superfícies RX publicadas preservam layout essencial em telefone e tablet', async ({ page }) => {
   await login(page);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await verifyCatalog(page);
-  await expectNoSeriousAxeViolations(page);
-  await verifyStock(page);
-  await expectNoSeriousAxeViolations(page);
+  await verifyPublishedSurfaces(page);
 
   await page.setViewportSize({ width: 768, height: 1024 });
-  await verifyCatalog(page);
-  await expectNoSeriousAxeViolations(page);
-  await verifyStock(page);
-  await expectNoSeriousAxeViolations(page);
+  await verifyPublishedSurfaces(page);
 });
