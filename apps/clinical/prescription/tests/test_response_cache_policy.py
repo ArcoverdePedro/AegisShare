@@ -5,6 +5,7 @@ from django.urls import reverse
 from aegis_share.tests.helpers import make_user
 
 from ..models import Drug
+from .surface_contract import RX_GET_SURFACE_NAMES
 
 TEST_STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
@@ -56,14 +57,18 @@ class PrescriptionResponseCachePolicyTests(TestCase):
         self.assertIn("cookie", vary)
         self.assertIn("hx-request", vary)
 
-    def test_every_published_rx_get_surface_is_private_and_no_store(self):
-        routes = (
-            reverse("prescription:drug_catalog"),
-            reverse("prescription:drug_create"),
-            reverse("prescription:drug_update", kwargs={"pk": self.drug.pk}),
-            reverse("prescription:pharmacy_stock"),
-        )
+    def test_every_reviewed_rx_get_surface_is_private_and_no_store(self):
+        routes = {
+            "drug_catalog": reverse("prescription:drug_catalog"),
+            "drug_create": reverse("prescription:drug_create"),
+            "drug_update": reverse(
+                "prescription:drug_update",
+                kwargs={"pk": self.drug.pk},
+            ),
+            "pharmacy_stock": reverse("prescription:pharmacy_stock"),
+        }
+        self.assertEqual(set(routes), RX_GET_SURFACE_NAMES)
 
-        for route in routes:
-            with self.subTest(route=route):
+        for name, route in routes.items():
+            with self.subTest(name=name, route=route):
                 self.assert_private_no_store(self.client.get(route))
