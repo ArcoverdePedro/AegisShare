@@ -47,6 +47,8 @@ class DrugCatalogView(LoginRequiredMixin, NoStoreResponseMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        for drug in context["drugs"]:
+            accessed.send(drug.__class__, instance=drug)
         context["can_manage_catalog"] = can_manage_reference_data(self.request.user)
         return context
 
