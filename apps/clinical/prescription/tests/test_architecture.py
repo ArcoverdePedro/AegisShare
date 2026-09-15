@@ -6,7 +6,11 @@ from django.urls import URLPattern, URLResolver, reverse
 
 from apps.clinical.prescription.urls import urlpatterns as prescription_urlpatterns
 
-from .surface_contract import RX_REVIEWED_SURFACE_NAMES
+from .surface_contract import (
+    RX_GET_SURFACE_NAMES,
+    RX_NON_GET_SURFACE_NAMES,
+    RX_REVIEWED_SURFACE_NAMES,
+)
 
 FORBIDDEN_OFFLINE_TOKENS = (
     "AegisOfflineQueue",
@@ -49,6 +53,7 @@ class PrescriptionArchitectureBoundaryTests(TestCase):
         published_names = _collect_named_routes(prescription_urlpatterns)
 
         self.assertTrue(published_names)
+        self.assertFalse(RX_GET_SURFACE_NAMES & RX_NON_GET_SURFACE_NAMES)
         self.assertEqual(
             published_names,
             RX_REVIEWED_SURFACE_NAMES,
