@@ -2,7 +2,7 @@ from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -10,7 +10,13 @@ from apps.clinical.pep.models import Encounter, Patient
 
 from ..models import VitalSignsRecord
 
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
+
+@override_settings(STORAGES=TEST_STORAGES)
 class NursingViewTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
