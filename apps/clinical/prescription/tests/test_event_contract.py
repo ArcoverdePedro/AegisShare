@@ -4,7 +4,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from django.conf import settings
-from django.test import SimpleTestCase
+from django.db import transaction
+from django.test import SimpleTestCase, TransactionTestCase
 
 from ..events import (
     PRESCRIPTION_CHANNEL_EVENT_TYPE,
@@ -88,6 +89,24 @@ def _emit_and_capture(callback):
     return layer.calls[0]
 
 
+def _event_emitters():
+    return {
+        "prescription.created": lambda: emit_prescription_event(
+            event_type="prescription.created",
+            prescription_id=uuid.uuid4(),
+            encounter_id=uuid.uuid4(),
+            status="SUBMITTED",
+        ),
+        "stock.low": lambda: emit_stock_low_event(
+            stock_item_id=uuid.uuid4(),
+            drug_id=uuid.uuid4(),
+            storage_location="Farmácia sintética",
+            quantity_available=Decimal("2.5"),
+            minimum_level=Decimal("5"),
+        ),
+    }
+
+
 class EventPayloadContractTests(SimpleTestCase):
     def assert_payload_matches_contract(self, payload, schema_name):
         self.assertEqual(payload["type"], PRESCRIPTION_CHANNEL_EVENT_TYPE)
@@ -128,3 +147,38 @@ class EventPayloadContractTests(SimpleTestCase):
 
         self.assertEqual(group, PRESCRIPTION_EVENT_GROUP)
         self.assert_payload_matches_contract(payload, "StockLowEventPayload")
+
+
+class EventCommitSemanticsTests(TransactionTestCase):
+    def test_events_are_sent_only_after_successful_commit(self):
+        for event_name, emit in _event_emitters().items():
+            with self.subTest(event=event_name):
+                layer = _RecordingChannelLayer()
+                with patch(
+                    "apps.clinical.prescription.events.get_channel_layer",
+                    return_value=layer,
+                ):
+                    with transaction.atomic():
+                        emit()
+                        self.assertEqual(layer.calls, [])
+
+                    self.assertEqual(len(layer.calls), 1)
+                    self.assertEqual(layer.calls[0][0], PRESCRIPTION_EVENT_GROUP)
+                    self.assertEqual(layer.calls[0][1]["event_type"], event_name)
+
+    def test_events_are_discarded_when_transaction_rolls_back(self):
+        for event_name, emit in _event_emitters().items():
+            with self.subTest(event=event_name):
+                layer = _RecordingChannelLayer()
+                with (
+                    patch(
+                        "apps.clinical.prescription.events.get_channel_layer",
+                        return_value=layer,
+                    ),
+                    self.assertRaises(RuntimeError),
+                    transaction.atomic(),
+                ):
+                    emit()
+                    raise RuntimeError("rollback sintético")
+
+                self.assertEqual(layer.calls, [])
