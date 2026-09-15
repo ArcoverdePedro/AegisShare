@@ -54,6 +54,30 @@ def emit_prescription_event(
     )
 
 
+def emit_medication_dispensed_event(
+    *,
+    dispense_id,
+    prescription_id,
+    encounter_id,
+    item_count,
+):
+    """Agenda evento técnico de dispensação pós-commit sem conteúdo clínico textual."""
+    if item_count < 1:
+        raise ValueError("Evento de dispensação exige ao menos um item.")
+    _schedule_event(
+        {
+            "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
+            "event_id": str(uuid.uuid4()),
+            "event_type": "medication.dispensed",
+            "occurred_at": timezone.now().isoformat(),
+            "dispense_id": str(dispense_id),
+            "prescription_id": str(prescription_id),
+            "encounter_id": str(encounter_id),
+            "item_count": int(item_count),
+        }
+    )
+
+
 def emit_stock_low_event(
     *,
     stock_item_id,
