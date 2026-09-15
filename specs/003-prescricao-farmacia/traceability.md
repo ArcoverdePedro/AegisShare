@@ -1,6 +1,6 @@
 # Rastreabilidade — Spec 003 Prescrição e Farmácia
 
-> Baseline técnica: `master` em `2d7969a7106ad1077f6af82ffd4e99ccdfecc30b`, 2026-09-15.  
+> Baseline técnica: `master` em `e848e6657e4d8f8deb46b5e97933093d1f01a172`, 2026-09-15.  
 > Esta matriz descreve o estado efetivamente disponível no repositório. Rotas/telas previstas na `spec.md` não são tratadas como implementadas até existirem no `urls.py` e possuírem cobertura correspondente.
 
 ## Legenda
@@ -14,7 +14,7 @@
 
 | Requisito | Estado | Implementação / evidência atual | Lacuna para fechamento |
 |---|---|---|---|
-| **RF-RX-01 — Catálogo de medicamentos** | **Implementado** | `models.py` (`Drug`), `forms.py`, `views.py`, `urls.py`; templates `drug_catalog.html`/`drug_form.html`; `tests/test_catalog.py`; axe/E2E em `tests/e2e/prescription_accessibility.spec.js`. Medicamento já utilizado em prescrição tem significado histórico congelado em aplicação e PostgreSQL por `0006_used_drug_integrity.py`, com prova em `test_used_drug_integrity.py`; `active` permanece mutável. | Conteúdo clínico real de referências continua subordinado a T-RX-02/RNF-RX-06. |
+| **RF-RX-01 — Catálogo de medicamentos** | **Implementado** | `models.py` (`Drug`), `forms.py`, `views.py`, `urls.py`; templates `drug_catalog.html`/`drug_form.html`; `tests/test_catalog.py`; axe/E2E em `tests/e2e/prescription_accessibility.spec.js` cobrindo catálogo e formulários de criação/edição. Medicamento já utilizado em prescrição tem significado histórico congelado em aplicação e PostgreSQL por `0006_used_drug_integrity.py`, com prova em `test_used_drug_integrity.py`; `active` permanece mutável. | Conteúdo clínico real de referências continua subordinado a T-RX-02/RNF-RX-06. |
 | **RF-RX-02 — Prescrição vinculada ao PEP** | **Parcial** | `MedicationRequest`, `services.py::create_medication_request`, RBAC+ABAC em `permissions.py`; `tests/test_services.py`, `test_permissions.py`, `test_selectors.py`. | Não existe rota/tela de criação de prescrição em `apps/clinical/prescription/urls.py`; jornada server-rendered permanece pendente. |
 | **RF-RX-03 — Itens estruturados** | **Parcial** | `MedicationRequestItem`, services de inclusão/remoção/submissão e validações server-side; `tests/test_models.py`, `test_services.py`. | Formulário/tela final de prescrição ainda não existe. |
 | **RF-RX-04 — Histórico imutável** | **Implementado** | Services e signals restringem mutação ao DRAFT. `0004_database_mutation_guards.py` impede update/delete de registros append-only e mutação de item fora de DRAFT; `0006_used_drug_integrity.py` preserva o significado do medicamento já prescrito; `0008_request_history_guards.py` congela encontro, autor, substituição, criação e horário de submissão quando a prescrição sai de DRAFT. Cobertura: `test_request_history_integrity.py`, `test_append_only_integrity.py`, `test_database_integrity_guards.py`, `test_used_drug_integrity.py` e `test_request_identity_integrity.py`. | Fluxos futuros de validação, cancelamento/adendo devem preservar a mesma política sem criar atalhos de lifecycle. |
@@ -37,7 +37,7 @@
 | **RNF-RX-02 — Mutação de estoque atômica/concorrente** | **Implementado para estoque; dispensação pendente** | `stock_services.py` e `tests/test_stock_concurrency.py` comprovam lock e saldo não negativo. `0007_stock_identity_guards.py` preserva identidade sem bloquear a atualização transacional de `quantity_available`. T-RX-11 ainda precisa compor a dispensação final. |
 | **RNF-RX-03 — Sem REST público** | **Implementado** | `tests/test_architecture.py` inspeciona o URLConf RX e impede rotas `api/`; interação atual é server-rendered. |
 | **RNF-RX-04 — Minimização de PHI em logs/eventos** | **Parcial** | Eventos atuais têm allowlist técnico; campos textuais sensíveis são excluídos do auditlog onde aplicável. Leituras de catálogo/estoque são registradas somente para objetos efetivamente renderizados, incluindo paginação comprovada para ambos, e tentativas negadas não geram falsos registros de acesso/escrita RX. `test_event_contract.py` impede drift de campos entre runtime e AsyncAPI para os eventos atualmente emitidos e formaliza que a chave `type` é somente roteamento Channels, não conteúdo do evento. Fluxos futuros ainda precisam da mesma verificação. |
-| **RNF-RX-05 — WCAG 2.1 AA / responsivo** | **Parcial** | `tests/e2e/prescription_accessibility.spec.js` executa axe em catálogo/estoque e valida 390×844 e 768×1024. Prescrição/validação/dispensação ainda não possuem telas. |
+| **RNF-RX-05 — WCAG 2.1 AA / responsivo** | **Parcial** | `tests/e2e/prescription_accessibility.spec.js` executa axe WCAG 2.1 AA e valida ausência de overflow em 390×844 e 768×1024 para todas as superfícies RX publicadas atualmente: catálogo, criação de medicamento, edição de medicamento e estoque. Prescrição/validação/dispensação ainda não possuem telas. |
 | **RNF-RX-06 — Referências governadas** | **Parcial / gate clínico** | Estrutura de procedência, versão e aprovação existe e referências começam inativas. `0005_approved_reference_integrity.py` torna versões aprovadas imutáveis inclusive contra bulk update/SQL, permite desativação e exige nova versão para voltar ao uso. T-RX-02 ainda precisa validar a fonte/conteúdo real. |
 | **RNF-RX-07 — Migrations reversíveis** | **Implementado na fundação atual** | Migrations da app são versionadas; `0004_database_mutation_guards.py` a `0008_request_history_guards.py` possuem operações reversas explícitas e são no-op fora de PostgreSQL quando o guard é específico do banco. |
 | **RNF-RX-08 — Idempotência/conflito seguro de dispensação** | **Parcial** | Estoque já possui idempotência por chave e conflitos seguros; concorrência foi provada em T-RX-13. A idempotência da dispensação completa depende de T-RX-11. |
@@ -64,7 +64,7 @@ As telas de lista/detalhe/criação de prescrição, validação farmacêutica e
 - Auditoria/eventos: `test_audit_events.py`, `test_stock_audit_pagination.py`, `test_denied_access_audit.py`, `test_event_contract.py`.
 - Política de resposta/cache das superfícies RX atuais: `test_response_cache_policy.py`.
 - Arquitetura/no-public-API/no-offline: `test_architecture.py`.
-- Acessibilidade/responsividade: `tests/e2e/prescription_accessibility.spec.js`.
+- Acessibilidade/responsividade: `tests/e2e/prescription_accessibility.spec.js` cobrindo catálogo, criação/edição de medicamento e estoque.
 - Boundary PWA runtime: `tests/e2e/prescription_pwa_boundary.spec.js`.
 
 ## Gates que impedem o fechamento da Spec 003
