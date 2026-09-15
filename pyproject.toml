@@ -3,6 +3,7 @@ name = "aegisshare"
 version = "0.2.0"
 description = "Portal seguro para compartilhamento, governanca e colaboracao de documentos"
 readme = "README.md"
+license = "AGPL-3.0-only"
 requires-python = ">=3.14"
 dependencies = [
     "argon2-cffi>=25.1.0",

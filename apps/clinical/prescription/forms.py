@@ -138,7 +138,7 @@ class MedicationRequestItemForm(forms.Form):
 
 MedicationRequestItemFormSet = formset_factory(
     MedicationRequestItemForm,
-    extra=1,
+    extra=0,
     min_num=1,
     validate_min=True,
     max_num=50,
@@ -218,7 +218,7 @@ class MedicationDispenseItemForm(forms.Form):
 
 MedicationDispenseItemFormSet = formset_factory(
     MedicationDispenseItemForm,
-    extra=1,
+    extra=0,
     min_num=1,
     validate_min=True,
     max_num=50,
