@@ -2,7 +2,7 @@
 
 > Prioridade: P0  
 > Dependências: Spec 001 — PEP; Spec 002 — ADT; Spec 003 — Prescrição/Farmácia; Spec 014 — PWA  
-> Status: proposta — aguardando aprovação do mantenedor; implementação clínica ainda não liberada
+> Status: aprovada pelo mantenedor em 2026-09-15 — implementação incremental liberada
 
 ## Contexto
 
