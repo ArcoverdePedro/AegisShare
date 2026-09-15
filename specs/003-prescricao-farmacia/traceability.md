@@ -1,83 +1,77 @@
 # Rastreabilidade — Spec 003 Prescrição e Farmácia
 
-> Baseline consolidada em 2026-09-15 após a implementação das superfícies clínicas de prescrição, validação e dispensação.  
-> Esta matriz separa **implementação técnica** de **conteúdo clínico governado**: uma engine pronta não autoriza carregar referências terapêuticas reais sem T-RX-02.
+> Baseline de fechamento técnico: 2026-09-15.  
+> A matriz abaixo descreve o runtime efetivamente entregue após os fluxos de prescrição, validação e dispensação. O único gate clínico de conteúdo ainda aberto nesta spec é T-RX-02; nenhum dado terapêutico real é inventado para fechar checklist.
 
-## Legenda
+## Gates externos preservados
 
-- **Implementado** — requisito entregue na superfície atual e coberto por testes automatizados.
-- **Implementado / gate clínico** — mecanismo técnico entregue, mas conteúdo/fonte clínica real continua bloqueado por governança externa.
-- **Gate externo** — depende de validação/decisão que não pode ser substituída por código.
+- **T-RX-02:** fonte/conteúdo real de `Interaction` e `DoseRule` depende de validação clínica/farmacêutica institucional. O código aceita somente referências estruturadas, versionadas e aprovadas; testes usam fixtures sintéticas.
+- **Alergias estruturadas:** a extensão PEP está especificada em `specs/001-pep/extensions/allergy-intolerance/`, porém a checagem automática permanece desabilitada até governança/implementação própria. RX declara indisponibilidade e exige revisão manual explícita.
+- **Peso estruturado:** não existe fonte clínica aprovada nesta versão. Regras dependentes de peso retornam `NOT_EVALUABLE`; nenhum peso é estimado.
+- **Assinatura jurídica:** validação farmacêutica não equivale à assinatura eletrônica de T-PEP-08.
 
 ## Requisitos funcionais
 
-| Requisito | Estado | Implementação / evidência | Gate restante |
-|---|---|---|---|
-| **RF-RX-01 — Catálogo de medicamentos** | **Implementado** | `Drug`, `catalog_services.py`, `DrugForm`, catálogo/criação/edição server-rendered, auditoria e testes de integridade histórica. | Conteúdo clínico real de referências continua subordinado a T-RX-02. |
-| **RF-RX-02 — Prescrição vinculada ao PEP** | **Implementado** | `MedicationRequest` referencia `Encounter` canônico; `create_medication_request()` revalida encontro/PEP; rotas `/prescricoes/`, `/prescricoes/nova/` e detalhe estão publicadas. | Nenhum para o fluxo técnico atual. |
-| **RF-RX-03 — Itens estruturados** | **Implementado** | `MedicationRequestItem`, formset server-side e services validam medicamento, dose, unidade, via, frequência, duração e ordem. | Terminologias clínicas oficiais permanecem governadas fora do código. |
-| **RF-RX-04 — Histórico imutável** | **Implementado** | Services, signals e guards PostgreSQL impedem edição/exclusão destrutiva após DRAFT; substituição/cancelamento preservam histórico. | Nenhum para a superfície atual. |
-| **RF-RX-05 — Interações medicamentosas** | **Implementado / gate clínico** | `Interaction` possui procedência/versão/aprovação; `safety.py` considera somente referências ativas/aprovadas e respeita `blocking` como dado governado. Testes usam interação sintética bloqueante. | **T-RX-02:** base real, severidade e bloqueio precisam de aprovação clínica/farmacêutica. |
-| **RF-RX-06 — Alergias** | **Implementado / gate clínico** | Validação farmacêutica usa `UNAVAILABLE`/revisão manual explícita e nunca infere “sem alergias conhecidas”. Extensão PEP `AllergyIntolerance` está especificada em `specs/001-pep/extensions/allergy-intolerance/`. | T-ALLERGY-02–05: validar modelo/terminologia e implementar fonte estruturada antes de automação. |
-| **RF-RX-07 — Dose por idade/peso** | **Implementado / gate clínico** | `DoseRule` governada + safety engine determinístico; idade vem do PEP; regra dependente de peso/fato ausente resulta em `NOT_EVALUABLE`, sem estimativa. | **T-RX-02** para regras reais e futura fonte estruturada aprovada de peso. |
-| **RF-RX-08 — Validação farmacêutica** | **Implementado** | `/prescricoes/<uuid>/validar/`, `validate_medication_request()`, `MedicationSafetyReview`/findings append-only, gate manual de alergias, bloqueio seguro e evento `prescription.validated`. | Assinatura jurídica permanece separada em T-PEP-08. |
-| **RF-RX-09 — Estoque farmacêutico** | **Implementado** | `StockItem`, `Lot`, `StockMovement`, services de entrada/ajuste, `/estoque-farmacia/`, validade/saldo e `stock.low`. | Integração futura com estoque geral da Spec 009. |
-| **RF-RX-10 — Dispensação transacional** | **Implementado** | `dispense_medication()` usa `transaction.atomic()`, `select_for_update()`, `operation_key` idempotente, valida lote/saldo e baixa estoque na mesma transação. | Políticas futuras de fracionamento/devolução não fazem parte desta entrega. |
-| **RF-RX-11 — Rastreabilidade por lote** | **Implementado** | `MedicationDispense -> MedicationDispenseItem -> Lot -> StockMovement` preserva cadeia prescrição/encontro/lote; registros concluídos são append-only. | Nenhum para o fluxo atual. |
-| **RF-RX-12 — Autorização** | **Implementado** | `permissions.py`, selectors e views aplicam RBAC + `can_access_patient()` deny-by-default. Gherkin/Playwright cobrem negação `CLI`, e objetos fora do escopo não revelam PHI. | Nenhum para as rotas publicadas. |
-| **RF-RX-13 — Auditoria e eventos** | **Implementado** | Leituras identificáveis geram `ACCESS`; mutações críticas usam ator explícito; AsyncAPI cobre `prescription.created`, `prescription.validated`, `medication.dispensed` e `stock.low`, todos pós-commit e sem PHI textual. | Nenhum para os eventos atuais. |
-| **RF-RX-14 — PWA network-only** | **Implementado** | Arquitetura e E2E provam ausência de nova API REST pública, `private/no-store`, nenhuma persistência RX em Cache Storage/IndexedDB e falha de POST clínico offline sem fila local. | Qualquer sincronização offline futura exige contrato clínico específico aprovado. |
+| Requisito | Estado técnico | Evidência principal |
+|---|---|---|
+| **RF-RX-01 — Catálogo** | **Implementado** | `Drug`, catálogo/formulário server-rendered, `catalog_services.py`, governança/imutabilidade de referências e testes de catálogo. |
+| **RF-RX-02 — Prescrição vinculada ao PEP** | **Implementado** | `MedicationRequest`, `prescription_list`, `prescription_create`, `prescription_detail`; autorização exige capacidade RX + escopo PEP. |
+| **RF-RX-03 — Itens estruturados** | **Implementado** | `MedicationRequestItem`, `MedicationRequestItemFormSet`, services server-side e validações de dose/via/frequência/duração. |
+| **RF-RX-04 — Histórico imutável** | **Implementado** | Guards de aplicação/PostgreSQL, submissão que congela DRAFT, substituição rastreável, cancelamento sem exclusão e safety/dispense append-only. |
+| **RF-RX-05 — Interações** | **Implementado com gate de conteúdo T-RX-02** | `safety.py` considera somente `Interaction` ativa e aprovada; `blocking=True` vem do dado governado e impede validação. |
+| **RF-RX-06 — Alergias** | **Implementado em modo fail-safe** | `AllergyStatus.UNAVAILABLE/REVIEW_CONFIRMED`; UI exige revisão manual e nunca afirma “sem alergias conhecidas”. Automação estruturada permanece bloqueada pela extensão PEP. |
+| **RF-RX-07 — Dose idade/peso** | **Implementado em modo determinístico/fail-safe** | `DoseRule` aprovada é avaliada sem expressão arbitrária; idade vem do PEP e peso/fato ausente produz `NOT_EVALUABLE`. |
+| **RF-RX-08 — Validação farmacêutica** | **Implementado** | `validate_medication_request`, `MedicationSafetyReview`/`Finding`, `/prescricoes/<uuid>/validar/` e evento `prescription.validated`. |
+| **RF-RX-09 — Estoque** | **Implementado** | `StockItem`, `Lot`, `StockMovement`, services atômicos, validade/saldo/baixo estoque e `/estoque-farmacia/`. |
+| **RF-RX-10 — Dispensação transacional** | **Implementado** | `dispense_services.py`: `transaction.atomic()`, locks `select_for_update()`, `operation_key`, saldo/validade/lote revalidados e rollback seguro. |
+| **RF-RX-11 — Rastreabilidade por lote** | **Implementado** | `MedicationDispense -> MedicationDispenseItem -> Lot -> StockMovement`, todos históricos/append-only. |
+| **RF-RX-12 — Autorização** | **Implementado** | `permissions.py`, selectors, escopo PEP, papel `CLI` deny-by-default, testes unitários + Gherkin + Playwright de negação. |
+| **RF-RX-13 — Auditoria/eventos** | **Implementado** | auditlog com ator explícito; textos sensíveis excluídos; AsyncAPI e quatro eventos pós-commit: `prescription.created`, `prescription.validated`, `medication.dispensed`, `stock.low`. |
+| **RF-RX-14 — PWA network-only** | **Implementado** | arquitetura e Playwright provam que prescrição/validação/dispensação não entram em Cache Storage/IndexedDB e falham offline sem fila. |
 
 ## Requisitos não funcionais
 
-| Requisito | Estado | Evidência / observação |
+| Requisito | Estado | Evidência |
 |---|---|---|
-| **RNF-RX-01 — PostgreSQL como fonte de verdade** | **Implementado** | CI aplica migrations e testes no PostgreSQL; guards/constraints protegem invariantes críticas também contra bypass de aplicação. |
-| **RNF-RX-02 — Estoque atômico/concorrente** | **Implementado** | Services usam transações/locks e `test_stock_concurrency.py` disputa o último saldo com conexões independentes. |
-| **RNF-RX-03 — Sem REST público** | **Implementado** | `test_architecture.py` inspeciona URLConf e proíbe novas rotas `api/`; toda a nova superfície é Django server-rendered. |
-| **RNF-RX-04 — Minimização de PHI** | **Implementado** | campos textuais sensíveis são excluídos do auditlog; eventos usam allowlist técnico; negações não criam falso `ACCESS`. |
-| **RNF-RX-05 — WCAG 2.1 AA / responsivo** | **Implementado** | `tests/e2e/prescription_accessibility.spec.js` executa axe-core e valida overflow em 390×844 e 768×1024 para catálogo, estoque, prescrição, validação e dispensação. |
-| **RNF-RX-06 — Referências governadas** | **Implementado / gate clínico** | estrutura de procedência, versão, aprovação, imutabilidade e desativação está implementada. | T-RX-02 precisa aprovar fontes/conteúdo reais. |
-| **RNF-RX-07 — Migrations reversíveis** | **Implementado** | migrations RX são versionadas e guards específicos de PostgreSQL possuem caminho reverso/no-op controlado fora do banco-alvo. |
-| **RNF-RX-08 — Idempotência/conflito seguro** | **Implementado** | dispensação usa `operation_key` única; replay idêntico retorna a operação existente e replay divergente é rejeitado; saldo insuficiente gera erro operacional seguro. |
+| **RNF-RX-01 — PostgreSQL fonte de verdade** | **Implementado** | CI aplica migrations e testes contra PostgreSQL; invariantes críticas também são protegidas no banco. |
+| **RNF-RX-02 — Estoque atômico/concorrente** | **Implementado** | locks, transações, constraint de saldo não negativo e testes `TransactionTestCase` concorrentes. |
+| **RNF-RX-03 — Sem REST público** | **Implementado** | URLConf server-rendered/POST tradicional e `test_architecture.py` bloqueando superfície `/api/`. |
+| **RNF-RX-04 — Minimização de PHI** | **Implementado** | allowlists de eventos, auditlog exclui texto clínico livre e respostas de negação não renderizam PHI. |
+| **RNF-RX-05 — WCAG/responsivo** | **Implementado** | `tests/e2e/prescription_accessibility.spec.js`: axe WCAG 2.1 A/AA + telefone 390×844 + tablet 768×1024 nas telas essenciais. |
+| **RNF-RX-06 — Referências governadas** | **Estrutura implementada; conteúdo real bloqueado por T-RX-02** | procedência, versão, aprovador/data, ativação controlada e imutabilidade de versão aprovada. |
+| **RNF-RX-07 — Migrations reversíveis** | **Implementado** | migrations RX versionadas/reversíveis; guards PostgreSQL têm reverso explícito. |
+| **RNF-RX-08 — Idempotência/conflito seguro** | **Implementado** | `MedicationDispense.operation_key` única + comparação da operação repetida + mensagens seguras e rollback. |
 
-## Superfícies efetivamente publicadas
+## Superfícies RX publicadas
 
-`apps/clinical/prescription/urls.py` publica atualmente:
+Todas permanecem internas, autenticadas por sessão e com respostas clínicas `private, no-store, max-age=0` quando aplicável:
 
-- `GET /prescricoes/` — lista autorizada;
-- `GET|POST /prescricoes/nova/` — criação de rascunho + itens;
-- `GET /prescricoes/<uuid>/` — detalhe/histórico;
-- `POST /prescricoes/<uuid>/submeter/` — submissão;
-- `GET|POST /prescricoes/<uuid>/validar/` — revisão/validação farmacêutica;
-- `POST /prescricoes/<uuid>/cancelar/` — cancelamento sem apagar histórico;
-- `GET|POST /prescricoes/<uuid>/dispensar/` — dispensação por lote;
-- `GET /dispensacoes/` e `GET /dispensacoes/<uuid>/` — histórico de dispensações;
-- `GET /medicamentos/`, `GET|POST /medicamentos/novo/`, `GET|POST /medicamentos/<uuid>/editar/` — catálogo;
-- `GET /estoque-farmacia/` — estoque/lotes.
+- `/prescricoes/`
+- `/prescricoes/nova/`
+- `/prescricoes/<uuid>/`
+- `/prescricoes/<uuid>/submeter/`
+- `/prescricoes/<uuid>/validar/`
+- `/prescricoes/<uuid>/cancelar/`
+- `/prescricoes/<uuid>/dispensar/`
+- `/dispensacoes/`
+- `/dispensacoes/<uuid>/`
+- `/medicamentos/`
+- `/medicamentos/novo/`
+- `/medicamentos/<uuid>/editar/`
+- `/estoque-farmacia/`
 
-Nenhuma rota nova usa `/api/`.
+Nenhuma rota REST pública foi criada.
 
 ## Evidências automatizadas principais
 
-- **Catálogo/governança:** `test_catalog.py`, `test_catalog_csrf.py`, `test_reference_governance_integrity.py`, `test_used_drug_integrity.py`.
-- **Lifecycle/histórico:** `test_services.py`, `test_request_history_integrity.py`, `test_append_only_integrity.py`, `test_database_integrity_guards.py`, `test_request_identity_integrity.py`.
-- **Safety/validação/dispensação:** `test_safety_and_dispense.py` e testes de auditoria/eventos da app RX.
-- **Concorrência PostgreSQL:** `test_stock_concurrency.py`.
-- **Autorização/negação:** `test_permissions.py`, `test_selectors.py`, `test_anonymous_boundary.py`, `test_denied_access_audit.py`, `features/authorization.feature`, `tests/e2e/prescription_authorization.spec.js`.
-- **Aceitação clínica:** `features/clinical_flows.feature`, `tests/e2e/prescription_clinical_flows.spec.js`, `test_acceptance_traceability.py`.
-- **Auditoria/AsyncAPI:** `test_event_contract.py`, `test_audit_events.py`, `test_auditlog_sensitive_fields.py`, `test_prescription_audit_actor.py`, testes de ator do fluxo clínico/estoque.
-- **Cache/PWA:** `test_architecture.py`, `test_response_cache_policy.py`, `tests/e2e/prescription_pwa_boundary.spec.js`.
-- **Acessibilidade/responsividade:** `tests/e2e/prescription_accessibility.spec.js`.
+- **Lifecycle/modelos/integridade:** `test_models.py`, `test_services.py`, `test_request_history_integrity.py`, `test_append_only_integrity.py`, `test_database_integrity_guards.py`, `test_request_identity_integrity.py`.
+- **Safety + dispensação:** `test_safety_and_dispense.py`, `test_stock.py`, `test_stock_concurrency.py`, `test_stock_identity_db_guards.py`.
+- **RBAC/ABAC:** `test_permissions.py`, `test_selectors.py`, `test_anonymous_boundary.py`, `test_denied_access_audit.py`, `test_acceptance_traceability.py`, `features/authorization.feature`, `prescription_authorization.spec.js`.
+- **Auditoria/eventos:** `test_event_contract.py`, `test_prescription_audit_actor.py`, `test_stock_audit_actor.py`, `test_auditlog_sensitive_fields.py`, `test_audit_events.py`.
+- **Jornada clínica:** `specs/003-prescricao-farmacia/features/clinical_journeys.feature` e `tests/e2e/prescription_clinical_flows.spec.js`.
+- **Acessibilidade/mobile:** `tests/e2e/prescription_accessibility.spec.js`.
+- **PWA/network-only:** `test_architecture.py`, `test_response_cache_policy.py`, `tests/e2e/prescription_pwa_boundary.spec.js`.
 
-## Gates que permanecem deliberadamente abertos
+## Definition of Done
 
-1. **T-RX-02 — governança clínica/farmacêutica:** nenhuma referência terapêutica real deve entrar no runtime antes da aprovação de fonte, versão e conteúdo.
-2. **Extensão PEP AllergyIntolerance:** o contrato está definido, mas sua implementação foi explicitamente bloqueada até validação clínica dos estados/terminologia; o fallback manual RX continua obrigatório.
-3. **Fonte estruturada de peso:** regras dependentes de peso permanecem `NOT_EVALUABLE` até uma spec clínica aprovada fornecer esse fato.
-4. **T-PEP-08 — assinatura jurídica/operacional:** não é substituída pela validação farmacêutica.
-5. **T-RX-17 — integrações 004/009:** deve ser fechada somente quando essas specs fornecerem suas fontes/ownership sem duplicação de verdade.
-
-## Estado de Definition of Done
-
-A **superfície técnica atual** da Spec 003 está implementada e possui rastreabilidade código → contrato → testes. O fechamento global da spec permanece condicionado aos gates externos acima; estes não devem ser marcados como concluídos por conveniência de backlog.
+A implementação técnica da Spec 003 está concluída para o escopo aprovado. O fechamento global da spec permanece administrativamente aberto apenas onde o SDD depende de terceiros: **T-RX-02** (governança clínica real) e **T-RX-17** (fechamento inter-spec com futuras Specs 004/009). Isso é um bloqueio explícito, não uma lacuna escondida de código.
