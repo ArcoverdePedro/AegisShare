@@ -5,6 +5,10 @@ from django.conf import settings
 from django.test import SimpleTestCase
 
 SCENARIO_TITLE = "papel CLI permanece negado nas superfícies RX mesmo com permissões mal atribuídas"
+CLINICAL_SCENARIOS = (
+    "prescrever, submeter, validar e dispensar por lote preserva o fluxo clínico",
+    "interação sintética bloqueante impede validação sem perder a revisão",
+)
 
 
 def _read_repo_file(relative_path):
@@ -48,3 +52,14 @@ class PrescriptionAcceptanceTraceabilityTests(SimpleTestCase):
         self.assertEqual(feature_routes, playwright_routes)
         self.assertIn("Então a resposta HTTP é 403", feature)
         self.assertIn(".toBe(403)", playwright)
+
+    def test_clinical_scenario_titles_are_shared_by_gherkin_and_playwright(self):
+        feature = _read_repo_file(
+            "specs/003-prescricao-farmacia/features/clinical_flows.feature"
+        )
+        playwright = _read_repo_file("tests/e2e/prescription_clinical_flows.spec.js")
+
+        for title in CLINICAL_SCENARIOS:
+            with self.subTest(title=title):
+                self.assertIn(f"Cenário: {title}", feature)
+                self.assertIn(f"test('{title}'", playwright)

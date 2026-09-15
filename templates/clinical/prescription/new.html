@@ -1,0 +1,46 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Nova prescrição - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <p class="heading">Prescrição e Farmácia</p>
+        <h1 class="title is-3">Nova prescrição</h1>
+        <p class="muted mb-5">A prescrição nasce como rascunho e só é congelada após a submissão.</p>
+
+        <form method="post" class="box aegis-card" novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="notification is-danger is-light">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="field">
+                <label class="label" for="{{ form.encounter.id_for_label }}">{{ form.encounter.label }}</label>
+                <div class="control"><div class="select is-fullwidth">{{ form.encounter }}</div></div>
+                {{ form.encounter.errors }}
+            </div>
+            {{ form.replaces }}
+
+            <hr>
+            <h2 class="title is-5">Itens</h2>
+            {{ item_formset.management_form }}
+            {% if item_formset.non_form_errors %}<div class="notification is-danger is-light">{{ item_formset.non_form_errors }}</div>{% endif %}
+            {% for item_form in item_formset %}
+            <fieldset class="box" aria-label="Item {{ forloop.counter }}">
+                {% if item_form.non_field_errors %}<div class="notification is-danger is-light">{{ item_form.non_field_errors }}</div>{% endif %}
+                {% for field in item_form.visible_fields %}
+                <div class="field">
+                    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    <div class="control">{{ field }}</div>
+                    {% if field.errors %}<p class="help is-danger">{{ field.errors|striptags }}</p>{% endif %}
+                </div>
+                {% endfor %}
+            </fieldset>
+            {% endfor %}
+
+            <div class="buttons mt-5">
+                <button class="button is-link" type="submit">Salvar rascunho</button>
+                <a class="button" href="{% url 'prescription:prescription_list' %}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

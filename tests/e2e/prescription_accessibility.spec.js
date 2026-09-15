@@ -75,18 +75,74 @@ async function verifyStock(page) {
   await expectNoPageOverflow(page);
 }
 
+async function verifyPrescriptionList(page) {
+  await page.goto('/prescricoes/');
+  await expect(page.getByRole('heading', { name: 'Prescrições' })).toBeVisible();
+  await expect(page.getByText('Paciente Sintético RX E2E').first()).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
+async function verifyPrescriptionCreate(page) {
+  await page.goto('/prescricoes/nova/');
+  await expect(page.getByRole('heading', { name: 'Nova prescrição' })).toBeVisible();
+  await expect(page.getByLabel('Encontro')).toBeVisible();
+  await expect(page.getByLabel('Medicamento')).toBeVisible();
+  await expect(page.getByLabel('Dose')).toBeVisible();
+  await expect(page.getByLabel('Unidade da dose')).toBeVisible();
+  await expect(page.getByLabel('Via')).toBeVisible();
+  await expect(page.getByLabel('Frequência')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
+async function verifyValidation(page) {
+  await page.goto('/prescricoes/');
+  const submittedRow = page.getByRole('row').filter({ hasText: 'Submetida' }).first();
+  await expect(submittedRow).toBeVisible();
+  await submittedRow.getByRole('link', { name: 'Abrir' }).click();
+  await page.getByRole('link', { name: 'Validar' }).click();
+  await expect(page.getByRole('heading', { name: 'Validação farmacêutica' })).toBeVisible();
+  await expect(page.getByLabel(/Revisei manualmente a situação de alergias/)).toBeVisible();
+  await expect(page.getByLabel('Confirmo a validação farmacêutica')).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
+async function verifyDispense(page) {
+  await page.goto('/prescricoes/');
+  const validatedRow = page.getByRole('row').filter({ hasText: 'Validada' }).first();
+  await expect(validatedRow).toBeVisible();
+  await validatedRow.getByRole('link', { name: 'Abrir' }).click();
+  await page.getByRole('link', { name: 'Dispensar' }).click();
+  await expect(page.getByRole('heading', { name: 'Dispensação por lote' })).toBeVisible();
+  await expect(page.getByLabel('Item prescrito')).toBeVisible();
+  await expect(page.getByLabel('Lote')).toBeVisible();
+  await expect(page.getByLabel('Quantidade')).toBeVisible();
+  await expect(page.getByLabel('Confirmo a dispensação e a baixa de estoque')).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
+async function verifyDispenseList(page) {
+  await page.goto('/dispensacoes/');
+  await expect(page.getByRole('heading', { name: 'Dispensações' })).toBeVisible();
+  await expectNoPageOverflow(page);
+}
+
 async function verifyPublishedSurfaces(page) {
-  await verifyCatalog(page);
-  await expectNoSeriousAxeViolations(page);
-
-  await verifyDrugCreateForm(page);
-  await expectNoSeriousAxeViolations(page);
-
-  await verifyDrugEditForm(page);
-  await expectNoSeriousAxeViolations(page);
-
-  await verifyStock(page);
-  await expectNoSeriousAxeViolations(page);
+  const checks = [
+    verifyCatalog,
+    verifyDrugCreateForm,
+    verifyDrugEditForm,
+    verifyStock,
+    verifyPrescriptionList,
+    verifyPrescriptionCreate,
+    verifyValidation,
+    verifyDispense,
+    verifyDispenseList,
+  ];
+  for (const verify of checks) {
+    await verify(page);
+    await expectNoSeriousAxeViolations(page);
+  }
 }
 
 test('superfícies RX publicadas não apresentam violações sérias WCAG', async ({ page }) => {

@@ -10,6 +10,7 @@ from django.test import SimpleTestCase, TransactionTestCase
 from ..events import (
     PRESCRIPTION_CHANNEL_EVENT_TYPE,
     PRESCRIPTION_EVENT_GROUP,
+    emit_medication_dispensed_event,
     emit_prescription_event,
     emit_stock_low_event,
 )
@@ -97,6 +98,19 @@ def _event_emitters():
             encounter_id=uuid.uuid4(),
             status="SUBMITTED",
         ),
+        "prescription.validated": lambda: emit_prescription_event(
+            event_type="prescription.validated",
+            prescription_id=uuid.uuid4(),
+            encounter_id=uuid.uuid4(),
+            status="VALIDATED",
+            safety_review_id=uuid.uuid4(),
+        ),
+        "medication.dispensed": lambda: emit_medication_dispensed_event(
+            dispense_id=uuid.uuid4(),
+            prescription_id=uuid.uuid4(),
+            encounter_id=uuid.uuid4(),
+            item_count=2,
+        ),
         "stock.low": lambda: emit_stock_low_event(
             stock_item_id=uuid.uuid4(),
             drug_id=uuid.uuid4(),
@@ -116,14 +130,11 @@ class EventPayloadContractTests(SimpleTestCase):
         )
 
     def test_prescription_created_payload_matches_asyncapi_schema(self):
-        prescription_id = uuid.uuid4()
-        encounter_id = uuid.uuid4()
-
         group, payload = _emit_and_capture(
             lambda: emit_prescription_event(
                 event_type="prescription.created",
-                prescription_id=prescription_id,
-                encounter_id=encounter_id,
+                prescription_id=uuid.uuid4(),
+                encounter_id=uuid.uuid4(),
                 status="SUBMITTED",
             )
         )
@@ -131,14 +142,40 @@ class EventPayloadContractTests(SimpleTestCase):
         self.assertEqual(group, PRESCRIPTION_EVENT_GROUP)
         self.assert_payload_matches_contract(payload, "PrescriptionEventPayload")
 
-    def test_stock_low_payload_matches_asyncapi_schema(self):
-        stock_item_id = uuid.uuid4()
-        drug_id = uuid.uuid4()
+    def test_prescription_validated_payload_matches_asyncapi_schema(self):
+        group, payload = _emit_and_capture(
+            lambda: emit_prescription_event(
+                event_type="prescription.validated",
+                prescription_id=uuid.uuid4(),
+                encounter_id=uuid.uuid4(),
+                status="VALIDATED",
+                safety_review_id=uuid.uuid4(),
+            )
+        )
 
+        self.assertEqual(group, PRESCRIPTION_EVENT_GROUP)
+        self.assert_payload_matches_contract(payload, "PrescriptionEventPayload")
+        self.assertIsNotNone(payload["safety_review_id"])
+
+    def test_medication_dispensed_payload_matches_asyncapi_schema(self):
+        group, payload = _emit_and_capture(
+            lambda: emit_medication_dispensed_event(
+                dispense_id=uuid.uuid4(),
+                prescription_id=uuid.uuid4(),
+                encounter_id=uuid.uuid4(),
+                item_count=2,
+            )
+        )
+
+        self.assertEqual(group, PRESCRIPTION_EVENT_GROUP)
+        self.assert_payload_matches_contract(payload, "DispenseEventPayload")
+        self.assertEqual(payload["item_count"], 2)
+
+    def test_stock_low_payload_matches_asyncapi_schema(self):
         group, payload = _emit_and_capture(
             lambda: emit_stock_low_event(
-                stock_item_id=stock_item_id,
-                drug_id=drug_id,
+                stock_item_id=uuid.uuid4(),
+                drug_id=uuid.uuid4(),
                 storage_location="Farmácia sintética",
                 quantity_available=Decimal("2.5"),
                 minimum_level=Decimal("5"),

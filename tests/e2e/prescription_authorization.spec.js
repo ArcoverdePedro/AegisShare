@@ -17,12 +17,16 @@ async function expectForbidden(page, path) {
   const response = await page.goto(path);
   expect(response, `Navegação para ${path} deve produzir resposta HTTP`).not.toBeNull();
   expect(response.status(), `${path} deve permanecer negado para papel CLI`).toBe(403);
+  await expect(page.getByText('Paciente Sintético RX E2E')).toHaveCount(0);
   await expect(page.getByText('Medicamento Sintético Acessibilidade')).toHaveCount(0);
 }
 
 test('papel CLI permanece negado nas superfícies RX mesmo com permissões mal atribuídas', async ({ page }) => {
   await login(page);
 
+  await expectForbidden(page, '/prescricoes/');
+  await expectForbidden(page, '/prescricoes/nova/');
+  await expectForbidden(page, '/dispensacoes/');
   await expectForbidden(page, '/medicamentos/');
   await expectForbidden(page, '/medicamentos/novo/');
   await expectForbidden(page, '/medicamentos/00000000-0000-0000-0000-000000000001/editar/');

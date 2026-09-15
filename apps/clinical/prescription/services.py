@@ -7,8 +7,13 @@ from django.utils import timezone
 from apps.clinical.pep.models import Encounter
 
 from .events import emit_prescription_event
-from .models import Drug, MedicationRequest, MedicationRequestItem
-from .permissions import can_prescribe_for_encounter
+from .models import Drug, MedicationRequest, MedicationRequestItem, MedicationSafetyReview
+from .permissions import (
+    can_cancel_prescription,
+    can_prescribe_for_encounter,
+    can_validate_prescription,
+)
+from .safety import record_medication_safety_review
 
 
 class PrescriptionStateError(RuntimeError):
@@ -17,6 +22,12 @@ class PrescriptionStateError(RuntimeError):
 
 class PrescriptionItemError(PrescriptionStateError):
     pass
+
+
+class PrescriptionValidationError(PrescriptionStateError):
+    def __init__(self, message, *, review_id=None):
+        super().__init__(message)
+        self.review_id = review_id
 
 
 def _require_author(request, actor):
@@ -141,9 +152,7 @@ def remove_medication_request_item(*, request_id, item_id, actor):
         )
         _require_prescribe_access(request, actor)
         if request.status != MedicationRequest.Status.DRAFT:
-            raise PrescriptionStateError(
-                "Itens submetidos não podem ser removidos."
-            )
+            raise PrescriptionStateError("Itens submetidos não podem ser removidos.")
         item = request.items.select_for_update().get(pk=item_id)
         with set_actor(actor):
             item.delete()
@@ -177,4 +186,97 @@ def submit_medication_request(*, request_id, actor):
             encounter_id=request.encounter_id,
             status=request.status,
         )
+        return request
+
+
+def validate_medication_request(
+    *,
+    request_id,
+    actor,
+    manual_allergy_review_confirmed,
+):
+    """Recalcula safety gates e valida somente se os bloqueios permitirem."""
+    blocked_message = None
+    review = None
+    with transaction.atomic():
+        request = (
+            MedicationRequest.objects.select_for_update()
+            .select_related("encounter__patient")
+            .get(pk=request_id)
+        )
+        if not can_validate_prescription(actor, request):
+            raise PermissionDenied
+        if request.status != MedicationRequest.Status.SUBMITTED:
+            raise PrescriptionStateError("A validação exige prescrição submetida.")
+
+        review = record_medication_safety_review(
+            medication_request=request,
+            actor=actor,
+            manual_allergy_review_confirmed=manual_allergy_review_confirmed,
+        )
+        if review.allergy_status != MedicationSafetyReview.AllergyStatus.REVIEW_CONFIRMED:
+            blocked_message = (
+                "A fonte estruturada de alergias está indisponível; confirme a revisão manual antes de validar."
+            )
+        elif review.blocking_findings:
+            blocked_message = "A prescrição possui achado de segurança bloqueante."
+        else:
+            request.status = MedicationRequest.Status.VALIDATED
+            request.validated_by = actor
+            request.validated_at = timezone.now()
+            with set_actor(actor):
+                request.save(
+                    update_fields=[
+                        "status",
+                        "validated_by",
+                        "validated_at",
+                        "updated_at",
+                    ]
+                )
+            emit_prescription_event(
+                event_type="prescription.validated",
+                prescription_id=request.pk,
+                encounter_id=request.encounter_id,
+                status=request.status,
+                safety_review_id=review.pk,
+            )
+
+    if blocked_message:
+        raise PrescriptionValidationError(blocked_message, review_id=review.pk)
+    return request, review
+
+
+def cancel_medication_request(*, request_id, actor, reason):
+    """Cancela sem apagar histórico e sem executar estorno implícito de estoque."""
+    reason = " ".join((reason or "").split())
+    if not reason:
+        raise PrescriptionStateError("Informe o motivo do cancelamento.")
+
+    with transaction.atomic():
+        request = (
+            MedicationRequest.objects.select_for_update()
+            .select_related("encounter__patient")
+            .get(pk=request_id)
+        )
+        if request.status == MedicationRequest.Status.CANCELLED:
+            return request
+        if request.status == MedicationRequest.Status.DRAFT:
+            _require_prescribe_access(request, actor)
+        elif not can_cancel_prescription(actor, request):
+            raise PermissionDenied
+
+        request.status = MedicationRequest.Status.CANCELLED
+        request.cancelled_by = actor
+        request.cancelled_at = timezone.now()
+        request.cancellation_reason = reason
+        with set_actor(actor):
+            request.save(
+                update_fields=[
+                    "status",
+                    "cancelled_by",
+                    "cancelled_at",
+                    "cancellation_reason",
+                    "updated_at",
+                ]
+            )
         return request

@@ -7,6 +7,7 @@ const RX_ADMIN = {
 
 const RX_CACHE_PREFIXES = [
   '/prescricoes/',
+  '/dispensacoes/',
   '/medicamentos/',
   '/estoque-farmacia/',
   '/dispensar/',
@@ -64,6 +65,15 @@ async function expectNoOfflineQueueDatabase(page) {
   expect(exists).toBe(false);
 }
 
+async function selectFirstPopulated(select) {
+  const value = await select.locator('option').evaluateAll((options) => {
+    const option = options.find((item) => item.value);
+    return option ? option.value : null;
+  });
+  expect(value).toBeTruthy();
+  await select.selectOption(value);
+}
+
 test('superfícies RX atuais permanecem network-only e fora do cache/fila offline', async ({
   page,
   context,
@@ -78,14 +88,22 @@ test('superfícies RX atuais permanecem network-only e fora do cache/fila offlin
   await expect(page.getByRole('heading', { name: 'Estoque farmacêutico' })).toBeVisible();
   await expect(page.getByText('Medicamento Sintético Acessibilidade')).toBeVisible();
 
+  await page.goto('/prescricoes/');
+  await expect(page.getByRole('heading', { name: 'Prescrições' })).toBeVisible();
+  await expect(page.getByText('Paciente Sintético RX E2E').first()).toBeVisible();
+
+  await page.goto('/dispensacoes/');
+  await expect(page.getByRole('heading', { name: 'Dispensações' })).toBeVisible();
+
   await waitForServiceWorkerControl(page);
   await expectNoRxCache(page);
   await expectNoOfflineQueueDatabase(page);
 
   await context.setOffline(true);
-  await page.goto('/medicamentos/?pwa-rx-offline-ci=1');
+  await page.goto('/prescricoes/?pwa-rx-offline-ci=1');
   await expect(page.getByRole('heading', { name: 'Você está sem conexão' })).toBeVisible();
   await expect(page.getByText('Nenhum dado clínico identificável')).toBeVisible();
+  await expect(page.getByText('Paciente Sintético RX E2E')).toHaveCount(0);
   await expect(page.getByText('Medicamento Sintético Acessibilidade')).toHaveCount(0);
   await context.setOffline(false);
 
@@ -169,4 +187,47 @@ test('criação e edição de medicamento não entram em cache nem fila offline'
   await expectNoOfflineQueueDatabase(page);
   await page.goto('/medicamentos/');
   await expect(page.getByText(offlineName)).toHaveCount(0);
+});
+
+test('dispensação offline falha e não é enfileirada nem persistida', async ({ page, context }) => {
+  await login(page);
+  await waitForServiceWorkerControl(page);
+
+  await page.goto('/dispensacoes/');
+  const rowsBefore = await page.getByRole('table').getByRole('row').count();
+
+  await page.goto('/prescricoes/');
+  const validatedRow = page.getByRole('row').filter({ hasText: 'Validada' }).first();
+  await expect(validatedRow).toBeVisible();
+  await validatedRow.getByRole('link', { name: 'Abrir' }).click();
+  await page.getByRole('link', { name: 'Dispensar' }).click();
+  await expect(page.getByRole('heading', { name: 'Dispensação por lote' })).toBeVisible();
+
+  await selectFirstPopulated(page.getByLabel('Item prescrito'));
+  await selectFirstPopulated(page.getByLabel('Lote'));
+  await page.getByLabel('Quantidade').fill('1');
+  await page.getByLabel('Confirmo a dispensação e a baixa de estoque').check();
+
+  await context.setOffline(true);
+  const offlineMutation = await page.evaluate(async () => {
+    const form = document.querySelector('form[method="post"]');
+    try {
+      const response = await fetch(window.location.pathname, {
+        method: 'POST',
+        body: new FormData(form),
+        credentials: 'same-origin',
+      });
+      return { resolved: true, status: response.status };
+    } catch (error) {
+      return { resolved: false, errorName: error.name };
+    }
+  });
+  expect(offlineMutation.resolved).toBe(false);
+  await context.setOffline(false);
+
+  await expectNoRxCache(page);
+  await expectNoOfflineQueueDatabase(page);
+  await page.goto('/dispensacoes/');
+  const rowsAfter = await page.getByRole('table').getByRole('row').count();
+  expect(rowsAfter).toBe(rowsBefore);
 });

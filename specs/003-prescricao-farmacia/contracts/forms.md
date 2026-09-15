@@ -4,116 +4,68 @@
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `encounter` | ModelChoice | somente encontros abertos de pacientes no escopo PEP do usuário |
-| `replaces` | UUID/hidden opcional | somente prescrição do mesmo encontro e acessível |
+| `encounter` | ModelChoice | somente encontros abertos de pacientes no escopo PEP do usuário; label inclui paciente/tipo/data para decisão humana |
+| `replaces` | UUID/hidden opcional | somente prescrição do mesmo encontro e acessível; service revalida |
 
-Permissão: `prescription.prescribe_medication` + escopo PEP.
-
-O paciente não é enviado como campo independente: é derivado do `Encounter`, evitando combinações inconsistentes paciente/encontro.
+Permissão: `prescription.prescribe_medication` + escopo PEP. O paciente é derivado do `Encounter` e não pode ser combinado separadamente pelo cliente.
 
 ## MedicationRequestItemFormSet
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `drug` | ModelChoice | `Drug.active=True` |
+| `drug` | ModelChoice | `Drug.active=True`; label legível com nome/apresentação/código |
 | `dose` | Decimal | obrigatório e > 0 |
-| `dose_unit` | string/choice governada | obrigatória |
-| `route` | string/choice governada | obrigatória |
-| `frequency` | string | obrigatória; normalizada sem executar expressão |
+| `dose_unit` | string | obrigatória |
+| `route` | string | obrigatória |
+| `frequency` | string | obrigatória; texto normalizado, nunca executado |
 | `duration_value` | Decimal opcional | > 0 quando informado |
-| `duration_unit` | string opcional | obrigatório quando `duration_value` existir |
-| `instructions` | textarea opcional | limite explícito; texto clínico, não copiar para logs/eventos |
-| `sequence` | hidden/int | ordem única dentro da prescrição |
+| `duration_unit` | string opcional | obrigatória quando `duration_value` existir |
+| `instructions` | textarea opcional | máximo 2000; texto clínico excluído de logs/eventos |
 
-Regras do formset:
-
-- pelo menos um item válido;
-- limite máximo configurável de itens por submissão para evitar abuso;
-- duplicidade do mesmo `Drug` gera aviso/erro conforme contrato clínico aprovado; não é silenciosamente agregada;
-- edição/adicionamento/remoção só em `DRAFT`;
-- validações são repetidas no service antes de persistir/submeter.
+A ordem é atribuída server-side pela posição do formset. O service repete os gates de DRAFT, autoria, escopo PEP, medicamento ativo, duplicidade e `RX_MAX_ITEMS_PER_REQUEST`.
 
 ## MedicationRequestSubmitForm
 
-Campos:
+`confirm: boolean obrigatório`.
 
-```text
-confirm: boolean obrigatório
-```
-
-Permissão: `prescription.prescribe_medication`, autoria autorizada e escopo PEP.
-
-Antes da transição `DRAFT -> SUBMITTED`, o service:
-
-1. revalida encontro aberto;
-2. confirma existência de item;
-3. congela conteúdo clínico para edição comum;
-4. produz revisão preliminar de segurança quando as referências estiverem disponíveis;
-5. registra auditoria e agenda `prescription.created` após commit.
+Antes de `DRAFT -> SUBMITTED`, o service revalida encontro aberto, autoria, permissão e existência de ao menos um item; congela a edição comum e agenda `prescription.created` somente após commit. A revisão farmacêutica ocorre na etapa de validação, não na submissão.
 
 ## MedicationRequestValidateForm
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `manual_allergy_review_confirmed` | boolean condicional | obrigatório apenas quando a fonte estruturada de alergias estiver `UNAVAILABLE`/`REVIEW_REQUIRED` |
+| `manual_allergy_review_confirmed` | boolean condicional | necessário enquanto a fonte estruturada de alergias permanecer indisponível |
 | `confirm_validation` | boolean | obrigatório |
 
 Permissão: `prescription.validate_medication_request` + escopo PEP.
 
-Regras:
-
-- prescrição precisa estar `SUBMITTED`;
-- safety review é recalculada/revalidada no servidor no momento do POST;
-- achado configurado como `blocking=True` impede validação; esta primeira versão não oferece checkbox genérico de “ignorar interação”;
-- regra de dose dependente de fato ausente produz `NOT_EVALUABLE`; a política institucional deve definir se isso bloqueia ou exige revisão específica antes de habilitar regras reais;
-- ausência da fonte estruturada de alergia nunca vira checkbox pré-marcado ou mensagem “sem alergia”;
-- validação registra `validated_by`/`validated_at` e um `MedicationSafetyReview` append-only;
-- este formulário não implementa assinatura ICP-Brasil/assinatura jurídica.
+O POST recalcula o safety engine usando apenas `Interaction`/`DoseRule` ativos, aprovados e versionados. Achado `blocking=True` mantém a prescrição `SUBMITTED`. Fato de peso ausente ou regra não avaliável produz `NOT_EVALUABLE`, sem estimativa. A tentativa de revisão é preservada em `MedicationSafetyReview`/`MedicationSafetyFinding` append-only. O formulário não implementa assinatura jurídica/ICP-Brasil.
 
 ## MedicationRequestCancelForm
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `reason` | textarea curta | obrigatória, com limite explícito |
+| `reason` | textarea curta | obrigatória, normalizada, máximo 255 |
 | `confirm` | boolean | obrigatório |
 
-Permissão: política de cancelamento definida em `access-policy.md` + escopo PEP.
+Cancelar não apaga histórico nem reverte estoque implicitamente. Qualquer devolução/estorno exige fluxo próprio futuro.
 
-Regras:
+## MedicationDispenseHeaderForm
 
-- não apaga a prescrição;
-- registra ator/horário/motivo e transiciona para `CANCELLED`;
-- se já houver dispensação, cancelamento não reverte estoque automaticamente; qualquer devolução/estorno exige fluxo explícito futuro.
-
-## MedicationDispenseForm
-
-Campos de cabeçalho:
-
-```text
-operation_key: UUID hidden, obrigatório
-confirm: boolean obrigatório
-```
-
-Itens são enviados por `MedicationDispenseItemFormSet`.
-
-Permissão: `prescription.dispense_medication` + escopo PEP.
+| Campo | Tipo | Regra |
+|---|---|---|
+| `operation_key` | UUID hidden | obrigatório; gerado no GET e usado para idempotência |
+| `confirm` | boolean | obrigatório |
 
 ## MedicationDispenseItemFormSet
 
 | Campo | Tipo | Regra |
 |---|---|---|
-| `request_item` | ModelChoice/hidden | item da prescrição validada alvo |
-| `lot` | ModelChoice | lote do mesmo medicamento, ativo, não expirado e com saldo potencial |
+| `request_item` | ModelChoice | item da prescrição alvo; label mostra medicamento/dose/via/frequência |
+| `lot` | ModelChoice | lotes ativos com saldo; label mostra lote, validade e saldo |
 | `quantity` | Decimal | > 0 |
 
-Regras críticas repetidas em `transaction.atomic()`:
-
-- prescrição ainda `VALIDATED`;
-- lote corresponde ao `Drug` do item;
-- lote não expirou;
-- saldo bloqueado é suficiente;
-- quantidade acumulada não ultrapassa o limite dispensável contratado;
-- `operation_key` repetida não consome saldo novamente.
+A interface filtra escolhas úteis, mas o service é a fonte de verdade e, dentro de `transaction.atomic()` + `select_for_update()`, revalida: status `VALIDATED`, autorização, medicamento ativo, correspondência lote/Drug, lote/estoque ativos, validade, saldo acumulado e `operation_key`. Retry idêntico não consome saldo novamente; reutilização conflitante da chave é recusada.
 
 ## DrugForm
 
@@ -123,46 +75,20 @@ Regras críticas repetidas em `transaction.atomic()`:
 | `name` | obrigatório |
 | `presentation` | obrigatório |
 | `strength_text` | opcional |
-| `route_hint` | opcional; informativo, não prescreve automaticamente |
+| `route_hint` | opcional e somente informativo |
 | `dispense_unit` | obrigatório |
 | `active` | boolean |
 
-Permissão: `prescription.manage_drug_catalog`.
+Permissão: `prescription.manage_drug_catalog`. Desativar é preferível a apagar; dados usados clinicamente não devem ser reescritos silenciosamente.
 
-Desativar é preferível a excluir. Edição que mudaria significado clínico histórico deve criar versão/referência nova em vez de alterar registros passados silenciosamente.
+## Interaction / DoseRule
 
-## InteractionReferenceForm / DoseRuleReferenceForm
+Não há formulário clínico público para conteúdo real nesta entrega. Referências começam inativas e só entram no safety engine quando têm fonte, versão, aprovador, data de aprovação e `active=True`. T-RX-02 continua como gate externo de governança. Nenhuma fórmula executável/`eval` é aceita.
 
-Inicialmente restritos a manutenção administrativa controlada. Antes de `active=True`, exigem:
+## Estoque
 
-- fonte da referência;
-- versão;
-- aprovador autorizado;
-- data de aprovação;
-- campos estruturados válidos.
-
-Nunca aceitar código executável, expressão arbitrária ou `eval` como fórmula de dose.
-
-## StockAdjustmentForm
-
-Não possui rota pública na primeira superfície. Caso habilitado em tarefa própria:
-
-```text
-lot
-quantity_delta
-reason
-operation_key
-```
-
-Permissão: `prescription.manage_pharmacy_stock`.
-
-Ajuste é `StockMovement` append-only, nunca edição direta não auditada do saldo. O service deve bloquear resultado negativo.
+Ajustes de estoque continuam por services explícitos e `StockMovement` append-only; não há formulário público genérico de edição direta de saldo.
 
 ## Mensagens de erro
 
-Mensagens devem ser em pt-BR, úteis e sem revelar:
-
-- SQL/constraint interna;
-- existência de prescrição de paciente fora do escopo;
-- nome/CPF em erro técnico;
-- conteúdo de alergia/instrução clínica em logs.
+Erros são pt-BR e não revelam SQL/constraint, existência de paciente fora do escopo, CPF/nome em erro técnico nem texto de alergia/instrução em logs.
