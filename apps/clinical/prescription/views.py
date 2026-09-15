@@ -31,7 +31,14 @@ from .forms import (
     MedicationRequestSubmitForm,
     MedicationRequestValidateForm,
 )
-from .models import Drug, Lot, MedicationDispense, MedicationRequest, MedicationSafetyReview, StockItem
+from .models import (
+    Drug,
+    Lot,
+    MedicationDispense,
+    MedicationRequest,
+    MedicationSafetyReview,
+    StockItem,
+)
 from .permissions import (
     PERM_DISPENSE,
     PERM_PRESCRIBE,
