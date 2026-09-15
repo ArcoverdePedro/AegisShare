@@ -1,0 +1,35 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Detalhe da dispensação - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left"><div>
+                <p class="heading">Prescrição e Farmácia</p>
+                <h1 class="title is-3 mb-1">Dispensação concluída</h1>
+                <p class="muted">{{ dispense.dispensed_at|date:'d/m/Y H:i' }} · operação {{ dispense.operation_key }}</p>
+            </div></div>
+            <div class="level-right"><a class="button" href="{% url 'prescription:dispense_list' %}">Voltar</a></div>
+        </div>
+        <div class="box aegis-card">
+            <div class="table-container" role="region" aria-label="Itens dispensados" tabindex="0">
+                <table class="table is-fullwidth">
+                    <thead><tr><th>Medicamento</th><th>Lote</th><th>Validade</th><th>Quantidade</th></tr></thead>
+                    <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.request_item.drug.name }} — {{ item.request_item.drug.presentation }}</td>
+                        <td>{{ item.lot.lot_number }}</td>
+                        <td>{{ item.lot.expires_on|date:'d/m/Y' }}</td>
+                        <td>{{ item.quantity }} {{ item.lot.stock_item.drug.dispense_unit }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
