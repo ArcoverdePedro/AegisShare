@@ -33,8 +33,8 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
     prescriptionItem.getByLabel('Medicamento'),
     'Medicamento Sintético Acessibilidade',
   );
-  await prescriptionItem.getByLabel('Dose').fill('10');
-  await prescriptionItem.getByLabel('Unidade da dose').fill('mg');
+  await prescriptionItem.getByRole('spinbutton', { name: 'Dose', exact: true }).fill('10');
+  await prescriptionItem.getByLabel('Unidade da dose', { exact: true }).fill('mg');
   await prescriptionItem.getByLabel('Via').fill('oral');
   await prescriptionItem.getByLabel('Frequência').fill('1x ao dia');
   await page.getByRole('button', { name: 'Salvar rascunho' }).click();
@@ -52,9 +52,7 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
   await expect(page.getByRole('heading', { name: 'Validação farmacêutica' })).toBeVisible();
   await expect(page.getByText('Checagem automática de alergias indisponível.')).toBeVisible();
   await expect(page.getByText('NOT_EVALUABLE')).toBeVisible();
-  await page
-    .getByLabel(/Revisei manualmente a situação de alergias/)
-    .check();
+  await page.getByLabel(/Revisei manualmente a situação de alergias/).check();
   await page.getByLabel('Confirmo a validação farmacêutica').check();
   await page.getByRole('button', { name: 'Validar prescrição' }).click();
 
@@ -95,8 +93,6 @@ test('interação sintética bloqueante impede validação sem perder a revisão
   await page.getByRole('button', { name: 'Validar prescrição' }).click();
 
   await expect(page.getByText('A prescrição possui achado de segurança bloqueante.')).toBeVisible();
-  await expect(
-    page.getByText(/A tentativa foi registrada como revisão append-only/),
-  ).toBeVisible();
+  await expect(page.getByText(/A tentativa foi registrada como revisão append-only/)).toBeVisible();
   await expect(page).toHaveURL(/\/prescricoes\/[0-9a-f-]+\/validar\/$/);
 });
