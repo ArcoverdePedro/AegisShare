@@ -56,14 +56,19 @@ class PrescriptionAuditActorTests(TestCase):
             dispense_unit="unidade",
         )
 
-    def assert_action_actor(self, model, object_pk, action):
+    def _entry(self, model, object_pk, action):
         content_type = ContentType.objects.get_for_model(model)
-        entry = LogEntry.objects.filter(
+        return LogEntry.objects.filter(
             content_type=content_type,
             object_pk=str(object_pk),
             action=action,
         ).latest("timestamp")
-        self.assertEqual(entry.actor, self.prescriber)
+
+    def assert_action_actor(self, model, object_pk, action):
+        self.assertEqual(
+            self._entry(model, object_pk, action).actor,
+            self.prescriber,
+        )
 
     def _add_item(self, request, *, sequence):
         return add_medication_request_item(
@@ -76,6 +81,16 @@ class PrescriptionAuditActorTests(TestCase):
             frequency="frequência sintética",
             sequence=sequence,
         )
+
+    def _assert_next_direct_write_is_unattributed(self, code):
+        direct_drug = Drug.objects.create(
+            code=code,
+            name=f"Medicamento direto {code}",
+            presentation="Apresentação sintética",
+            dispense_unit="unidade",
+        )
+        entry = self._entry(Drug, direct_drug.pk, LogEntry.Action.CREATE)
+        self.assertIsNone(entry.actor)
 
     def test_prescription_service_writes_are_attributed_to_explicit_actor(self):
         request = create_medication_request(
@@ -127,3 +142,29 @@ class PrescriptionAuditActorTests(TestCase):
         )
 
         self.assertFalse(MedicationRequestItem.objects.filter(pk=removed_item_id).exists())
+
+    def test_prescription_service_actor_context_does_not_leak_between_writes(self):
+        request = create_medication_request(
+            encounter_id=self.encounter.pk,
+            actor=self.prescriber,
+        )
+        self._assert_next_direct_write_is_unattributed("RX-AUDIT-SCOPE-REQUEST")
+
+        item = self._add_item(request, sequence=1)
+        self._assert_next_direct_write_is_unattributed("RX-AUDIT-SCOPE-ITEM-CREATE")
+
+        item_id = item.pk
+        remove_medication_request_item(
+            request_id=request.pk,
+            item_id=item_id,
+            actor=self.prescriber,
+        )
+        self._assert_next_direct_write_is_unattributed("RX-AUDIT-SCOPE-ITEM-DELETE")
+
+        self._add_item(request, sequence=1)
+        with patch("apps.clinical.prescription.services.emit_prescription_event"):
+            submit_medication_request(
+                request_id=request.pk,
+                actor=self.prescriber,
+            )
+        self._assert_next_direct_write_is_unattributed("RX-AUDIT-SCOPE-SUBMIT")
