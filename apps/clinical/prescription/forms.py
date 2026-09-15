@@ -10,6 +10,31 @@ from .models import Drug, Lot, MedicationRequestItem
 from .permissions import PERM_PRESCRIBE, has_rx_permission
 
 
+def _encounter_label(encounter):
+    return (
+        f"{encounter.patient.full_name} — {encounter.get_encounter_type_display()} — "
+        f"{encounter.started_at:%d/%m/%Y %H:%M}"
+    )
+
+
+def _drug_label(drug):
+    return f"{drug.name} — {drug.presentation} ({drug.code})"
+
+
+def _request_item_label(item):
+    return (
+        f"{item.drug.name} — {item.dose} {item.dose_unit} — "
+        f"{item.route} — {item.frequency}"
+    )
+
+
+def _lot_label(lot):
+    return (
+        f"{lot.lot_number} — validade {lot.expires_on:%d/%m/%Y} — "
+        f"saldo {lot.quantity_available} {lot.stock_item.drug.dispense_unit}"
+    )
+
+
 class DrugForm(forms.ModelForm):
     class Meta:
         model = Drug
@@ -52,6 +77,7 @@ class MedicationRequestCreateForm(forms.Form):
 
     def __init__(self, *args, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["encounter"].label_from_instance = _encounter_label
         if actor and has_rx_permission(actor, PERM_PRESCRIBE):
             self.fields["encounter"].queryset = (
                 Encounter.objects.select_related("patient")
@@ -88,9 +114,15 @@ class MedicationRequestItemForm(forms.Form):
         label="Instruções",
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["drug"].label_from_instance = _drug_label
+
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get("duration_value") is not None and not (cleaned.get("duration_unit") or "").strip():
+        if cleaned.get("duration_value") is not None and not (
+            cleaned.get("duration_unit") or ""
+        ).strip():
             self.add_error("duration_unit", "Informe a unidade da duração.")
         return cleaned
 
@@ -112,7 +144,10 @@ class MedicationRequestSubmitForm(forms.Form):
 class MedicationRequestValidateForm(forms.Form):
     manual_allergy_review_confirmed = forms.BooleanField(
         required=False,
-        label="Revisei manualmente a situação de alergias devido à indisponibilidade da fonte estruturada",
+        label=(
+            "Revisei manualmente a situação de alergias devido à indisponibilidade "
+            "da fonte estruturada"
+        ),
     )
     confirm_validation = forms.BooleanField(label="Confirmo a validação farmacêutica")
 
@@ -151,6 +186,8 @@ class MedicationDispenseItemForm(forms.Form):
 
     def __init__(self, *args, medication_request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["request_item"].label_from_instance = _request_item_label
+        self.fields["lot"].label_from_instance = _lot_label
         if medication_request is None:
             return
         self.fields["request_item"].queryset = medication_request.items.select_related("drug").order_by(
