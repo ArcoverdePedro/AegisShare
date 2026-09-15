@@ -17,11 +17,20 @@
                     </p>
                 </div>
             </div>
-            {% if can_record_vitals %}
+            {% if can_record_vitals or can_administer_medications %}
             <div class="level-right">
-                <a class="button is-link" href="{% url 'nursing:vitals_create' encounter.pk %}">
-                    {% icon 'plus' %}<span>Registrar sinais vitais</span>
-                </a>
+                <div class="buttons">
+                    {% if can_administer_medications %}
+                    <a class="button is-light" href="{% url 'nursing:medication_list' encounter.pk %}">
+                        {% icon 'check-circle' %}<span>Administrar medicações</span>
+                    </a>
+                    {% endif %}
+                    {% if can_record_vitals %}
+                    <a class="button is-link" href="{% url 'nursing:vitals_create' encounter.pk %}">
+                        {% icon 'plus' %}<span>Registrar sinais vitais</span>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
             {% endif %}
         </div>
