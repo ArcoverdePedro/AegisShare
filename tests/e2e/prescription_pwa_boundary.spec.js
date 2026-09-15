@@ -25,6 +25,12 @@ async function waitForServiceWorkerControl(page) {
     if (!('serviceWorker' in navigator)) throw new Error('Service Worker indisponível');
     await navigator.serviceWorker.ready;
   });
+
+  const alreadyControlled = await page.evaluate(() => Boolean(navigator.serviceWorker.controller));
+  if (!alreadyControlled) {
+    await page.reload();
+  }
+
   await expect.poll(async () => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
 }
 
