@@ -14,7 +14,6 @@ from ..models import (
     DoseRule,
     Drug,
     Interaction,
-    Lot,
     MedicationRequest,
     MedicationSafetyReview,
     StockMovement,
