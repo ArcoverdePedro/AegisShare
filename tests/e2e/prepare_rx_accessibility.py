@@ -10,6 +10,7 @@ import django  # noqa: E402
 django.setup()
 
 from django.contrib.auth import get_user_model  # noqa: E402
+from django.contrib.auth.models import Permission  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
 from apps.clinical.prescription.models import Drug, Lot, StockItem  # noqa: E402
@@ -20,6 +21,8 @@ from apps.clinical.prescription.stock_services import (  # noqa: E402
 
 USERNAME = "ci-rx-accessibility"
 PASSWORD = "ci-rx-accessibility-password"
+DENIED_USERNAME = "ci-rx-denied-client"
+DENIED_PASSWORD = "ci-rx-denied-client-password"
 LOT_NUMBER = "E2E-RX-LOT-A11Y-001"
 
 
@@ -33,6 +36,30 @@ def configure_admin():
     user.is_superuser = True
     user.set_password(PASSWORD)
     user.save()
+    return user
+
+
+def configure_denied_client():
+    User = get_user_model()
+    user, _ = User.objects.get_or_create(username=DENIED_USERNAME)
+    user.email = "ci-rx-denied-client@example.invalid"
+    user.nivel_permissao = "CLI"
+    user.is_active = True
+    user.is_staff = False
+    user.is_superuser = False
+    user.set_password(DENIED_PASSWORD)
+    user.save()
+
+    permissions = Permission.objects.filter(
+        content_type__app_label="prescription",
+        codename__in={
+            "view_drug",
+            "manage_drug_catalog",
+            "view_pharmacy_stock",
+            "manage_pharmacy_stock",
+        },
+    )
+    user.user_permissions.set(permissions)
     return user
 
 
@@ -78,6 +105,7 @@ def ensure_stock(*, actor, drug):
 
 def main():
     admin = configure_admin()
+    denied_client = configure_denied_client()
     primary = ensure_drug(
         code="E2E-RX-A11Y-001",
         name="Medicamento Sintético Acessibilidade",
@@ -93,6 +121,7 @@ def main():
     print(
         "Dados E2E RX acessibilidade prontos:",
         admin.username,
+        denied_client.username,
         primary.code,
         stock.storage_location,
         lot.lot_number,
