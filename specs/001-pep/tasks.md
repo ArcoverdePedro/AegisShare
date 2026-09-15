@@ -9,7 +9,7 @@
 - [x] **T-PEP-05** Implementar lista/pesquisa/cadastro/detalhe de paciente. RF-PEP-01/02/03.
 - [x] **T-PEP-06** Implementar encontros clínicos. RF-PEP-04.
 - [x] **T-PEP-07** Implementar evolução clínica e histórico imutável com adendos append-only. RF-PEP-05.
-- [ ] **T-PEP-08 — BLOCKED (validação jurídica/operacional)** Definir e implementar assinatura somente após validação jurídica/operacional do mecanismo, identidade, significado e requisitos probatórios. RF-PEP-06. O desenvolvimento não deve escolher unilateralmente assinatura simples/avançada/qualificada, ICP-Brasil ou equivalência jurídica.
+- [ ] **T-PEP-08 — BLOCKED / validação jurídica e operacional externa.** Definir e implementar assinatura somente após aprovação do modelo jurídico/operacional aplicável. A validação farmacêutica da Spec 003 permanece explicitamente separada desta assinatura. RF-PEP-06.
 - [x] **T-PEP-09** Integrar auditoria de leitura/escrita e notificações internas WebSocket sem PHI no payload. RF-PEP-07/09.
 - [x] **T-PEP-10** Consolidar testes de autorização, auditoria e jornadas clínicas restantes. As fronteiras de grant expirado, papel cliente e encontro encerrado foram adicionadas a `tests/test_security_boundaries.py`, complementando a cobertura de auditlog/eventos existente.
 - [x] **T-PEP-11** Criar cenários Gherkin e E2E das jornadas principais. Os cenários estão em `features/clinical-journeys.feature` e são executados no CI com Playwright, cobrindo cadastro, encontro, evolução, adendo e negação por ausência de vínculo.
