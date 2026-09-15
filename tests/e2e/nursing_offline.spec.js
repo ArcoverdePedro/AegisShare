@@ -56,6 +56,12 @@ test('piloto de sinais vitais permanece cifrado e acessível nos estados online,
 
   await expectNoSeriousAxeViolations(page);
   await expectNoPageOverflow(page);
+  await page.evaluate(() => {
+    Object.defineProperty(window.crypto, 'randomUUID', {
+      value: undefined,
+      configurable: true,
+    });
+  });
 
   await context.setOffline(true);
   await page.getByLabel('Temperatura (°C)').fill('36.51');
