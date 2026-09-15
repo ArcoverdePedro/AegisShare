@@ -1,3 +1,4 @@
+from auditlog.context import set_actor
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -64,11 +65,12 @@ def create_medication_request(*, encounter_id, actor, replaces_id=None):
                     "A prescrição informada já possui uma substituição."
                 )
 
-        return MedicationRequest.objects.create(
-            encounter=encounter,
-            authored_by=actor,
-            replaces=replaces,
-        )
+        with set_actor(actor):
+            return MedicationRequest.objects.create(
+                encounter=encounter,
+                authored_by=actor,
+                replaces=replaces,
+            )
 
 
 def add_medication_request_item(
@@ -114,18 +116,19 @@ def add_medication_request_item(
                 "O mesmo medicamento não pode ser incluído duas vezes no mesmo rascunho."
             )
 
-        return MedicationRequestItem.objects.create(
-            medication_request=request,
-            drug=drug,
-            dose=dose,
-            dose_unit=dose_unit,
-            route=route,
-            frequency=frequency,
-            duration_value=duration_value,
-            duration_unit=duration_unit,
-            instructions=instructions,
-            sequence=sequence,
-        )
+        with set_actor(actor):
+            return MedicationRequestItem.objects.create(
+                medication_request=request,
+                drug=drug,
+                dose=dose,
+                dose_unit=dose_unit,
+                route=route,
+                frequency=frequency,
+                duration_value=duration_value,
+                duration_unit=duration_unit,
+                instructions=instructions,
+                sequence=sequence,
+            )
 
 
 def remove_medication_request_item(*, request_id, item_id, actor):
@@ -142,7 +145,8 @@ def remove_medication_request_item(*, request_id, item_id, actor):
                 "Itens submetidos não podem ser removidos."
             )
         item = request.items.select_for_update().get(pk=item_id)
-        item.delete()
+        with set_actor(actor):
+            item.delete()
 
 
 def submit_medication_request(*, request_id, actor):
@@ -165,7 +169,8 @@ def submit_medication_request(*, request_id, actor):
 
         request.status = MedicationRequest.Status.SUBMITTED
         request.submitted_at = timezone.now()
-        request.save(update_fields=["status", "submitted_at", "updated_at"])
+        with set_actor(actor):
+            request.save(update_fields=["status", "submitted_at", "updated_at"])
         emit_prescription_event(
             event_type="prescription.created",
             prescription_id=request.pk,
