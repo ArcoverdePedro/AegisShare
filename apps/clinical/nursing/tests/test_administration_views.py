@@ -124,6 +124,7 @@ class MedicationAdministrationViewTests(TestCase):
             "administered_at": self._administered_at(),
             "administered_dose": "10.0000",
             "administered_dose_unit": "mg",
+            "confirm": "on",
         }
         data.update(overrides)
         return data
@@ -157,6 +158,7 @@ class MedicationAdministrationViewTests(TestCase):
         form = response.context["form"]
         self.assertNotIn("administered_dose", form.initial)
         self.assertNotIn("administered_dose_unit", form.initial)
+        self.assertContains(response, "efetivamente administrada")
         self.assertContains(response, "exclusivamente online")
         self.assertNotContains(response, "offline_queue.js")
         self.assertNotContains(response, "vitals_offline.js")
@@ -182,6 +184,22 @@ class MedicationAdministrationViewTests(TestCase):
         self.assertEqual(administration.administered_by, self.nurse)
         self.assertEqual(administration.administered_dose, Decimal("7.5000"))
         self.assertEqual(administration.administered_dose_unit, "mL")
+
+    def test_post_requires_explicit_confirmation(self):
+        data = self._post_data()
+        data.pop("confirm")
+
+        response = self.client.post(
+            reverse(
+                "nursing:medication_administer",
+                kwargs={"dispense_item_id": self.dispense_item.pk},
+            ),
+            data=data,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Este campo é obrigatório")
+        self.assertFalse(MedicationAdministration.objects.exists())
 
     def test_exact_post_retry_does_not_duplicate_administration(self):
         operation_key = uuid.uuid4()
