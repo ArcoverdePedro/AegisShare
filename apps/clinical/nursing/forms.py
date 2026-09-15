@@ -119,6 +119,10 @@ class MedicationAdministrationForm(forms.Form):
         max_length=40,
         widget=forms.TextInput(attrs={"class": "input", "autocomplete": "off"}),
     )
+    confirm = forms.BooleanField(
+        label="Confirmo que a dose informada foi efetivamente administrada.",
+        required=True,
+    )
 
     def __init__(self, *args, dispense_item=None, **kwargs):
         super().__init__(*args, **kwargs)
