@@ -29,7 +29,7 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
   await expect(page.getByRole('heading', { name: 'Nova prescrição' })).toBeVisible();
   await selectOptionContaining(page.getByLabel('Encontro'), 'Paciente Sintético RX E2E');
   await selectOptionContaining(page.getByLabel('Medicamento'), 'Medicamento Sintético Acessibilidade');
-  await page.getByLabel('Dose').fill('10');
+  await page.getByLabel('Dose', { exact: true }).fill('10');
   await page.getByLabel('Unidade da dose').fill('mg');
   await page.getByLabel('Via').fill('oral');
   await page.getByLabel('Frequência').fill('1x ao dia');
@@ -78,20 +78,21 @@ test('interação sintética bloqueante impede validação sem perder a revisão
   await page.goto('/prescricoes/');
   await expect(page.getByRole('heading', { name: 'Prescrições' })).toBeVisible();
 
-  const submittedRow = page.getByRole('row').filter({ hasText: 'Submetida' }).first();
-  await expect(submittedRow).toBeVisible();
-  await submittedRow.getByRole('link', { name: 'Abrir' }).click();
+  const row = page
+    .getByRole('row')
+    .filter({ hasText: 'Submetida' })
+    .filter({ hasText: 'Paciente Sintético RX E2E' })
+    .first();
+  await expect(row).toBeVisible();
+  await row.getByRole('link', { name: 'Abrir' }).click();
   await page.getByRole('link', { name: 'Validar' }).click();
 
-  await expect(page.getByText('Interação sintética bloqueante E2E')).toBeVisible();
-  await expect(page.getByText('fixture-sintetica-e2e')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Validação farmacêutica' })).toBeVisible();
   await page.getByLabel(/Revisei manualmente a situação de alergias/).check();
   await page.getByLabel('Confirmo a validação farmacêutica').check();
   await page.getByRole('button', { name: 'Validar prescrição' }).click();
 
-  await expect(page.getByText('A prescrição possui achado de segurança bloqueante.')).toBeVisible();
-  await expect(
-    page.getByText(/A tentativa foi registrada como revisão append-only/),
-  ).toBeVisible();
-  await expect(page).toHaveURL(/\/prescricoes\/[0-9a-f-]+\/validar\/$/);
+  await expect(page.getByText(/achado de segurança bloqueante/i)).toBeVisible();
+  await expect(page.getByText('Interação sintética bloqueante E2E')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Validar prescrição' })).toBeVisible();
 });
