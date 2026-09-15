@@ -10,14 +10,11 @@ from .models import Drug, Lot, MedicationRequestItem
 from .permissions import PERM_PRESCRIBE, has_rx_permission
 
 
-_FULL_WIDTH_STYLE = "width:100%;max-width:100%;box-sizing:border-box;"
-
-
 def _make_fields_responsive(form):
     for field in form.fields.values():
         if isinstance(field.widget, (forms.HiddenInput, forms.CheckboxInput)):
             continue
-        field.widget.attrs["style"] = _FULL_WIDTH_STYLE
+        field.widget.attrs["style"] = "width:100%;max-width:100%;box-sizing:border-box;"
 
 
 def _encounter_label(encounter):
