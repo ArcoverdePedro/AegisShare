@@ -180,6 +180,116 @@ class PrescriptionSubmissionEventTests(TestCase):
 
 
 @override_settings(STORAGES=TEST_STORAGES)
+class DrugCatalogAuditTests(TestCase):
+    def setUp(self):
+        self.viewer = User.objects.create_user(
+            username="rx-catalog-audit-viewer",
+            password="test-password",
+            nivel_permissao="FUNC",
+        )
+        self.manager = User.objects.create_user(
+            username="rx-catalog-audit-manager",
+            password="test-password",
+            nivel_permissao="FUNC",
+        )
+        view_permission = Permission.objects.get(
+            codename="view_drug",
+            content_type__app_label="prescription",
+        )
+        manage_permission = Permission.objects.get(
+            codename="manage_drug_catalog",
+            content_type__app_label="prescription",
+        )
+        self.viewer.user_permissions.add(view_permission)
+        self.manager.user_permissions.add(view_permission, manage_permission)
+        self.drugs = [
+            Drug.objects.create(
+                code=f"RX-AUDIT-DRUG-{index:02d}",
+                name=f"Medicamento Auditoria {index:02d}",
+                presentation="Apresentação sintética",
+                dispense_unit="unidade",
+            )
+            for index in range(31)
+        ]
+
+    def test_catalog_page_audits_only_drugs_rendered_on_current_page(self):
+        self.client.force_login(self.viewer)
+        response = self.client.get(reverse("prescription:drug_catalog"))
+
+        self.assertEqual(response.status_code, 200)
+        drug_content_type = ContentType.objects.get_for_model(Drug)
+        entries = LogEntry.objects.filter(
+            content_type=drug_content_type,
+            action=LogEntry.Action.ACCESS,
+            actor=self.viewer,
+        )
+        self.assertEqual(entries.count(), 30)
+        self.assertFalse(entries.filter(object_pk=str(self.drugs[-1].pk)).exists())
+
+        response = self.client.get(reverse("prescription:drug_catalog") + "?page=2")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            LogEntry.objects.filter(
+                content_type=drug_content_type,
+                object_pk=str(self.drugs[-1].pk),
+                action=LogEntry.Action.ACCESS,
+                actor=self.viewer,
+            ).exists()
+        )
+
+    def test_catalog_create_and_update_are_attributed_to_authenticated_actor(self):
+        self.client.force_login(self.manager)
+        create_response = self.client.post(
+            reverse("prescription:drug_create"),
+            data={
+                "code": "RX-AUDIT-HTTP-CREATE",
+                "name": "Medicamento Auditoria HTTP",
+                "presentation": "Comprimido",
+                "strength_text": "10 mg",
+                "route_hint": "Oral",
+                "dispense_unit": "unidade",
+                "active": "on",
+            },
+        )
+
+        self.assertEqual(create_response.status_code, 302)
+        drug = Drug.objects.get(code="RX-AUDIT-HTTP-CREATE")
+        drug_content_type = ContentType.objects.get_for_model(Drug)
+        self.assertTrue(
+            LogEntry.objects.filter(
+                content_type=drug_content_type,
+                object_pk=str(drug.pk),
+                action=LogEntry.Action.CREATE,
+                actor=self.manager,
+            ).exists()
+        )
+
+        update_response = self.client.post(
+            reverse("prescription:drug_update", kwargs={"pk": drug.pk}),
+            data={
+                "code": drug.code,
+                "name": drug.name,
+                "presentation": "Comprimido revestido",
+                "strength_text": drug.strength_text,
+                "route_hint": drug.route_hint,
+                "dispense_unit": drug.dispense_unit,
+                "active": "on",
+            },
+        )
+
+        self.assertEqual(update_response.status_code, 302)
+        self.assertTrue(
+            LogEntry.objects.filter(
+                content_type=drug_content_type,
+                object_pk=str(drug.pk),
+                action=LogEntry.Action.UPDATE,
+                actor=self.manager,
+            ).exists()
+        )
+
+
+@override_settings(STORAGES=TEST_STORAGES)
 class PharmacyStockAuditTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
