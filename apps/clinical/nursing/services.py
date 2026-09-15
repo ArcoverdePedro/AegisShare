@@ -2,6 +2,7 @@ import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.prescription.models import MedicationDispenseItem
@@ -195,14 +196,23 @@ def _administration_item_queryset():
     )
 
 
-def _validate_administration_state(*, actor, dispense_item):
+def _validate_administration_state(*, actor, dispense_item, data):
     medication_request = dispense_item.dispense.medication_request
+    encounter = medication_request.encounter
     if not can_administer_dispense_item(actor, dispense_item):
         raise PermissionDenied
     if dispense_item.request_item.medication_request_id != medication_request.pk:
         raise MedicationAdministrationStateError("Item dispensado incompatível.")
     if dispense_item.lot.stock_item.drug_id != dispense_item.request_item.drug_id:
         raise MedicationAdministrationStateError("Item dispensado incompatível.")
+
+    administered_at = data["administered_at"]
+    if administered_at > timezone.now():
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
+    if administered_at < encounter.started_at.replace(microsecond=0):
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
+    if administered_at < dispense_item.dispense.dispensed_at.replace(microsecond=0):
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
     return dispense_item
 
 
@@ -243,7 +253,11 @@ def _resolve_administration_collision(
         dispense_item = _administration_item_queryset().get(pk=dispense_item_id)
     except MedicationDispenseItem.DoesNotExist as exc:
         raise MedicationAdministrationStateError("Item dispensado indisponível.") from exc
-    _validate_administration_state(actor=actor, dispense_item=dispense_item)
+    _validate_administration_state(
+        actor=actor,
+        dispense_item=dispense_item,
+        data=data,
+    )
 
     existing = MedicationAdministration.objects.filter(operation_key=operation_key).first()
     if existing is None:
@@ -285,7 +299,11 @@ def administer_medication(
                     "Item dispensado indisponível."
                 ) from exc
 
-            _validate_administration_state(actor=actor, dispense_item=dispense_item)
+            _validate_administration_state(
+                actor=actor,
+                dispense_item=dispense_item,
+                data=normalized_data,
+            )
 
             existing = (
                 MedicationAdministration.objects.select_for_update()
