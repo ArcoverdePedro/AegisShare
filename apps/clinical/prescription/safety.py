@@ -2,7 +2,6 @@ from hashlib import sha256
 
 from auditlog.context import set_actor
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 
 from .models import (
@@ -43,8 +42,14 @@ def _approved_dose_rules(drug_ids):
 
 def _reference_fingerprint(interactions, dose_rules):
     tokens = {
-        *(f"interaction:{item.pk}:{item.reference_source}:{item.reference_version}" for item in interactions),
-        *(f"dose:{item.pk}:{item.reference_source}:{item.reference_version}" for item in dose_rules),
+        *(
+            f"interaction:{item.pk}:{item.reference_source}:{item.reference_version}"
+            for item in interactions
+        ),
+        *(
+            f"dose:{item.pk}:{item.reference_source}:{item.reference_version}"
+            for item in dose_rules
+        ),
     }
     payload = "|".join(sorted(tokens)) or "no-approved-reference"
     return f"sha256:{sha256(payload.encode()).hexdigest()}"
@@ -226,18 +231,14 @@ def record_medication_safety_review(
             warning_findings=snapshot["warning_findings"],
             reference_version=snapshot["reference_version"],
         )
-        MedicationSafetyFinding.objects.bulk_create(
-            [
-                MedicationSafetyFinding(
-                    review=review,
-                    kind=finding["kind"],
-                    request_item=finding["request_item"],
-                    interaction=finding["interaction"],
-                    dose_rule=finding["dose_rule"],
-                    severity=finding["severity"],
-                    blocking=finding["blocking"],
-                )
-                for finding in snapshot["findings"]
-            ]
-        )
+        for finding in snapshot["findings"]:
+            MedicationSafetyFinding.objects.create(
+                review=review,
+                kind=finding["kind"],
+                request_item=finding["request_item"],
+                interaction=finding["interaction"],
+                dose_rule=finding["dose_rule"],
+                severity=finding["severity"],
+                blocking=finding["blocking"],
+            )
     return review
