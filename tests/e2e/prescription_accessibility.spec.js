@@ -86,11 +86,12 @@ async function verifyPrescriptionCreate(page) {
   await page.goto('/prescricoes/nova/');
   await expect(page.getByRole('heading', { name: 'Nova prescrição' })).toBeVisible();
   await expect(page.getByLabel('Encontro')).toBeVisible();
-  await expect(page.getByLabel('Medicamento')).toBeVisible();
-  await expect(page.getByLabel('Dose')).toBeVisible();
-  await expect(page.getByLabel('Unidade da dose')).toBeVisible();
-  await expect(page.getByLabel('Via')).toBeVisible();
-  await expect(page.getByLabel('Frequência')).toBeVisible();
+  const item = page.getByRole('group', { name: 'Item 1' });
+  await expect(item.getByLabel('Medicamento')).toBeVisible();
+  await expect(item.getByLabel('Dose')).toBeVisible();
+  await expect(item.getByLabel('Unidade da dose')).toBeVisible();
+  await expect(item.getByLabel('Via')).toBeVisible();
+  await expect(item.getByLabel('Frequência')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toBeVisible();
   await expectNoPageOverflow(page);
 }
@@ -114,9 +115,10 @@ async function verifyDispense(page) {
   await validatedRow.getByRole('link', { name: 'Abrir' }).click();
   await page.getByRole('link', { name: 'Dispensar' }).click();
   await expect(page.getByRole('heading', { name: 'Dispensação por lote' })).toBeVisible();
-  await expect(page.getByLabel('Item prescrito')).toBeVisible();
-  await expect(page.getByLabel('Lote')).toBeVisible();
-  await expect(page.getByLabel('Quantidade')).toBeVisible();
+  const item = page.getByRole('group', { name: 'Item de dispensação 1' });
+  await expect(item.getByLabel('Item prescrito')).toBeVisible();
+  await expect(item.getByLabel('Lote')).toBeVisible();
+  await expect(item.getByLabel('Quantidade')).toBeVisible();
   await expect(page.getByLabel('Confirmo a dispensação e a baixa de estoque')).toBeVisible();
   await expectNoPageOverflow(page);
 }
