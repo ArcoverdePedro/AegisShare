@@ -6,6 +6,8 @@ from django.urls import URLPattern, URLResolver, reverse
 
 from apps.clinical.prescription.urls import urlpatterns as prescription_urlpatterns
 
+from .surface_contract import RX_REVIEWED_SURFACE_NAMES
+
 FORBIDDEN_OFFLINE_TOKENS = (
     "AegisOfflineQueue",
     "offline_queue.js",
@@ -26,12 +28,35 @@ def _collect_routes(patterns, prefix=""):
     return routes
 
 
+def _collect_named_routes(patterns):
+    names = set()
+    for entry in patterns:
+        if isinstance(entry, URLResolver):
+            names.update(_collect_named_routes(entry.url_patterns))
+        elif isinstance(entry, URLPattern) and entry.name:
+            names.add(entry.name)
+    return names
+
+
 class PrescriptionArchitectureBoundaryTests(TestCase):
     def test_prescription_urlconf_exposes_no_api_routes(self):
         routes = _collect_routes(prescription_urlpatterns)
 
         self.assertTrue(routes)
         self.assertFalse(any(route.startswith("api/") for route in routes))
+
+    def test_every_published_rx_route_requires_explicit_security_review(self):
+        published_names = _collect_named_routes(prescription_urlpatterns)
+
+        self.assertTrue(published_names)
+        self.assertEqual(
+            published_names,
+            RX_REVIEWED_SURFACE_NAMES,
+            msg=(
+                "Toda nova rota RX deve ser classificada em surface_contract.py antes de "
+                "ser publicada, para revisão explícita de cache/PWA/auditoria."
+            ),
+        )
 
     def test_prescription_runtime_does_not_opt_into_offline_queue_or_cache(self):
         base_dir = Path(settings.BASE_DIR)
