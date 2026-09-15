@@ -3,7 +3,7 @@ from decimal import Decimal, InvalidOperation
 
 from auditlog.context import set_actor
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from .events import emit_medication_dispensed_event, emit_stock_low_event
@@ -55,21 +55,32 @@ def _normalize_allocations(allocations):
     return normalized
 
 
+def _existing_for_key(operation_key):
+    return (
+        MedicationDispense.objects.select_related("medication_request__encounter__patient")
+        .prefetch_related("items")
+        .filter(operation_key=operation_key)
+        .first()
+    )
+
+
+def _return_existing_or_conflict(*, existing, request_id, actor, normalized):
+    if (
+        existing.medication_request_id != request_id
+        or existing.dispensed_by_id != actor.pk
+        or not _existing_matches(existing, normalized)
+    ):
+        raise DispenseStateError("A chave de operação já foi utilizada com dados diferentes.")
+    return existing
+
+
 def _existing_matches(existing, normalized):
     persisted = sorted(
-        (
-            str(item.request_item_id),
-            str(item.lot_id),
-            item.quantity,
-        )
+        (str(item.request_item_id), str(item.lot_id), item.quantity)
         for item in existing.items.all()
     )
     incoming = sorted(
-        (
-            item["request_item_id"],
-            item["lot_id"],
-            item["quantity"],
-        )
+        (item["request_item_id"], item["lot_id"], item["quantity"])
         for item in normalized
     )
     return persisted == incoming
@@ -83,20 +94,14 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
     except (TypeError, ValueError, AttributeError) as exc:
         raise DispenseStateError("Chave de operação inválida.") from exc
 
-    existing = (
-        MedicationDispense.objects.select_related("medication_request__encounter__patient")
-        .prefetch_related("items")
-        .filter(operation_key=operation_key)
-        .first()
-    )
+    existing = _existing_for_key(operation_key)
     if existing:
-        if (
-            existing.medication_request_id != request_id
-            or existing.dispensed_by_id != actor.pk
-            or not _existing_matches(existing, normalized)
-        ):
-            raise DispenseStateError("A chave de operação já foi utilizada com dados diferentes.")
-        return existing
+        return _return_existing_or_conflict(
+            existing=existing,
+            request_id=request_id,
+            actor=actor,
+            normalized=normalized,
+        )
 
     medication_request = (
         MedicationRequest.objects.select_for_update()
@@ -107,6 +112,16 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
         raise PermissionDenied
     if medication_request.status != MedicationRequest.Status.VALIDATED:
         raise DispenseStateError("A dispensação exige prescrição validada.")
+
+    # Serializa retries da mesma prescrição antes de tocar no saldo.
+    existing = _existing_for_key(operation_key)
+    if existing:
+        return _return_existing_or_conflict(
+            existing=existing,
+            request_id=request_id,
+            actor=actor,
+            normalized=normalized,
+        )
 
     request_item_ids = {item["request_item_id"] for item in normalized}
     request_items = {
@@ -145,29 +160,50 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
             Decimal("0"),
         )
 
+    # Valida toda a operação antes de persistir o cabeçalho.
+    projected_balances = {lot_id: lot.quantity_available for lot_id, lot in lots.items()}
+    for allocation in normalized:
+        request_item = request_items[allocation["request_item_id"]]
+        lot = lots[allocation["lot_id"]]
+        quantity = allocation["quantity"]
+        if not request_item.drug.active:
+            raise DispenseStateError("Medicamento inativo não pode ser dispensado.")
+        if not lot.stock_item.active or not lot.active:
+            raise DispenseStateError("Estoque ou lote inativo não pode ser dispensado.")
+        if lot.expires_on < today:
+            raise DispenseStateError("Lote expirado não pode ser dispensado.")
+        if lot.stock_item.drug_id != request_item.drug_id:
+            raise DispenseStateError("O lote não corresponde ao medicamento prescrito.")
+        projected_balances[allocation["lot_id"]] -= quantity
+        if projected_balances[allocation["lot_id"]] < 0:
+            raise DispenseStateError("Saldo insuficiente para concluir a dispensação.")
+
     with set_actor(actor):
-        dispense = MedicationDispense.objects.create(
-            medication_request=medication_request,
-            dispensed_by=actor,
-            operation_key=operation_key,
-            dispensed_at=timezone.now(),
-        )
+        try:
+            # O savepoint permite traduzir uma corrida rara de operation_key sem
+            # deixar a transação externa em estado quebrado.
+            with transaction.atomic():
+                dispense = MedicationDispense.objects.create(
+                    medication_request=medication_request,
+                    dispensed_by=actor,
+                    operation_key=operation_key,
+                    dispensed_at=timezone.now(),
+                )
+        except IntegrityError:
+            existing = _existing_for_key(operation_key)
+            if existing:
+                return _return_existing_or_conflict(
+                    existing=existing,
+                    request_id=request_id,
+                    actor=actor,
+                    normalized=normalized,
+                )
+            raise DispenseStateError("Não foi possível confirmar a chave de operação.") from None
 
         for allocation in normalized:
             request_item = request_items[allocation["request_item_id"]]
             lot = lots[allocation["lot_id"]]
             quantity = allocation["quantity"]
-            if not request_item.drug.active:
-                raise DispenseStateError("Medicamento inativo não pode ser dispensado.")
-            if not lot.stock_item.active or not lot.active:
-                raise DispenseStateError("Estoque ou lote inativo não pode ser dispensado.")
-            if lot.expires_on < today:
-                raise DispenseStateError("Lote expirado não pode ser dispensado.")
-            if lot.stock_item.drug_id != request_item.drug_id:
-                raise DispenseStateError("O lote não corresponde ao medicamento prescrito.")
-            if lot.quantity_available < quantity:
-                raise DispenseStateError("Saldo insuficiente para concluir a dispensação.")
-
             dispense_item = MedicationDispenseItem.objects.create(
                 dispense=dispense,
                 request_item=request_item,
