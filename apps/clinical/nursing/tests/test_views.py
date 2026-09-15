@@ -14,6 +14,11 @@ from ..models import VitalSignsRecord
 class NursingViewTests(TestCase):
     def setUp(self):
         user_model = get_user_model()
+        self.bootstrap_admin = user_model.objects.create_superuser(
+            username="nursing-bootstrap-admin",
+            email="nursing-bootstrap@example.invalid",
+            password="StrongPass!2026",
+        )
         self.nurse = user_model.objects.create_user(
             username="nursing-view-user",
             password="test-password",
