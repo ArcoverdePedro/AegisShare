@@ -1,7 +1,7 @@
 # Constituição — AegisShare HIS
 
 ## Status
-Proposta para aprovação no ciclo SDD inicial.
+Aprovada como baseline do ciclo SDD inicial.
 
 ## Princípios inegociáveis
 
@@ -16,7 +16,7 @@ Proposta para aprovação no ciclo SDD inicial.
 9. **Conformidade regulatória** — LGPD e requisitos regulatórios aplicáveis, incluindo avaliação de ANVISA/RDC 657/2022 quando houver enquadramento como SaMD.
 10. **Observabilidade desde o início** — logs estruturados, métricas, traces e health checks.
 11. **Sem breaking changes silenciosos** — migrações reversíveis, rollout explícito e compatibilidade documentada.
-12. **Código aberto** — alvo de licenciamento AGPL-3.0 e governança pública documentada.
+12. **Código aberto** — licenciamento `AGPL-3.0-only` e governança pública documentada.
 
 ## Regra de ouro do SDD
 
@@ -35,13 +35,17 @@ Nenhuma implementação de feature clínica, administrativa ou PWA deve ser inic
 - Lighthouse PWA >= 90 quando aplicável;
 - validação de segurança/LGPD.
 
-## Conflitos detectados no repositório atual
+## Conflitos e transições ainda abertas
 
-A evolução para o HIS requer decisões explícitas antes de código porque o repositório atual possui elementos incompatíveis com esta constituição:
+A evolução para o HIS mantém decisões explícitas e incrementais para os pontos que ainda não atingiram integralmente a arquitetura alvo:
 
-- existem rotas `api/v1/*`, enquanto o alvo proíbe API REST pública;
-- a licença atual é MIT, enquanto o alvo definido é AGPL-3.0;
-- o frontend atual usa Bulma/crispy-bulma, enquanto a arquitetura alvo define Tailwind + daisyUI;
-- ainda não existe a estrutura `.specify/`, `specs/` e bounded contexts alvo.
+- as rotas legadas `api/v1/*` permanecem somente como compatibilidade temporária; novas APIs REST públicas são proibidas e a retirada depende do inventário/migração operacional definido na Spec 000;
+- o frontend ainda usa Bulma/crispy-bulma; a migração para Tailwind + daisyUI segue o plano incremental da Spec 000, sem reescrita em massa;
+- gates clínicos, jurídicos e de governança definidos pelas specs permanecem bloqueantes mesmo quando a infraestrutura técnica correspondente já existe.
 
-Esses pontos devem ser tratados por tarefas e ADRs aprovados, sem remoções ou migrações silenciosas.
+## Transições concluídas
+
+- estrutura `.specify/`, `specs/` e bounded contexts SDD criada e utilizada como fonte de verdade;
+- licença do projeto migrada de MIT para `AGPL-3.0-only`, com texto integral em `LICENSE` e metadado correspondente em `pyproject.toml`.
+
+Esses estados devem continuar sendo atualizados por tarefas e ADRs aprovados, sem remoções ou migrações silenciosas.
