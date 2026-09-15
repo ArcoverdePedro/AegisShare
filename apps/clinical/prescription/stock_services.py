@@ -1,6 +1,7 @@
 import uuid
 from decimal import Decimal, InvalidOperation
 
+from auditlog.context import set_actor
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Sum
@@ -66,12 +67,13 @@ def create_stock_item(
     drug = Drug.objects.get(pk=drug_id)
     if not drug.active:
         raise StockStateError("Medicamento inativo não pode receber novo estoque operacional.")
-    return StockItem.objects.create(
-        drug=drug,
-        storage_location=storage_location,
-        minimum_level=_decimal(minimum_level, field_name="Nível mínimo"),
-        active=active,
-    )
+    with set_actor(actor):
+        return StockItem.objects.create(
+            drug=drug,
+            storage_location=storage_location,
+            minimum_level=_decimal(minimum_level, field_name="Nível mínimo"),
+            active=active,
+        )
 
 
 def _apply_stock_movement(
@@ -129,14 +131,15 @@ def _apply_stock_movement(
         quantity_available=new_balance,
         updated_at=timezone.now(),
     )
-    movement = StockMovement.objects.create(
-        lot=lot,
-        movement_type=movement_type,
-        quantity_delta=delta,
-        actor=actor,
-        operation_key=operation_key,
-        reason=reason,
-    )
+    with set_actor(actor):
+        movement = StockMovement.objects.create(
+            lot=lot,
+            movement_type=movement_type,
+            quantity_delta=delta,
+            actor=actor,
+            operation_key=operation_key,
+            reason=reason,
+        )
     lot.refresh_from_db(fields=["quantity_available", "updated_at"])
     after_total = _eligible_total(stock_item.pk, on_date=today)
     _emit_low_stock_if_needed(
@@ -173,13 +176,14 @@ def create_lot(
     if initial_quantity > 0 and expires_on < timezone.localdate():
         raise StockStateError("Lote expirado não pode ser criado com saldo disponível.")
 
-    lot = Lot.objects.create(
-        stock_item=stock_item,
-        lot_number=lot_number,
-        expires_on=expires_on,
-        quantity_available=Decimal("0"),
-        active=active,
-    )
+    with set_actor(actor):
+        lot = Lot.objects.create(
+            stock_item=stock_item,
+            lot_number=lot_number,
+            expires_on=expires_on,
+            quantity_available=Decimal("0"),
+            active=active,
+        )
     if initial_quantity > 0:
         _apply_stock_movement(
             lot_id=lot.pk,
