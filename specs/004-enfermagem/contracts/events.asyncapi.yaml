@@ -1,0 +1,94 @@
+asyncapi: 3.0.0
+info:
+  title: AegisShare HIS - Nursing Internal Events
+  version: 0.1.0
+  description: >-
+    Contrato interno proposto da Spec 004. Eventos só podem ser produzidos após
+    commit e não constituem API pública. Payloads usam IDs técnicos e timestamps;
+    não transportam nome, CPF, valores de sinais vitais, dose administrada,
+    medicamento textual ou instrução clínica.
+channels:
+  nursingEvents:
+    address: internal.nursing.events
+    messages:
+      vitalsRecorded:
+        $ref: '#/components/messages/VitalsRecorded'
+      medicationAdministered:
+        $ref: '#/components/messages/MedicationAdministered'
+operations:
+  publishNursingEvent:
+    action: send
+    channel:
+      $ref: '#/channels/nursingEvents'
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      additionalProperties: false
+      required:
+        - event_id
+        - event_type
+        - occurred_at
+      properties:
+        event_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    VitalsRecordedPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - vital_signs_record_id
+            - encounter_id
+            - origin
+          properties:
+            vital_signs_record_id:
+              type: string
+              format: uuid
+            encounter_id:
+              type: string
+              format: uuid
+            origin:
+              type: string
+              enum:
+                - ONLINE
+                - OFFLINE_SYNC
+            replaces_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+    MedicationAdministeredPayload:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          additionalProperties: false
+          required:
+            - administration_id
+            - dispense_item_id
+            - encounter_id
+          properties:
+            administration_id:
+              type: string
+              format: uuid
+            dispense_item_id:
+              type: string
+              format: uuid
+            encounter_id:
+              type: string
+              format: uuid
+  messages:
+    VitalsRecorded:
+      name: nursing.vitals.recorded
+      payload:
+        $ref: '#/components/schemas/VitalsRecordedPayload'
+    MedicationAdministered:
+      name: nursing.medication.administered
+      payload:
+        $ref: '#/components/schemas/MedicationAdministeredPayload'
