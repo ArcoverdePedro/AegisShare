@@ -42,6 +42,7 @@
                             <th>SpO₂</th>
                             <th>Peso</th>
                             <th>Profissional</th>
+                            <th>Histórico</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,9 +60,17 @@
                             <td>{% if record.oxygen_saturation_pct != None %}{{ record.oxygen_saturation_pct }}%{% else %}—{% endif %}</td>
                             <td>{% if record.weight_kg != None %}{{ record.weight_kg }} kg{% else %}—{% endif %}</td>
                             <td>{{ record.recorded_by }}</td>
+                            <td>
+                                {% if record.replaces_id %}
+                                    <span class="tag is-info is-light mb-1">Correção</span>
+                                {% endif %}
+                                {% if can_record_vitals %}
+                                    <a class="button is-small is-light" href="{% url 'nursing:vitals_correct' record.pk %}">Corrigir</a>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="8" class="has-text-centered muted py-5">Nenhum sinal vital registrado neste encontro.</td></tr>
+                        <tr><td colspan="9" class="has-text-centered muted py-5">Nenhum sinal vital registrado neste encontro.</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>

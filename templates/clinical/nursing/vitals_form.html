@@ -1,15 +1,21 @@
 {% extends 'navbar/navbar.html' %}
 
-{% block title %}Registrar sinais vitais - AegisShare{% endblock %}
+{% block title %}{% if is_correction %}Corrigir{% else %}Registrar{% endif %} sinais vitais - AegisShare{% endblock %}
 
 {% block page_content %}
 <section class="section pt-4">
     <div class="container" style="max-width: 860px;">
         <div class="mb-5">
             <p class="heading">Enfermagem</p>
-            <h1 class="title is-3 mb-1">Registrar sinais vitais</h1>
+            <h1 class="title is-3 mb-1">{% if is_correction %}Corrigir{% else %}Registrar{% endif %} sinais vitais</h1>
             <p class="muted">{{ encounter.patient.full_name }} · encontro iniciado em {{ encounter.started_at|date:'d/m/Y H:i' }}</p>
         </div>
+
+        {% if is_correction %}
+        <div class="notification is-warning is-light" role="status">
+            A correção cria um novo registro e preserva integralmente o registro anterior. Nenhum valor já confirmado será editado ou excluído.
+        </div>
+        {% endif %}
 
         <form method="post" class="box aegis-card" novalidate>
             {% csrf_token %}
@@ -34,7 +40,7 @@
             </div>
 
             <div class="buttons mt-5">
-                <button class="button is-link" type="submit">Confirmar registro</button>
+                <button class="button is-link" type="submit">{% if is_correction %}Confirmar correção{% else %}Confirmar registro{% endif %}</button>
                 <a class="button is-light" href="{% url 'nursing:encounter' encounter.pk %}">Cancelar</a>
             </div>
         </form>

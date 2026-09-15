@@ -16,4 +16,9 @@ urlpatterns = [
         views.vitals_create,
         name="vitals_create",
     ),
+    path(
+        "enfermagem/sinais-vitais/<uuid:record_id>/corrigir/",
+        views.vitals_correct,
+        name="vitals_correct",
+    ),
 ]
