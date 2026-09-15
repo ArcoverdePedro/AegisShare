@@ -4,4 +4,5 @@ from .settings_base import INSTALLED_APPS as BASE_INSTALLED_APPS
 INSTALLED_APPS = [
     *BASE_INSTALLED_APPS,
     "apps.clinical.prescription.apps.PrescriptionConfig",
+    "apps.clinical.nursing.apps.NursingConfig",
 ]
