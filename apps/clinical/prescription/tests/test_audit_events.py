@@ -182,6 +182,11 @@ class PrescriptionSubmissionEventTests(TestCase):
 @override_settings(STORAGES=TEST_STORAGES)
 class DrugCatalogAuditTests(TestCase):
     def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username="rx-catalog-audit-admin",
+            password="test-password",
+            nivel_permissao="ADM",
+        )
         self.viewer = User.objects.create_user(
             username="rx-catalog-audit-viewer",
             password="test-password",
