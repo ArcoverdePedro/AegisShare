@@ -40,13 +40,21 @@ retry_count
 - `idempotency_key`, `operation_type` e `user_session_fingerprint` entram como Additional Authenticated Data (AAD), portanto alteração desses metadados invalida a autenticação do ciphertext;
 - o object store usa `idempotency_key` como chave primária, rejeitando duplicatas no dispositivo;
 - listagens comuns retornam somente metadados; a leitura do payload exige descriptografia explícita;
-- nenhum listener intercepta formulários e nenhum envio de rede é feito pelo helper nesta etapa.
+- nenhum listener intercepta formulários e nenhum envio de rede é feito pelo helper genérico.
 
 A chave no IndexedDB protege o conteúdo contra persistência em texto claro e inspeção casual do armazenamento bruto, mas **não é uma fronteira contra XSS ou código comprometido executando na mesma origem**, que poderia solicitar a descriptografia pela Web Crypto API. CSP, prevenção de XSS, autorização no servidor e limpeza no logout continuam obrigatórias.
 
-## Fluxos inicialmente elegíveis
+## Fluxos elegíveis
 
-Nenhum até aprovação da spec clínica correspondente. O primeiro piloto recomendado é sinais vitais da Spec 004 Enfermagem, após contratos de dados e risco aprovados.
+O primeiro e único piloto habilitado é:
+
+```text
+operation_type = nursing.vitals.record
+```
+
+A integração pertence à Spec 004 Enfermagem. Somente a tela de registro/correção de sinais vitais opta explicitamente pela fila; a sincronização usa rota Django interna autenticada por sessão + CSRF, compara o fingerprint da sessão e reaplica form, capacidade, escopo PEP, estado do encontro e idempotência server-side.
+
+A habilitação deste piloto **não** torna outras mutações elegíveis. Cada novo fluxo continua exigindo aprovação explícita de sua própria spec.
 
 ## Fluxos proibidos por padrão
 

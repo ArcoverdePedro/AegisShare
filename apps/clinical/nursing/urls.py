@@ -21,4 +21,9 @@ urlpatterns = [
         views.vitals_correct,
         name="vitals_correct",
     ),
+    path(
+        "enfermagem/sinais-vitais/sincronizar/",
+        views.vitals_sync,
+        name="vitals_sync",
+    ),
 ]
