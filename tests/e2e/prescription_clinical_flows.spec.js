@@ -88,11 +88,15 @@ test('interação sintética bloqueante impede validação sem perder a revisão
   await page.getByRole('link', { name: 'Validar' }).click();
 
   await expect(page.getByRole('heading', { name: 'Validação farmacêutica' })).toBeVisible();
+  await expect(page.getByText('Interação sintética bloqueante E2E')).toBeVisible();
+  await expect(page.getByText('fixture-sintetica-e2e')).toBeVisible();
   await page.getByLabel(/Revisei manualmente a situação de alergias/).check();
   await page.getByLabel('Confirmo a validação farmacêutica').check();
   await page.getByRole('button', { name: 'Validar prescrição' }).click();
 
   await expect(page.getByText(/achado de segurança bloqueante/i)).toBeVisible();
   await expect(page.getByText('Interação sintética bloqueante E2E')).toBeVisible();
+  await expect(page.getByText(/A tentativa foi registrada como revisão append-only/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Validar prescrição' })).toBeVisible();
+  await expect(page).toHaveURL(/\/prescricoes\/[0-9a-f-]+\/validar\/$/);
 });
