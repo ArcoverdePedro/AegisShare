@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from types import SimpleNamespace
 
 from django.contrib.auth import get_user_model
@@ -70,10 +70,12 @@ class NursingPermissionTests(TestCase):
         self.nurse.user_permissions.add(self.record_permission)
         self.assertTrue(can_record_vitals(self.nurse, self.encounter))
 
+        ended_at = timezone.now()
         closed_encounter = Encounter.objects.create(
             patient=self.patient,
             status=Encounter.Status.CLOSED,
-            ended_at=timezone.now(),
+            started_at=ended_at - timedelta(minutes=1),
+            ended_at=ended_at,
             responsible_professional=self.nurse,
             created_by=self.nurse,
         )
