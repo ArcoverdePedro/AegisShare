@@ -88,8 +88,8 @@ async function verifyPrescriptionCreate(page) {
   await expect(page.getByLabel('Encontro')).toBeVisible();
   const item = page.getByRole('group', { name: 'Item 1' });
   await expect(item.getByLabel('Medicamento')).toBeVisible();
-  await expect(item.getByLabel('Dose')).toBeVisible();
-  await expect(item.getByLabel('Unidade da dose')).toBeVisible();
+  await expect(item.getByLabel('Dose', { exact: true })).toBeVisible();
+  await expect(item.getByLabel('Unidade da dose', { exact: true })).toBeVisible();
   await expect(item.getByLabel('Via')).toBeVisible();
   await expect(item.getByLabel('Frequência')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Salvar rascunho' })).toBeVisible();
