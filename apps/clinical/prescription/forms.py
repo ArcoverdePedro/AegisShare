@@ -10,6 +10,13 @@ from .models import Drug, Lot, MedicationRequestItem
 from .permissions import PERM_PRESCRIBE, has_rx_permission
 
 
+def _make_fields_responsive(form):
+    for field in form.fields.values():
+        if isinstance(field.widget, (forms.HiddenInput, forms.CheckboxInput)):
+            continue
+        field.widget.attrs["style"] = "width:100%;max-width:100%;box-sizing:border-box;"
+
+
 def _encounter_label(encounter):
     return (
         f"{encounter.patient.full_name} — {encounter.get_encounter_type_display()} — "
@@ -77,6 +84,7 @@ class MedicationRequestCreateForm(forms.Form):
 
     def __init__(self, *args, actor=None, **kwargs):
         super().__init__(*args, **kwargs)
+        _make_fields_responsive(self)
         self.fields["encounter"].label_from_instance = _encounter_label
         if actor and has_rx_permission(actor, PERM_PRESCRIBE):
             self.fields["encounter"].queryset = (
@@ -116,6 +124,7 @@ class MedicationRequestItemForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        _make_fields_responsive(self)
         self.fields["drug"].label_from_instance = _drug_label
 
     def clean(self):
@@ -186,6 +195,7 @@ class MedicationDispenseItemForm(forms.Form):
 
     def __init__(self, *args, medication_request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        _make_fields_responsive(self)
         self.fields["request_item"].label_from_instance = _request_item_label
         self.fields["lot"].label_from_instance = _lot_label
         if medication_request is None:

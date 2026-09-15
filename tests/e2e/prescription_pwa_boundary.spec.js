@@ -203,9 +203,10 @@ test('dispensação offline falha e não é enfileirada nem persistida', async (
   await page.getByRole('link', { name: 'Dispensar' }).click();
   await expect(page.getByRole('heading', { name: 'Dispensação por lote' })).toBeVisible();
 
-  await selectFirstPopulated(page.getByLabel('Item prescrito'));
-  await selectFirstPopulated(page.getByLabel('Lote'));
-  await page.getByLabel('Quantidade').fill('1');
+  const dispenseItem = page.getByRole('group', { name: 'Item de dispensação 1' });
+  await selectFirstPopulated(dispenseItem.getByLabel('Item prescrito'));
+  await selectFirstPopulated(dispenseItem.getByLabel('Lote'));
+  await dispenseItem.getByLabel('Quantidade').fill('1');
   await page.getByLabel('Confirmo a dispensação e a baixa de estoque').check();
 
   await context.setOffline(true);

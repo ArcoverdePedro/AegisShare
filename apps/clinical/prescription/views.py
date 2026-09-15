@@ -74,6 +74,10 @@ def _no_store(response):
     return response
 
 
+def _submitted_formset_forms(formset):
+    return [form for form in formset.forms if form.has_changed()]
+
+
 def _scoped_request_or_404(user, pk):
     return get_object_or_404(
         MedicationRequest.objects.select_related("encounter__patient", "authored_by", "validated_by").filter(
@@ -253,7 +257,9 @@ def prescription_create(request):
                     actor=request.user,
                     replaces_id=form.cleaned_data.get("replaces"),
                 )
-                for sequence, item_form in enumerate(formset.forms, start=1):
+                for sequence, item_form in enumerate(
+                    _submitted_formset_forms(formset), start=1
+                ):
                     add_medication_request_item(
                         request_id=medication_request.pk,
                         actor=request.user,
@@ -417,7 +423,7 @@ def dispense_create(request, pk):
                 "lot_id": form.cleaned_data["lot"].pk,
                 "quantity": form.cleaned_data["quantity"],
             }
-            for form in item_formset.forms
+            for form in _submitted_formset_forms(item_formset)
         ]
         try:
             dispense = dispense_medication(
