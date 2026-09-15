@@ -4,6 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from .session import hash_session_key
+
 
 class PushSubscription(models.Model):
     user = models.ForeignKey(
@@ -35,7 +37,7 @@ class PushSubscription(models.Model):
 
     @staticmethod
     def hash_session_key(session_key: str) -> str:
-        return hashlib.sha256(session_key.encode("utf-8")).hexdigest()
+        return hash_session_key(session_key)
 
     def save(self, *args, **kwargs):
         self.endpoint_hash = self.hash_endpoint(self.endpoint)
