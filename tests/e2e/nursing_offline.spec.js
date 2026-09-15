@@ -10,6 +10,7 @@ const CLOSED_ENCOUNTER_ID = '20000000-0000-4000-8000-000000000005';
 const VITALS_FORM_URL = `/enfermagem/encontros/${OPEN_ENCOUNTER_ID}/sinais-vitais/novo/`;
 const ENCOUNTER_URL = `/enfermagem/encontros/${OPEN_ENCOUNTER_ID}/`;
 const SYNC_URL_PATTERN = '**/enfermagem/sinais-vitais/sincronizar/';
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 async function login(page) {
   await page.goto('/login/');
@@ -64,6 +65,8 @@ test('piloto de sinais vitais permanece cifrado e acessível nos estados online,
   await expect(offlineStatus).toContainText('Ainda não foi confirmado no prontuário');
   await expect.poll(async () => (await queueMetadata(page)).length).toBe(1);
   await expect.poll(async () => (await queueMetadata(page))[0]?.status).toBe('pending');
+  const [pending] = await queueMetadata(page);
+  expect(pending.idempotency_key).toMatch(UUID_V4);
   await expectNoSeriousAxeViolations(page);
   await expectNoPageOverflow(page);
 
@@ -98,10 +101,11 @@ test('piloto de sinais vitais permanece cifrado e acessível nos estados online,
   await expect(page.getByRole('row').filter({ hasText: /36[,.]51 °C/ })).toHaveCount(1);
 });
 
-test('encontro encerrado mantém envelope cifrado em conflito para revisão explícita', async ({ page }) => {
+test('encontro encerrado mantém envelope cifrado em conflito para revisão explícita', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await openVitalsForm(page);
+  await context.setOffline(true);
 
   await page.evaluate(async ({ closedEncounterId }) => {
     const form = document.querySelector('[data-nursing-vitals-offline]');
@@ -115,9 +119,10 @@ test('encontro encerrado mantém envelope cifrado em conflito para revisão expl
         measurements: { temperature_c: '39.99' },
       },
     });
-    window.dispatchEvent(new Event('online'));
   }, { closedEncounterId: CLOSED_ENCOUNTER_ID });
 
+  await context.setOffline(false);
+  await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await expect.poll(async () => (await queueMetadata(page))[0]?.status).toBe('conflict');
   await expect(page.locator('[data-offline-status]')).toContainText('exigem revisão');
   await expectNoSeriousAxeViolations(page);
