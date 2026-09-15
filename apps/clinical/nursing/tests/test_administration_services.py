@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -281,3 +281,18 @@ class MedicationAdministrationServiceTests(TestCase):
             )
 
         self.assertFalse(MedicationAdministration.objects.exists())
+
+    def test_confirmed_administration_is_append_only(self):
+        administration = administer_medication(
+            dispense_item_id=self.dispense_item.pk,
+            actor=self.nurse,
+            data=self._data(),
+            operation_key=uuid.uuid4(),
+        )
+        administration.administered_dose = Decimal("5")
+
+        with self.assertRaisesMessage(ValidationError, "append-only"):
+            administration.save()
+
+        with self.assertRaisesMessage(ValidationError, "não podem ser excluídas"):
+            administration.delete()
