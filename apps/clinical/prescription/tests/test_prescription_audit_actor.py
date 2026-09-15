@@ -56,11 +56,11 @@ class PrescriptionAuditActorTests(TestCase):
             dispense_unit="unidade",
         )
 
-    def assert_action_actor(self, instance, action):
-        content_type = ContentType.objects.get_for_model(instance.__class__)
+    def assert_action_actor(self, model, object_pk, action):
+        content_type = ContentType.objects.get_for_model(model)
         entry = LogEntry.objects.filter(
             content_type=content_type,
-            object_pk=str(instance.pk),
+            object_pk=str(object_pk),
             action=action,
         ).latest("timestamp")
         self.assertEqual(entry.actor, self.prescriber)
@@ -82,20 +82,37 @@ class PrescriptionAuditActorTests(TestCase):
             encounter_id=self.encounter.pk,
             actor=self.prescriber,
         )
-        self.assert_action_actor(request, LogEntry.Action.CREATE)
+        self.assert_action_actor(
+            MedicationRequest,
+            request.pk,
+            LogEntry.Action.CREATE,
+        )
 
         removed_item = self._add_item(request, sequence=1)
-        self.assert_action_actor(removed_item, LogEntry.Action.CREATE)
+        removed_item_id = removed_item.pk
+        self.assert_action_actor(
+            MedicationRequestItem,
+            removed_item_id,
+            LogEntry.Action.CREATE,
+        )
 
         remove_medication_request_item(
             request_id=request.pk,
-            item_id=removed_item.pk,
+            item_id=removed_item_id,
             actor=self.prescriber,
         )
-        self.assert_action_actor(removed_item, LogEntry.Action.DELETE)
+        self.assert_action_actor(
+            MedicationRequestItem,
+            removed_item_id,
+            LogEntry.Action.DELETE,
+        )
 
         submitted_item = self._add_item(request, sequence=1)
-        self.assert_action_actor(submitted_item, LogEntry.Action.CREATE)
+        self.assert_action_actor(
+            MedicationRequestItem,
+            submitted_item.pk,
+            LogEntry.Action.CREATE,
+        )
 
         with patch("apps.clinical.prescription.services.emit_prescription_event"):
             submitted = submit_medication_request(
@@ -103,6 +120,10 @@ class PrescriptionAuditActorTests(TestCase):
                 actor=self.prescriber,
             )
         self.assertEqual(submitted.status, MedicationRequest.Status.SUBMITTED)
-        self.assert_action_actor(submitted, LogEntry.Action.UPDATE)
+        self.assert_action_actor(
+            MedicationRequest,
+            submitted.pk,
+            LogEntry.Action.UPDATE,
+        )
 
-        self.assertFalse(MedicationRequestItem.objects.filter(pk=removed_item.pk).exists())
+        self.assertFalse(MedicationRequestItem.objects.filter(pk=removed_item_id).exists())
