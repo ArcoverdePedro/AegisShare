@@ -33,6 +33,7 @@ from apps.clinical.prescription.services import (  # noqa: E402
 from apps.clinical.prescription.stock_services import (  # noqa: E402
     create_lot,
     create_stock_item,
+    receive_stock,
 )
 
 USERNAME = "ci-rx-accessibility"
@@ -41,6 +42,7 @@ DENIED_USERNAME = "ci-rx-denied-client"
 DENIED_PASSWORD = "ci-rx-denied-client-password"
 LOT_NUMBER = "E2E-RX-LOT-A11Y-001"
 PATIENT_IDENTIFIER = "E2E-RX-PATIENT-001"
+E2E_STOCK_TARGET = Decimal("50")
 
 
 def configure_admin():
@@ -121,8 +123,15 @@ def ensure_stock(*, actor, drug):
             stock_item_id=stock.pk,
             lot_number=LOT_NUMBER,
             expires_on=timezone.localdate() + timedelta(days=180),
-            initial_quantity=Decimal("12"),
+            initial_quantity=E2E_STOCK_TARGET,
         )
+    elif lot.quantity_available < E2E_STOCK_TARGET:
+        receive_stock(
+            actor=actor,
+            lot_id=lot.pk,
+            quantity=E2E_STOCK_TARGET - lot.quantity_available,
+        )
+        lot.refresh_from_db()
     return stock, lot
 
 
