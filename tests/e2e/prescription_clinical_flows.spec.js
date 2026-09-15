@@ -28,11 +28,15 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
   await page.goto('/prescricoes/nova/');
   await expect(page.getByRole('heading', { name: 'Nova prescrição' })).toBeVisible();
   await selectOptionContaining(page.getByLabel('Encontro'), 'Paciente Sintético RX E2E');
-  await selectOptionContaining(page.getByLabel('Medicamento'), 'Medicamento Sintético Acessibilidade');
-  await page.getByLabel('Dose').fill('10');
-  await page.getByLabel('Unidade da dose').fill('mg');
-  await page.getByLabel('Via').fill('oral');
-  await page.getByLabel('Frequência').fill('1x ao dia');
+  const prescriptionItem = page.getByRole('group', { name: 'Item 1' });
+  await selectOptionContaining(
+    prescriptionItem.getByLabel('Medicamento'),
+    'Medicamento Sintético Acessibilidade',
+  );
+  await prescriptionItem.getByLabel('Dose').fill('10');
+  await prescriptionItem.getByLabel('Unidade da dose').fill('mg');
+  await prescriptionItem.getByLabel('Via').fill('oral');
+  await prescriptionItem.getByLabel('Frequência').fill('1x ao dia');
   await page.getByRole('button', { name: 'Salvar rascunho' }).click();
 
   await expect(page.getByRole('heading', { name: 'Prescrição' })).toBeVisible();
@@ -59,12 +63,13 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
   await page.getByRole('link', { name: 'Dispensar' }).click();
 
   await expect(page.getByRole('heading', { name: 'Dispensação por lote' })).toBeVisible();
+  const dispenseItem = page.getByRole('group', { name: 'Item de dispensação 1' });
   await selectOptionContaining(
-    page.getByLabel('Item prescrito'),
+    dispenseItem.getByLabel('Item prescrito'),
     'Medicamento Sintético Acessibilidade',
   );
-  await selectOptionContaining(page.getByLabel('Lote'), 'E2E-RX-LOT-A11Y-001');
-  await page.getByLabel('Quantidade').fill('1');
+  await selectOptionContaining(dispenseItem.getByLabel('Lote'), 'E2E-RX-LOT-A11Y-001');
+  await dispenseItem.getByLabel('Quantidade').fill('1');
   await page.getByLabel('Confirmo a dispensação e a baixa de estoque').check();
   await page.getByRole('button', { name: 'Confirmar dispensação' }).click();
 
