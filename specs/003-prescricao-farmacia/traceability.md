@@ -1,6 +1,6 @@
 # Rastreabilidade — Spec 003 Prescrição e Farmácia
 
-> Baseline técnica: `master` em `c9c2e455a8ffbca05fba7b8935e2b81be198dd46`, 2026-09-15.  
+> Baseline técnica: `master` em `bc3830bd204274717a0fc461a30da51026492619`, 2026-09-15.  
 > Esta matriz descreve o estado efetivamente disponível no repositório. Rotas/telas previstas na `spec.md` não são tratadas como implementadas até existirem no `urls.py` e possuírem cobertura correspondente.
 
 ## Legenda
@@ -27,7 +27,7 @@
 | **RF-RX-11 — Rastreabilidade por lote** | **Parcial** | FKs `MedicationDispenseItem -> request_item/lot` e `StockMovement -> dispense_item` já modelam a cadeia; proteção append-only existe em aplicação/PostgreSQL e a identidade do lote após movimentação é protegida por `0007_stock_identity_guards.py`. | T-RX-11: criar o fluxo operacional que persiste essa cadeia na dispensação real. |
 | **RF-RX-12 — Autorização** | **Implementado** | `permissions.py` e selectors aplicam RBAC+ABAC deny-by-default; `tests/test_permissions.py`/`test_selectors.py`. Catálogo/estoque usam permissões explícitas. `features/authorization.feature` descreve em Gherkin a negação do papel `CLI` nas quatro superfícies RX atuais mesmo com permissões mal atribuídas; `tests/e2e/prescription_authorization.spec.js` executa a mesma jornada no navegador e `test_acceptance_traceability.py` exige igualdade de título, HTTP 403 e conjunto de rotas entre Gherkin e Playwright. | Futuras views de prescrição/validação/dispensação devem reutilizar as mesmas fronteiras e ganhar a mesma prova Gherkin + E2E de negação. |
 | **RF-RX-13 — Auditoria e eventos** | **Parcial** | `events.py` emite payload técnico pós-commit; `prescription.created` e `stock.low` ativos. O catálogo registra `ACCESS` somente para `Drug` efetivamente renderizados e as escritas HTTP de criação/edição ficam atribuídas ao ator autenticado; estoque/lotes também geram `ACCESS`. `tests/test_audit_events.py` confere superfícies e nomes de eventos; `tests/test_event_contract.py` exige que os campos efetivamente emitidos de `prescription.created` e `stock.low` coincidam exatamente com `contracts/events.asyncapi.yaml`, admitindo apenas `type=prescription_event_handler` como envelope técnico do Django Channels fora do payload AsyncAPI. | T-RX-12: `prescription.validated` e `medication.dispensed`, além de leitura/escrita das futuras telas de prescrição, validação e dispensação. |
-| **RF-RX-14 — PWA network-only** | **Parcial** | `tests/test_architecture.py` proíbe API REST/cache/fila offline RX; `tests/e2e/prescription_pwa_boundary.spec.js` comprova em runtime que catálogo/estoque não entram em Cache Storage/IndexedDB, usam fallback genérico offline, que create/update de medicamento permanecem network-only e que um `POST` offline falha sem persistir nem ser enfileirado. | T-RX-16: repetir a prova E2E nas futuras mutações de prescrição e dispensação. |
+| **RF-RX-14 — PWA network-only** | **Parcial** | `tests/test_architecture.py` proíbe API REST/cache/fila offline RX; `tests/e2e/prescription_pwa_boundary.spec.js` comprova em runtime que catálogo/estoque não entram em Cache Storage/IndexedDB, usam fallback genérico offline, que create/update de medicamento permanecem network-only e que um `POST` offline falha sem persistir nem ser enfileirado. `test_response_cache_policy.py` exige que catálogo, criação, edição e estoque respondam com `private, no-store, max-age=0` e `Vary` para Cookie/HTMX. | T-RX-16: repetir a prova E2E e política de resposta nas futuras mutações de prescrição e dispensação. |
 
 ## Requisitos não funcionais
 
@@ -62,6 +62,7 @@ As telas de lista/detalhe/criação de prescrição, validação farmacêutica e
 - Estoque/ledger: `test_stock.py`, `test_stock_identity_db_guards.py`.
 - Concorrência PostgreSQL: `test_stock_concurrency.py`.
 - Auditoria/eventos: `test_audit_events.py`, `test_event_contract.py`.
+- Política de resposta/cache das superfícies RX atuais: `test_response_cache_policy.py`.
 - Arquitetura/no-public-API/no-offline: `test_architecture.py`.
 - Acessibilidade/responsividade: `tests/e2e/prescription_accessibility.spec.js`.
 - Boundary PWA runtime: `tests/e2e/prescription_pwa_boundary.spec.js`.
