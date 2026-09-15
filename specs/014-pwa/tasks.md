@@ -8,7 +8,7 @@
 - [x] **T-PWA-04** Implementar service worker com política deny-by-default para conteúdo sensível. RNF-PWA-02/08.
 - [x] **T-PWA-05** Implementar `/offline/` e fallback visual. RF-PWA-05.
 - [x] **T-PWA-06** Criar helpers IndexedDB e criptografia/proteção de payloads permitidos. RNF-PWA-03/08. `static/pwa/offline_queue.js` mantém somente ciphertext AES-GCM no IndexedDB, usa chave não extraível, associa o envelope a `idempotency_key`, operação e fingerprint de sessão e não ativa sincronização automaticamente.
-- [ ] **T-PWA-07** Implementar fila idempotente de sincronização para um fluxo piloto aprovado. RF-PWA-03. A fila local protegida está pronta, mas nenhum fluxo clínico é habilitado enquanto a spec correspondente não aprovar o piloto e seu contrato de conflito/sincronização.
+- [ ] **T-PWA-07 — BLOCKED (spec de fluxo piloto)** Implementar fila idempotente de sincronização para um fluxo explicitamente autorizado pela spec dona do dado/ação, incluindo contrato de conflito, idempotência e auditoria. RF-PWA-03. A infraestrutura local protegida está pronta, mas a Spec 014 proíbe escolher sozinha uma mutação clínica para offline; nenhuma spec clínica atualmente publicada autorizou esse piloto.
 - [x] **T-PWA-08** Implementar limpeza de cache/IndexedDB no logout. RF-PWA-08.
 - [x] **T-PWA-09** Configurar push genérico sem PHI. RF-PWA-04. `PushSubscription`, VAPID e `pywebpush` publicam sem payload; título/corpo/destino ficam fixos no service worker, o vínculo da sessão é armazenado apenas como SHA-256 e o logout revoga somente o dispositivo/sessão encerrado antes de reabrir `/notificacoes/` autenticado.
 - [x] **T-PWA-10** Garantir tema claro/escuro consistente em standalone/offline. RF-PWA-07.

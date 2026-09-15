@@ -87,7 +87,7 @@ async function verifyPrescriptionCreate(page) {
   await expect(page.getByRole('heading', { name: 'Nova prescrição' })).toBeVisible();
   await expect(page.getByLabel('Encontro')).toBeVisible();
   await expect(page.getByLabel('Medicamento')).toBeVisible();
-  await expect(page.getByLabel('Dose')).toBeVisible();
+  await expect(page.getByLabel('Dose', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Unidade da dose')).toBeVisible();
   await expect(page.getByLabel('Via')).toBeVisible();
   await expect(page.getByLabel('Frequência')).toBeVisible();
@@ -117,7 +117,7 @@ async function verifyDispense(page) {
   await expect(page.getByLabel('Item prescrito')).toBeVisible();
   await expect(page.getByLabel('Lote')).toBeVisible();
   await expect(page.getByLabel('Quantidade')).toBeVisible();
-  await expect(page.getByLabel('Confirmo a dispensação e a baixa de estoque')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Confirmar dispensação' })).toBeVisible();
   await expectNoPageOverflow(page);
 }
 
@@ -128,21 +128,32 @@ async function verifyDispenseList(page) {
 }
 
 async function verifyPublishedSurfaces(page) {
-  const checks = [
-    verifyCatalog,
-    verifyDrugCreateForm,
-    verifyDrugEditForm,
-    verifyStock,
-    verifyPrescriptionList,
-    verifyPrescriptionCreate,
-    verifyValidation,
-    verifyDispense,
-    verifyDispenseList,
-  ];
-  for (const verify of checks) {
-    await verify(page);
-    await expectNoSeriousAxeViolations(page);
-  }
+  await verifyCatalog(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDrugCreateForm(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDrugEditForm(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyStock(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyPrescriptionList(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyPrescriptionCreate(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyValidation(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDispense(page);
+  await expectNoSeriousAxeViolations(page);
+
+  await verifyDispenseList(page);
+  await expectNoSeriousAxeViolations(page);
 }
 
 test('superfícies RX publicadas não apresentam violações sérias WCAG', async ({ page }) => {

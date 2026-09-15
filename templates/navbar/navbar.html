@@ -87,6 +87,14 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
         }
         .pwa-connection-status[hidden] { display: none !important; }
+        .aegis-source-footer {
+            border-top: 1px solid var(--aegis-border);
+            padding: 1rem;
+            text-align: center;
+            font-size: .8rem;
+            color: var(--aegis-muted);
+        }
+        .aegis-source-footer a { color: inherit; text-decoration: underline; }
         @media (max-width: 768px) { .content-wrapper { padding-top: 4.5rem; } }
     </style>
     {% block extra_head %}{% endblock %}
@@ -167,6 +175,11 @@
 <main class="content-wrapper">
     {% block page_content %}{% endblock %}
 </main>
+
+<footer class="aegis-source-footer">
+    AegisShare — AGPL-3.0-only ·
+    <a href="https://github.com/ArcoverdePedro/AegisShare" target="_blank" rel="noopener noreferrer">Código-fonte correspondente</a>
+</footer>
 
 {% if messages %}
 <div class="notification-stack">

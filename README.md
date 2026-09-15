@@ -313,4 +313,4 @@ Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet. 
 
 ## Licença
 
-Consulte [LICENSE](LICENSE).
+AegisShare é distribuído sob a **GNU Affero General Public License v3.0 only (`AGPL-3.0-only`)**. Consulte o texto integral em [LICENSE](LICENSE).
