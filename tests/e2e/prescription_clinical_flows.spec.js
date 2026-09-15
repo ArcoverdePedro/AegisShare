@@ -22,6 +22,23 @@ async function selectOptionContaining(select, text) {
   await select.selectOption(value);
 }
 
+async function openSubmittedRequestContaining(page, medicationName) {
+  await page.goto('/prescricoes/');
+  const hrefs = await page
+    .getByRole('row')
+    .filter({ hasText: 'Submetida' })
+    .getByRole('link', { name: 'Abrir' })
+    .evaluateAll((links) => links.map((link) => link.getAttribute('href')).filter(Boolean));
+
+  for (const href of hrefs) {
+    await page.goto(href);
+    if (await page.getByText(medicationName, { exact: true }).count()) {
+      return;
+    }
+  }
+  throw new Error(`Nenhuma prescrição submetida contém ${medicationName}`);
+}
+
 test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clínico', async ({ page }) => {
   await login(page);
 
@@ -51,7 +68,7 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
   await page.getByRole('link', { name: 'Validar' }).click();
   await expect(page.getByRole('heading', { name: 'Validação farmacêutica' })).toBeVisible();
   await expect(page.getByText('Checagem automática de alergias indisponível.')).toBeVisible();
-  await expect(page.getByText('NOT_EVALUABLE')).toBeVisible();
+  await expect(page.getByText('Dose: NOT_EVALUABLE', { exact: true })).toBeVisible();
   await page.getByLabel(/Revisei manualmente a situação de alergias/).check();
   await page.getByLabel('Confirmo a validação farmacêutica').check();
   await page.getByRole('button', { name: 'Validar prescrição' }).click();
@@ -78,12 +95,7 @@ test('prescrever, submeter, validar e dispensar por lote preserva o fluxo clíni
 
 test('interação sintética bloqueante impede validação sem perder a revisão', async ({ page }) => {
   await login(page);
-  await page.goto('/prescricoes/');
-  await expect(page.getByRole('heading', { name: 'Prescrições' })).toBeVisible();
-
-  const submittedRow = page.getByRole('row').filter({ hasText: 'Submetida' }).first();
-  await expect(submittedRow).toBeVisible();
-  await submittedRow.getByRole('link', { name: 'Abrir' }).click();
+  await openSubmittedRequestContaining(page, 'Medicamento Sintético Secundário');
   await page.getByRole('link', { name: 'Validar' }).click();
 
   await expect(page.getByText('Interação sintética bloqueante E2E')).toBeVisible();
