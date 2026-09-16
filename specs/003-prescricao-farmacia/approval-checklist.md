@@ -17,7 +17,7 @@
 - [x] `blocking` em `Interaction` é atributo governado e não é inferido automaticamente da severidade.
 - [x] A Spec 003 não cria cadastro duplicado de alergias; a extensão PEP foi definida em `specs/001-pep/extensions/allergy-intolerance/`.
 - [x] Enquanto `AllergyIntolerance` não estiver implementada/validada, a UI declara checagem automática indisponível e exige revisão manual explícita; nunca exibe “sem alergias conhecidas”.
-- [x] Peso não é digitado/copiado ad hoc para alimentar algoritmo; regras dependentes de peso ficam `NOT_EVALUABLE` sem fonte estruturada aprovada.
+- [x] Peso não é digitado/copiado ad hoc para alimentar algoritmo; a Spec 004 expõe `weight_kg` + proveniência por `latest_weight_fact()`, mas regras dependentes de peso permanecem `NOT_EVALUABLE` enquanto T-NUR-09 não aprovar origem, atualidade e elegibilidade clínica.
 - [x] Validação farmacêutica da Spec 003 permanece separada da assinatura eletrônica jurídica/ICP-Brasil de T-PEP-08.
 
 ## Autorização
@@ -63,11 +63,11 @@ Continuam exigindo validação clínica/farmacêutica separada antes de uso real
 - política institucional para auto-validação prescritor = farmacêutico, se aplicável;
 - política institucional para override de alertas bloqueantes;
 - terminologia e estados elegíveis de `AllergyIntolerance`;
-- fonte estruturada de peso;
+- política institucional de origem aceitável, atualidade máxima e elegibilidade do peso estruturado;
 - política de fracionamento/devolução/estorno de medicamentos.
 
 Até esses pontos terem fonte e aprovação documentadas, testes e demonstrações usam somente dados sintéticos.
 
 ## Gate SDD atual
 
-A superfície técnica implementada da Spec 003 está coberta por serviços transacionais, RBAC+ABAC, auditoria/eventos, Gherkin, testes Django/PostgreSQL e E2E. A integração com a Spec 004 está concluída e rastreável; o fechamento global permanece bloqueado por **T-RX-02** (governança clínica das referências reais) e **T-RX-17** (fronteira futura com a Spec 009 sem duplicar fonte de verdade).
+A superfície técnica implementada da Spec 003 está coberta por serviços transacionais, RBAC+ABAC, auditoria/eventos, Gherkin, testes Django/PostgreSQL e E2E. A integração com a Spec 004 está concluída e rastreável; o fato de peso já possui fonte técnica estruturada, porém seu consumo automático pelo RX continua bloqueado por T-NUR-09. O fechamento global permanece bloqueado por **T-RX-02** (governança clínica das referências reais) e **T-RX-17** (fronteira futura com a Spec 009 sem duplicar fonte de verdade).
