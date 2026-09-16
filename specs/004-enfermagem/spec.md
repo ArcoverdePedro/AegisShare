@@ -2,7 +2,7 @@
 
 > Prioridade: P0  
 > Dependências: Spec 001 — PEP; Spec 002 — ADT; Spec 003 — Prescrição/Farmácia; Spec 014 — PWA  
-> Status: aprovada pelo mantenedor em 2026-09-15 — implementação incremental liberada
+> Status: implementação v1 concluída em 2026-09-16; T-NUR-09 e T-NUR-11 permanecem bloqueados por governança externa
 
 ## Contexto
 
@@ -167,15 +167,6 @@ Cenário: usuário sem escopo PEP tenta acessar enfermagem
 - tentativa de administrar item de paciente fora do escopo;
 - interpretação automática de sinais vitais sem referência aprovada.
 
-## Rastreabilidade inicial
+## Rastreabilidade final
 
-| Requisito | Superfície prevista | Teste previsto |
-|---|---|---|
-| RF-NUR-01/02/03/04 | encontro + formulário de sinais vitais | model + form + view |
-| RF-NUR-05 | correção por `replaces` | model/service + imutabilidade |
-| RF-NUR-06/07 | fila PWA de sinais vitais | service + Playwright offline + idempotência |
-| RF-NUR-08 | selector de peso com metadados | selector contract + gate RX |
-| RF-NUR-09/10/11 | administração online | service + boundary + idempotência |
-| RF-NUR-12 | formulário de administração | Playwright network-only |
-| RF-NUR-13 | todas as rotas | RBAC + ABAC + negações sem PHI |
-| RF-NUR-14 | services/eventos | audit + AsyncAPI contract |
+A matriz requisito → contrato → código → evidência automatizada está consolidada em [`traceability.md`](traceability.md). O fechamento mantém explicitamente T-NUR-09 e T-NUR-11 como gates externos bloqueados; nenhuma capacidade dependente deles faz parte da v1 implementada.
