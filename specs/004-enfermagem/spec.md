@@ -10,7 +10,7 @@ A Spec 004 define o primeiro recorte de Enfermagem do AegisShare HIS. O escopo i
 
 O módulo reutiliza `Patient` e `Encounter` canônicos do PEP, o contexto operacional do ADT e a prescrição/dispensação da Spec 003. Não cria cadastro paralelo de paciente, atendimento, medicamento, lote ou prescrição.
 
-A Spec 003 já depende de uma futura fonte estruturada de peso para regras de dose. Esta spec pode fornecer o fato estruturado `weight_kg`, mas **não autoriza automaticamente seu uso em decisão medicamentosa**: a política institucional de atualidade máxima, origem aceitável e demais critérios de validade clínica do peso continuam como gate de governança. Até esse gate fechar, regras RX dependentes de peso permanecem `NOT_EVALUABLE`.
+A Spec 003 depende de um fato de peso clinicamente elegível para regras de dose. Esta spec já fornece o fato estruturado `weight_kg` e o selector `latest_weight_fact()` com proveniência técnica, mas **não autoriza automaticamente seu uso em decisão medicamentosa**: a política institucional de atualidade máxima, origem aceitável e demais critérios de validade clínica do peso continuam como gate de governança. Até esse gate fechar, regras RX dependentes de peso permanecem `NOT_EVALUABLE`.
 
 A Spec 014 recomenda sinais vitais como primeiro piloto offline. Portanto esta spec define um piloto restrito e idempotente para **criação append-only de sinais vitais**, usando a fila local cifrada já existente. Administração de medicamento permanece `network-only`.
 

@@ -111,8 +111,8 @@ Formsets podem ser usados para itens de prescrição, mantendo processamento ser
 - `DoseRule` é dado de referência com procedência e aprovação;
 - idade é calculada de `Patient.birth_date` na data do encontro;
 - peso não é solicitado como valor duplicado na prescrição;
-- peso deverá vir de selector clínico aprovado (provavelmente Spec 004);
-- se a regra exigir um fato ausente, resultado é `NOT_EVALUABLE`, não `PASS`;
+- a Spec 004 já fornece `latest_weight_fact()` com `weight_kg` e proveniência técnica, mas o RX não consome esse fato automaticamente enquanto T-NUR-09 não aprovar origem aceitável, atualidade máxima e demais critérios de elegibilidade clínica;
+- se a regra exigir um fato ausente ou ainda não elegível, resultado é `NOT_EVALUABLE`, não `PASS`;
 - conversões de unidade só serão implementadas quando explicitamente contratadas e testadas.
 
 ## Estoque e Concorrência
@@ -198,4 +198,4 @@ Impacto: sim, porém **network-only** para todas as mutações desta spec.
 7. implementar dispensação transacional/idempotente;
 8. executar concorrência, E2E, a11y, auditoria e PWA;
 9. somente habilitar regras clínicas reais após carga de referência/procedência aprovada;
-10. automatização de alergias e peso entra apenas após as specs fonte correspondentes.
+10. automação de alergias e consumo de peso entram apenas após os respectivos gates de governança das fontes clínicas.
