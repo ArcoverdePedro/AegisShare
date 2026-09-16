@@ -1,5 +1,6 @@
 import uuid
 
+from auditlog.context import set_actor
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
@@ -7,6 +8,7 @@ from django.utils import timezone
 from apps.clinical.pep.models import Encounter
 from apps.clinical.prescription.models import MedicationDispenseItem
 
+from .events import emit_medication_administered_event, emit_vitals_recorded_event
 from .models import MedicationAdministration, VitalSignsRecord
 from .permissions import can_administer_dispense_item, can_record_vitals
 
@@ -146,7 +148,14 @@ def record_vital_signs(
                 origin=origin,
                 **{field: data.get(field) for field in MEASURE_FIELDS},
             )
-            record.save()
+            with set_actor(actor):
+                record.save()
+            emit_vitals_recorded_event(
+                record_id=record.pk,
+                encounter_id=current_encounter.pk,
+                origin=record.origin,
+                replaces_id=record.replaces_id,
+            )
             return record
     except IntegrityError:
         existing = _resolve_collision(
@@ -326,7 +335,13 @@ def administer_medication(
                 administered_dose_unit=administered_dose_unit,
                 operation_key=operation_key,
             )
-            administration.save()
+            with set_actor(actor):
+                administration.save()
+            emit_medication_administered_event(
+                administration_id=administration.pk,
+                dispense_item_id=dispense_item.pk,
+                encounter_id=dispense_item.dispense.medication_request.encounter_id,
+            )
             return administration
     except IntegrityError:
         existing = _resolve_administration_collision(
