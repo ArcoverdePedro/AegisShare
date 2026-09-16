@@ -334,6 +334,11 @@ class NursingMutationAuditEventTests(TestCase):
 @override_settings(STORAGES=TEST_STORAGES)
 class NursingReadAuditTests(TestCase):
     def setUp(self):
+        self.bootstrap_admin = User.objects.create_superuser(
+            username="nursing-audit-bootstrap",
+            email="nursing-audit-bootstrap@example.invalid",
+            password="StrongPass!2026",
+        )
         self.viewer = User.objects.create_user(
             username="nursing-audit-viewer",
             password="test-password",
