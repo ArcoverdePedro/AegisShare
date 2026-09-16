@@ -1,6 +1,6 @@
 # Tasks — Spec 004 Enfermagem
 
-> Status: aprovada pelo mantenedor em 2026-09-15 — implementação incremental liberada. Permanecem bloqueantes somente os gates clínicos/operacionais explicitamente marcados.
+> Status: implementação v1 concluída em 2026-09-16. Permanecem abertos somente os gates externos T-NUR-09 e T-NUR-11; nenhuma funcionalidade clínica dependente deles está autorizada até decisão de governança.
 
 - [x] **T-NUR-01** Definir `spec.md`, `plan.md` e `data-model.md` do recorte inicial de Enfermagem. RF-NUR-01/02/09.
 - [x] **T-NUR-02** Definir contratos iniciais de acesso, rotas, offline, administração, eventos e critérios de aceitação. RF-NUR-06/07/09/12/13/14.
@@ -18,4 +18,4 @@
 - [x] **T-NUR-14** Criar/automatizar cenários Gherkin + Playwright de sinais vitais online/offline, conflito de sincronização e administração network-only. Os títulos de aceitação ficam ligados por teste de rastreabilidade aos E2E; Playwright cobre registro online, fila cifrada, retry, conflito por encontro encerrado, administração online rastreável e falha real de rede sem criar operação de administração em IndexedDB/Cache Storage.
 - [x] **T-NUR-15** Executar axe-core e validação mobile/tablet nas superfícies essenciais. Sinais vitais já possuíam gate móvel + axe; a administração agora possui gate Playwright dedicado em 390x844 e 768x1024, verificando WCAG A/AA, controles essenciais visíveis e ausência de overflow horizontal. RNF-NUR-05.
 - [x] **T-NUR-16** Validar ausência de plaintext clínico em cache/IndexedDB/logs e limpeza no logout conforme Spec 014. O fluxo real `nursing.vitals.record` possui gate Playwright que inspeciona ciphertext no IndexedDB, Cache Storage e console; a CI rejeita o marcador clínico sintético nos logs da stack; uma operação deliberadamente pendente é removida do IndexedDB no logout. A administração continua comprovadamente network-only e fora da fila offline. RNF-NUR-04/06/08.
-- [ ] **T-NUR-17 — PRÓXIMA** Atualizar rastreabilidade final, AsyncAPI e documentação, confirmando ausência de nova API REST pública. RNF-NUR-03.
+- [x] **T-NUR-17** Atualizar rastreabilidade final, estabilizar o AsyncAPI em `1.0.0` e documentar a proteção arquitetural que impede nova API REST pública. `traceability.md` referencia código/testes reais e `aegis_share/tests/test_architecture.py` mantém a allowlist global de `/api/` restrita às rotas legadas. RNF-NUR-03.
