@@ -7,7 +7,7 @@
 
 - **T-RX-02:** fonte/conteúdo real de `Interaction` e `DoseRule` depende de validação clínica/farmacêutica institucional. O código aceita somente referências estruturadas, versionadas e aprovadas; testes usam fixtures sintéticas.
 - **Alergias estruturadas:** a extensão PEP está especificada em `specs/001-pep/extensions/allergy-intolerance/`, porém a checagem automática permanece desabilitada até governança/implementação própria. RX declara indisponibilidade e exige revisão manual explícita.
-- **Peso estruturado:** não existe fonte clínica aprovada nesta versão. Regras dependentes de peso retornam `NOT_EVALUABLE`; nenhum peso é estimado.
+- **Peso estruturado:** a Spec 004 fornece `latest_weight_fact()` com `weight_kg` e proveniência técnica, mas T-NUR-09 ainda bloqueia seu consumo automático pelo RX até aprovação institucional de origem aceitável, atualidade máxima e demais critérios de elegibilidade clínica. Regras dependentes de peso permanecem `NOT_EVALUABLE`; nenhum peso é estimado.
 - **Assinatura jurídica:** validação farmacêutica não equivale à assinatura eletrônica de T-PEP-08.
 
 ## Requisitos funcionais
@@ -20,7 +20,7 @@
 | **RF-RX-04 — Histórico imutável** | **Implementado** | Guards de aplicação/PostgreSQL, submissão que congela DRAFT, substituição rastreável, cancelamento sem exclusão e safety/dispense append-only. |
 | **RF-RX-05 — Interações** | **Implementado com gate de conteúdo T-RX-02** | `safety.py` considera somente `Interaction` ativa e aprovada; `blocking=True` vem do dado governado e impede validação. |
 | **RF-RX-06 — Alergias** | **Implementado em modo fail-safe** | `AllergyStatus.UNAVAILABLE/REVIEW_CONFIRMED`; UI exige revisão manual e nunca afirma “sem alergias conhecidas”. Automação estruturada permanece bloqueada pela extensão PEP. |
-| **RF-RX-07 — Dose idade/peso** | **Implementado em modo determinístico/fail-safe** | `DoseRule` aprovada é avaliada sem expressão arbitrária; idade vem do PEP e peso/fato ausente produz `NOT_EVALUABLE`. |
+| **RF-RX-07 — Dose idade/peso** | **Implementado em modo determinístico/fail-safe** | `DoseRule` aprovada é avaliada sem expressão arbitrária; idade vem do PEP; a Spec 004 expõe peso + proveniência por selector, mas o RX mantém `NOT_EVALUABLE` enquanto T-NUR-09 não aprovar a elegibilidade clínica desse fato. |
 | **RF-RX-08 — Validação farmacêutica** | **Implementado** | `validate_medication_request`, `MedicationSafetyReview`/`Finding`, `/prescricoes/<uuid>/validar/` e evento `prescription.validated`. |
 | **RF-RX-09 — Estoque** | **Implementado** | `StockItem`, `Lot`, `StockMovement`, services atômicos, validade/saldo/baixo estoque e `/estoque-farmacia/`. |
 | **RF-RX-10 — Dispensação transacional** | **Implementado** | `dispense_services.py`: `transaction.atomic()`, locks `select_for_update()`, `operation_key`, saldo/validade/lote revalidados e rollback seguro. |
@@ -71,8 +71,8 @@ Nenhuma rota REST pública foi criada.
 - **Jornada clínica:** `specs/003-prescricao-farmacia/features/clinical_journeys.feature` e `tests/e2e/prescription_clinical_flows.spec.js`.
 - **Acessibilidade/mobile:** `tests/e2e/prescription_accessibility.spec.js`.
 - **PWA/network-only:** `test_architecture.py`, `test_response_cache_policy.py`, `tests/e2e/prescription_pwa_boundary.spec.js`.
-- **Integração com Enfermagem (Spec 004):** `MedicationAdministration -> MedicationDispenseItem`, contratos em `specs/004-enfermagem/contracts/medication-administration.md` e testes de serviço/view/auditoria da administração.
+- **Integração com Enfermagem (Spec 004):** `MedicationAdministration -> MedicationDispenseItem`, contratos em `specs/004-enfermagem/contracts/medication-administration.md` e testes de serviço/view/auditoria da administração; `latest_weight_fact()` expõe peso + proveniência sem liberar consumo automático pelo RX.
 
 ## Definition of Done
 
-A implementação técnica da Spec 003 está concluída para o escopo aprovado. A integração prevista com a Spec 004 também está concluída e mantém a cadeia de rastreabilidade até dispensação/prescrição/lote. O fechamento global da spec permanece administrativamente aberto apenas onde o SDD ainda depende de terceiros ou de contexto futuro: **T-RX-02** (governança clínica real) e **T-RX-17** (fronteira futura com a Spec 009). Isso é um bloqueio explícito, não uma lacuna escondida de código.
+A implementação técnica da Spec 003 está concluída para o escopo aprovado. A integração prevista com a Spec 004 também está concluída e mantém a cadeia de rastreabilidade até dispensação/prescrição/lote; o fato estruturado de peso já possui selector técnico, mas sua elegibilidade para o safety engine continua bloqueada por T-NUR-09. O fechamento global da spec permanece administrativamente aberto apenas onde o SDD ainda depende de terceiros ou de contexto futuro: **T-RX-02** (governança clínica real) e **T-RX-17** (fronteira futura com a Spec 009). Isso é um bloqueio explícito, não uma lacuna escondida de código.
