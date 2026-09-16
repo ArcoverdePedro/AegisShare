@@ -3,10 +3,13 @@ info:
   title: AegisShare HIS - Nursing Internal Events
   version: 0.1.0
   description: >-
-    Contrato interno proposto da Spec 004. Eventos só podem ser produzidos após
-    commit e não constituem API pública. Payloads usam IDs técnicos e timestamps;
-    não transportam nome, CPF, valores de sinais vitais, dose administrada,
-    medicamento textual ou instrução clínica.
+    Contrato interno da Spec 004. Eventos são produzidos somente após commit e
+    não constituem API pública. Payloads usam IDs técnicos e timestamps; não
+    transportam nome, CPF, valores de sinais vitais, dose administrada,
+    medicamento textual ou instrução clínica. No transporte interno via Django
+    Channels, o objeto enviado por group_send inclui adicionalmente a chave
+    técnica `type=nursing_event_handler` usada apenas para roteamento; essa chave
+    de envelope não integra os payloads AsyncAPI descritos abaixo.
 channels:
   nursingEvents:
     address: internal.nursing.events
