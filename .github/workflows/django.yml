@@ -178,6 +178,14 @@ jobs:
           PWA_BASE_URL: http://127.0.0.1:8000
         run: npx playwright test --config=playwright.config.cjs
 
+      - name: Garantir ausência de plaintext clínico sintético nos logs
+        run: |
+          docker compose -f compose.yml logs --no-color > /tmp/aegisshare-stack.log
+          if grep -Fq '37.77' /tmp/aegisshare-stack.log; then
+            echo "Valor clínico sintético encontrado nos logs da stack."
+            exit 1
+          fi
+
       - name: Executar Lighthouse CI
         run: |
           export CHROME_PATH="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
