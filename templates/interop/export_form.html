@@ -1,0 +1,33 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Exportar cadastro de paciente - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 860px;">
+        <p class="heading">Interoperabilidade</p>
+        <h1 class="title is-3">Exportar cadastro de paciente</h1>
+        <p class="mb-5">Baixe o cadastro mínimo de um paciente em arquivo FHIR R4 JSON.</p>
+        <form method="post" action="{% url 'interoperability:patient_export' %}" class="box aegis-card">
+            {% csrf_token %}
+            <p class="notification is-warning is-light" id="export-notice">
+                O arquivo contém nome e data de nascimento. Salve-o somente em local autorizado.
+                Sair do sistema não remove arquivos baixados. A exportação exige conexão.
+            </p>
+            {{ form.non_field_errors }}
+            <div class="field">
+                <label class="label" for="{{ form.patient.id_for_label }}">{{ form.patient.label }}</label>
+                <div class="control"><div class="select is-fullwidth">{{ form.patient }}</div></div>
+                {{ form.patient.errors }}
+            </div>
+            <div class="field">
+                <label class="checkbox" for="{{ form.confirm.id_for_label }}">
+                    {{ form.confirm }} {{ form.confirm.label }}
+                </label>
+                {{ form.confirm.errors }}
+            </div>
+            <button class="button is-link mt-4" type="submit" aria-describedby="export-notice">Baixar arquivo</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

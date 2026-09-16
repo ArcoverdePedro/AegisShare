@@ -5,4 +5,11 @@ INSTALLED_APPS = [
     *BASE_INSTALLED_APPS,
     "apps.clinical.prescription.apps.PrescriptionConfig",
     "apps.clinical.nursing.apps.NursingConfig",
+    "apps.interoperability.apps.InteroperabilityConfig",
+    "apps.compliance.apps.ComplianceConfig",
+]
+
+MIDDLEWARE = [
+    "aegis_share.middleware.PrivateWorkflowMiddleware",
+    *MIDDLEWARE,  # noqa: F405
 ]

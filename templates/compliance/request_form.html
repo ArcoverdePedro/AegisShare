@@ -1,0 +1,18 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Nova solicitação do titular - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 860px;">
+        <h1 class="title is-3">Nova solicitação do titular</h1>
+        <p class="notification is-info is-light">Registre somente o resumo necessário para o atendimento. Não inclua senhas, documentos de identidade ou cópias de prontuário.</p>
+        <form method="post" action="{% url 'compliance:request_create' %}" class="box aegis-card" novalidate>
+            {% csrf_token %}
+            {% include 'compliance/_partials/form_fields.html' %}
+            <div class="buttons mt-5">
+                <button class="button is-link" type="submit">Registrar solicitação</button>
+                <a class="button is-light" href="{% url 'compliance:request_list' %}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

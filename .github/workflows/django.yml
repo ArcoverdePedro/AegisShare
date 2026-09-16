@@ -166,6 +166,8 @@ jobs:
           docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_adt_journeys.py
           docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_rx_accessibility.py
           docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_nursing_journeys.py
+          docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_interop_journeys.py
+          docker compose -f compose.yml exec -T aegis_share python tests/e2e/prepare_compliance_journeys.py
 
       - name: Instalar ferramentas de navegador
         run: npm install --no-save --no-audit --no-fund @playwright/test@1.63.0 @axe-core/playwright@4.10.2 @lhci/cli@0.15.1

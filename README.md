@@ -102,11 +102,16 @@ specs/001-pep/                     prontuário eletrônico do paciente
 specs/002-adt/                     admissão, transferência, alta e leitos
 specs/003-prescricao-farmacia/     prescrição, safety review, estoque e dispensação
 specs/004-enfermagem/              sinais vitais e administração de medicamento
+specs/012-interoperabilidade/       exportação FHIR por arquivo
 specs/014-pwa/                     PWA, offline seguro e push
 adr/                               decisões arquiteturais aceitas
 ```
 
 Cada spec mantém requisitos, contratos, tarefas e rastreabilidade. Gates dependentes de governança externa permanecem marcados como `BLOCKED` e não são implementados silenciosamente.
+
+A [Spec 012 — Interoperabilidade por arquivos](specs/012-interoperabilidade/spec.md) implementa exportação individual de cadastro mínimo em FHIR R4 JSON, com autorização PEP e recibo auditado. Consulte o [guia operacional](docs/interoperabilidade.md). A ingestão HL7/ASTM necessária ao LIS será uma extensão posterior.
+
+[Spec 013 — Solicitações do titular](specs/013-lgpd-anvisa/spec.md) implementada, com registro, análise e encerramento administrativo auditáveis. Consulte o [guia operacional](docs/solicitacoes-titular.md) para migrations e permissões. Não automatiza exclusão, anonimização, retenção ou decisões jurídicas.
 
 ## Requisitos
 

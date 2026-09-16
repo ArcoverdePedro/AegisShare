@@ -2,8 +2,26 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.cache import patch_vary_headers
 
 from .models import TrackedSession
+
+
+class PrivateWorkflowMiddleware:
+    """Inclui erros de CSRF e autorização na política de privacidade dos fluxos."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.path_info == reverse(
+            "interoperability:patient_export"
+        ) or request.path_info.startswith(reverse("compliance:request_list")):
+            response["Cache-Control"] = "private, no-store"
+            response["X-Content-Type-Options"] = "nosniff"
+            patch_vary_headers(response, ("Cookie",))
+        return response
 
 
 class FirstAccessRedirectMiddleware:

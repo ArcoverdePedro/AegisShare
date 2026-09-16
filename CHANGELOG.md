@@ -4,9 +4,16 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 
 ## [0.2.0] - Em desenvolvimento
 
+### Corrigido
+
+- Atualização transitiva de `click` de 8.3.0 para 8.3.3 para corrigir o alerta `PYSEC-2026-2132` identificado pelo pip-audit.
+
 ### Adicionado
 
 #### HIS clínico
+
+- Spec 013: solicitações do titular com escopo PEP, histórico auditado, transições atômicas, conflito concorrente e fluxo exclusivamente online.
+- Spec 012: exportação individual de cadastro mínimo FHIR R4 via formulário autenticado, com escopo PEP, CSRF, recibo auditado e proteção no-store.
 
 - PEP com paciente e encontro canônicos, evolução clínica e adendos append-only.
 - Autorização clínica RBAC + ABAC deny-by-default e auditoria de leitura/escrita.

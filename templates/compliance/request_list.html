@@ -1,0 +1,31 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Solicitações do titular - AegisShare{% endblock %}
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container">
+        <h1 class="title is-3">Solicitações do titular</h1>
+        <p class="mb-4">Acompanhamento administrativo dos pedidos recebidos pelo canal institucional.</p>
+        {% if perms.compliance.register_request %}<a class="button is-link mb-4" href="{% url 'compliance:request_create' %}">Nova solicitação</a>{% endif %}
+        <form method="get" action="{% url 'compliance:request_list' %}" class="box aegis-card">
+            {% include 'compliance/_partials/form_fields.html' with form=filter_form %}
+            <button class="button is-link" type="submit">Filtrar</button>
+        </form>
+        <div class="table-container" style="max-width: 100%; overflow-x: auto;" role="region" aria-label="Solicitações disponíveis" tabindex="0">
+            <table class="table is-fullwidth">
+                <caption class="has-text-left mb-3">Solicitações disponíveis no seu escopo de acesso</caption>
+                <thead><tr><th scope="col">Paciente</th><th scope="col">Categoria</th><th scope="col">Estado</th><th scope="col">Recebimento</th><th scope="col">Ação</th></tr></thead>
+                <tbody>
+                {% for item in page_obj %}
+                    <tr><td>{{ item.patient.full_name }}</td><td>{{ item.get_category_display }}</td><td>{{ item.get_status_display }}</td><td>{{ item.created_at|date:'d/m/Y H:i' }}</td><td><a href="{% url 'compliance:request_detail' item.pk %}" aria-label="Ver solicitação {{ item.pk }}">Ver solicitação</a></td></tr>
+                {% empty %}<tr><td colspan="5">Nenhuma solicitação disponível.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <nav class="buttons" aria-label="Paginação">
+            {% if page_obj.has_previous %}<a class="button is-light" href="{% url 'compliance:request_list' %}?page={{ page_obj.previous_page_number }}&amp;status={{ filter_form.status.value|default:''|urlencode }}">Anterior</a>{% endif %}
+            <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}<a class="button is-light" href="{% url 'compliance:request_list' %}?page={{ page_obj.next_page_number }}&amp;status={{ filter_form.status.value|default:''|urlencode }}">Próxima</a>{% endif %}
+        </nav>
+    </div>
+</section>
+{% endblock %}

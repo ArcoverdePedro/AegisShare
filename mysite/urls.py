@@ -25,5 +25,7 @@ urlpatterns = [
     path("", include("apps.clinical.adt.urls")),
     path("", include("apps.clinical.prescription.urls")),
     path("", include("apps.clinical.nursing.urls")),
+    path("", include("apps.interoperability.urls")),
+    path("", include("apps.compliance.urls")),
     path("", include("aegis_share.urls")),
 ]
