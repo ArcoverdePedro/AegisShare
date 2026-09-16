@@ -1,7 +1,7 @@
 [project]
 name = "aegisshare"
 version = "0.2.0"
-description = "Portal seguro para compartilhamento, governanca e colaboracao de documentos"
+description = "Sistema de informação hospitalar e colaboração segura em Django"
 readme = "README.md"
 license = "AGPL-3.0-only"
 requires-python = ">=3.14"
