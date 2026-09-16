@@ -9,6 +9,7 @@
 - [x] `MedicationRequest`/itens clínicos ficam imutáveis após submissão; correção usa novo registro/substituição rastreável.
 - [x] `MedicationSafetyReview`, `MedicationDispense` e `StockMovement` concluídos são append-only.
 - [x] Estoque farmacêutico inicial pertence à Spec 003; compras/fornecedores/estoque geral ficam para integração com a Spec 009.
+- [x] A integração com Enfermagem (Spec 004) está concluída por `MedicationAdministration -> MedicationDispenseItem`, sem duplicar prescrição, dispensação ou lote como fonte de verdade.
 
 ## Segurança clínica
 
@@ -69,4 +70,4 @@ Até esses pontos terem fonte e aprovação documentadas, testes e demonstraçõ
 
 ## Gate SDD atual
 
-A superfície técnica implementada da Spec 003 está coberta por serviços transacionais, RBAC+ABAC, auditoria/eventos, Gherkin, testes Django/PostgreSQL e E2E. O fechamento global permanece bloqueado por **T-RX-02** (governança clínica das referências reais) e **T-RX-17** (integrações futuras com Specs 004/009 sem duplicar fonte de verdade).
+A superfície técnica implementada da Spec 003 está coberta por serviços transacionais, RBAC+ABAC, auditoria/eventos, Gherkin, testes Django/PostgreSQL e E2E. A integração com a Spec 004 está concluída e rastreável; o fechamento global permanece bloqueado por **T-RX-02** (governança clínica das referências reais) e **T-RX-17** (fronteira futura com a Spec 009 sem duplicar fonte de verdade).
