@@ -208,7 +208,7 @@
         if (systemTheme.media.addEventListener) {
             systemTheme.media.addEventListener('change', systemTheme.apply);
         } else if (systemTheme.media.addListener) {
-            systemTheme.media.addListener('change', systemTheme.apply);
+            systemTheme.media.addListener(systemTheme.apply);
         }
     }
 
