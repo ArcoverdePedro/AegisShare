@@ -6,6 +6,16 @@ from aegis_share.models import CustomUser
 
 
 class ClinicalNavbarTests(TestCase):
+    def setUp(self):
+        # FirstAccessRedirectMiddleware só considera a instalação configurada
+        # quando existe um superusuário. Este ator é apenas infraestrutura do teste;
+        # as permissões exercitadas continuam nos usuários FUNC/CLI abaixo.
+        CustomUser.objects.create_superuser(
+            username="nav-system-admin",
+            password="test-password",
+            nivel_permissao="ADM",
+        )
+
     def _make_user(self, username, role):
         return CustomUser.objects.create_user(
             username=username,
