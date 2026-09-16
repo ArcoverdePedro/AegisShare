@@ -1,6 +1,7 @@
 import json
 import uuid
 
+from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -42,6 +43,12 @@ def _no_store(response):
     response["Cache-Control"] = "private, no-store, max-age=0"
     patch_vary_headers(response, ("Cookie", "HX-Request"))
     return response
+
+
+def _audit_access(*instances):
+    for instance in instances:
+        if instance is not None:
+            accessed.send(instance.__class__, instance=instance)
 
 
 def _scoped_encounter_or_404(user, pk):
@@ -108,11 +115,13 @@ def nursing_worklist(request):
     )
     paginator = Paginator(encounters, 25)
     page_obj = paginator.get_page(request.GET.get("page"))
+    rendered_encounters = list(page_obj.object_list)
+    _audit_access(*rendered_encounters)
     return _no_store(
         render(
             request,
             "clinical/nursing/worklist.html",
-            {"encounters": page_obj.object_list, "page_obj": page_obj},
+            {"encounters": rendered_encounters, "page_obj": page_obj},
         )
     )
 
@@ -124,9 +133,10 @@ def nursing_encounter(request, pk):
         raise PermissionDenied
 
     encounter = _scoped_encounter_or_404(request.user, pk)
-    vital_signs = encounter.nursing_vital_signs.select_related(
-        "recorded_by", "replaces"
-    ).all()[:50]
+    vital_signs = list(
+        encounter.nursing_vital_signs.select_related("recorded_by", "replaces").all()[:50]
+    )
+    _audit_access(encounter, *vital_signs)
     return _no_store(
         render(
             request,
@@ -170,6 +180,7 @@ def vitals_create(request, encounter_id):
         messages.success(request, "Sinais vitais registrados com sucesso.")
         return _no_store(redirect("nursing:encounter", pk=encounter.pk))
 
+    _audit_access(encounter)
     return _no_store(
         render(
             request,
@@ -223,6 +234,7 @@ def vitals_correct(request, record_id):
         messages.success(request, "Correção de sinais vitais registrada com sucesso.")
         return _no_store(redirect("nursing:encounter", pk=encounter.pk))
 
+    _audit_access(encounter, original)
     return _no_store(
         render(
             request,
@@ -352,7 +364,7 @@ def medication_list(request, encounter_id):
     if encounter.status != Encounter.Status.OPEN:
         raise PermissionDenied
 
-    dispense_items = (
+    dispense_items = list(
         MedicationDispenseItem.objects.select_related(
             "dispense__medication_request",
             "request_item__drug",
@@ -366,6 +378,7 @@ def medication_list(request, encounter_id):
         )
         .order_by("-dispense__dispensed_at", "request_item__sequence", "created_at")
     )
+    _audit_access(encounter, *dispense_items)
     return _no_store(
         render(
             request,
@@ -434,6 +447,8 @@ def medication_administer(request, dispense_item_id):
                 redirect("nursing:medication_list", encounter_id=encounter_id)
             )
 
+    encounter = dispense_item.dispense.medication_request.encounter
+    _audit_access(encounter, dispense_item)
     return _no_store(
         render(
             request,
@@ -441,7 +456,7 @@ def medication_administer(request, dispense_item_id):
             {
                 "form": form,
                 "dispense_item": dispense_item,
-                "encounter": dispense_item.dispense.medication_request.encounter,
+                "encounter": encounter,
             },
             status=response_status,
         )
