@@ -71,7 +71,8 @@ Nenhuma rota REST pública foi criada.
 - **Jornada clínica:** `specs/003-prescricao-farmacia/features/clinical_journeys.feature` e `tests/e2e/prescription_clinical_flows.spec.js`.
 - **Acessibilidade/mobile:** `tests/e2e/prescription_accessibility.spec.js`.
 - **PWA/network-only:** `test_architecture.py`, `test_response_cache_policy.py`, `tests/e2e/prescription_pwa_boundary.spec.js`.
+- **Integração com Enfermagem (Spec 004):** `MedicationAdministration -> MedicationDispenseItem`, contratos em `specs/004-enfermagem/contracts/medication-administration.md` e testes de serviço/view/auditoria da administração.
 
 ## Definition of Done
 
-A implementação técnica da Spec 003 está concluída para o escopo aprovado. O fechamento global da spec permanece administrativamente aberto apenas onde o SDD depende de terceiros: **T-RX-02** (governança clínica real) e **T-RX-17** (fechamento inter-spec com futuras Specs 004/009). Isso é um bloqueio explícito, não uma lacuna escondida de código.
+A implementação técnica da Spec 003 está concluída para o escopo aprovado. A integração prevista com a Spec 004 também está concluída e mantém a cadeia de rastreabilidade até dispensação/prescrição/lote. O fechamento global da spec permanece administrativamente aberto apenas onde o SDD ainda depende de terceiros ou de contexto futuro: **T-RX-02** (governança clínica real) e **T-RX-17** (fronteira futura com a Spec 009). Isso é um bloqueio explícito, não uma lacuna escondida de código.
