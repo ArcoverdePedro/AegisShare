@@ -1,10 +1,16 @@
 from django.contrib.auth.models import Permission
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from aegis_share.models import CustomUser
 
+TEST_STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
+
+@override_settings(STORAGES=TEST_STORAGES)
 class ClinicalNavbarTests(TestCase):
     def setUp(self):
         # FirstAccessRedirectMiddleware só considera a instalação configurada

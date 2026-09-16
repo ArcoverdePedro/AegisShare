@@ -116,16 +116,23 @@
                 <a class="navbar-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'home' %}">{% icon 'home' %} Inicio</a>
                 {% if user.is_authenticated %}
                     {% if user.is_admin or user.is_employee %}
-                        <a class="navbar-item {% if request.resolver_match.namespace == 'pep' %}is-active{% endif %}" href="{% url 'pep:patient_list' %}">{% icon 'users' %} Pacientes</a>
-                        {% if perms.adt.view_bed_map %}
-                            <a class="navbar-item {% if request.resolver_match.namespace == 'adt' %}is-active{% endif %}" href="{% url 'adt:bed_map' %}">{% icon 'grid' %} Leitos</a>
-                        {% endif %}
-                        {% if perms.prescription.view_medication_request %}
-                            <a class="navbar-item {% if request.resolver_match.namespace == 'prescription' %}is-active{% endif %}" href="{% url 'prescription:prescription_list' %}">{% icon 'file-text' %} Prescricoes</a>
-                        {% endif %}
-                        {% if perms.nursing.view_nursing %}
-                            <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
-                        {% endif %}
+                        <div class="navbar-item has-dropdown {% if request.resolver_match.namespace == 'pep' or request.resolver_match.namespace == 'adt' or request.resolver_match.namespace == 'prescription' or request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" id="clinicalDropdown">
+                            <button class="navbar-link button is-ghost has-text-light" id="clinicalDropdownButton" type="button" aria-expanded="false">
+                                {% icon 'heart' %} Clinico
+                            </button>
+                            <div class="navbar-dropdown">
+                                <a class="navbar-item {% if request.resolver_match.namespace == 'pep' %}is-active{% endif %}" href="{% url 'pep:patient_list' %}">{% icon 'users' %} Pacientes</a>
+                                {% if perms.adt.view_bed_map %}
+                                    <a class="navbar-item {% if request.resolver_match.namespace == 'adt' %}is-active{% endif %}" href="{% url 'adt:bed_map' %}">{% icon 'grid' %} Leitos</a>
+                                {% endif %}
+                                {% if perms.prescription.view_medication_request %}
+                                    <a class="navbar-item {% if request.resolver_match.namespace == 'prescription' %}is-active{% endif %}" href="{% url 'prescription:prescription_list' %}">{% icon 'file-text' %} Prescricoes</a>
+                                {% endif %}
+                                {% if perms.nursing.view_nursing %}
+                                    <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
+                                {% endif %}
+                            </div>
+                        </div>
                     {% endif %}
                     <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
                     {% if not user.is_client %}
@@ -146,7 +153,7 @@
                         {% if unread_notifications_count %}<span class="notification-dot">{{ unread_notifications_count }}</span>{% endif %}
                     </a>
                     <div class="navbar-item has-dropdown" id="userDropdown">
-                        <button class="navbar-link button is-ghost has-text-light" id="userDropdownButton" type="button">
+                        <button class="navbar-link button is-ghost has-text-light" id="userDropdownButton" type="button" aria-expanded="false">
                             {% if user.foto_perfil %}
                                 <figure class="image is-24x24 mr-2"><img class="is-rounded" src="{{ user.foto_perfil }}" alt=""></figure>
                             {% else %}{% icon 'user' %}{% endif %}
@@ -219,12 +226,23 @@
         burger.setAttribute('aria-expanded', burger.classList.contains('is-active'));
     });
 
-    const dropdown = document.getElementById('userDropdown');
-    const button = document.getElementById('userDropdownButton');
-    if (dropdown && button) {
-        button.addEventListener('click', (event) => { event.stopPropagation(); dropdown.classList.toggle('is-active'); });
-        document.addEventListener('click', () => dropdown.classList.remove('is-active'));
-    }
+    const bindDropdown = (dropdownId, buttonId) => {
+        const dropdown = document.getElementById(dropdownId);
+        const button = document.getElementById(buttonId);
+        if (!dropdown || !button) return;
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const active = dropdown.classList.toggle('is-active');
+            button.setAttribute('aria-expanded', active ? 'true' : 'false');
+        });
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('is-active');
+            button.setAttribute('aria-expanded', 'false');
+        });
+    };
+
+    bindDropdown('clinicalDropdown', 'clinicalDropdownButton');
+    bindDropdown('userDropdown', 'userDropdownButton');
 
     document.querySelectorAll('.notification .delete').forEach((button) => {
         button.addEventListener('click', () => button.parentElement.remove());
