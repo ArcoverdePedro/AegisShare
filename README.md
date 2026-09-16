@@ -1,12 +1,41 @@
 # AegisShare
 
-**Portal seguro para troca, organização, rastreabilidade e colaboração de documentos entre equipes e clientes.**
+**Sistema de informação hospitalar (HIS) e plataforma segura de colaboração, construído em Django.**
 
-AegisShare é uma aplicação Django/ASGI com armazenamento no IPFS via Pinata, criptografia antes do envio, versionamento, auditoria, workspaces por cliente, links temporários, solicitações de documentos, chat em tempo real e API.
+O AegisShare combina o núcleo original de troca e governança de documentos com módulos clínicos server-rendered para prontuário, ADT, prescrição/farmácia e enfermagem. A aplicação roda em Django/ASGI, usa PostgreSQL como fonte de verdade, Redis para Channels/cache e mantém segurança, rastreabilidade e minimização de dados como requisitos transversais.
 
-> O IPFS é tratado como camada de armazenamento. Novos arquivos são cifrados antes do upload; o CID não é mais usado como mecanismo de autorização.
+> O projeto segue uma arquitetura Django monolítica e incremental. Novas superfícies públicas REST não são adicionadas; as rotas `api/v1/*` existentes são compatibilidade legada em processo de depreciação.
+
+## Estado atual
+
+Os seguintes recortes estão implementados e protegidos pela CI:
+
+- **Core:** arquivos cifrados, workspaces, compartilhamento, auditoria, solicitações, chat e controles de segurança.
+- **PEP:** pacientes, encontros clínicos, evolução e adendos append-only, autorização RBAC + ABAC e auditoria de acesso.
+- **ADT:** localização/leitos, admissão, transferência e alta transacionais, mapa de leitos e atualização por Channels.
+- **Prescrição/Farmácia:** catálogo, prescrição estruturada, revisão farmacêutica, estoque/lotes e dispensação idempotente.
+- **Enfermagem:** sinais vitais estruturados, correção append-only, piloto offline cifrado para sinais vitais e administração de medicamento exclusivamente online.
+- **PWA:** manifest/service worker, fallback offline, fila IndexedDB cifrada restrita ao fluxo aprovado, limpeza no logout e Web Push sem PHI.
+
+A automação clínica é deliberadamente conservadora. Regras que dependem de conteúdo clínico institucional, assinatura jurídica ou semânticas operacionais ainda não aprovadas permanecem bloqueadas nas respectivas specs; o runtime não inventa decisões terapêuticas para preencher esses gaps.
 
 ## Recursos principais
+
+### HIS clínico
+
+- Paciente e `Encounter` canônicos reutilizados pelos módulos clínicos.
+- Histórico clínico append-only, com correções/adendos preservando o fato anterior.
+- RBAC por capacidades Django combinado com escopo clínico deny-by-default.
+- ADT com prevenção de dupla ocupação ativa e operações transacionais de admissão, transferência e alta.
+- Prescrição estruturada com ciclo DRAFT → submissão → validação farmacêutica e substituição rastreável.
+- Safety engine determinístico que retorna `NOT_EVALUABLE` quando faltam fatos ou referências aprovadas, em vez de inferir regra clínica.
+- Estoque farmacêutico por item/lote, ledger append-only e dispensação transacional/idempotente.
+- Sinais vitais estruturados com unidades canônicas e registro de proveniência.
+- Administração de medicamento vinculada à dispensação/lote, com `operation_key` idempotente e comportamento `network-only`.
+- Eventos internos e audit log com payloads técnicos minimizados e sem PHI desnecessária.
+- Playwright, Gherkin, axe-core, viewports de telefone/tablet e gates de privacidade local nas jornadas clínicas.
+
+### Documentos e colaboração
 
 - AES-256-GCM antes do IPFS, com chave aleatória por versão.
 - Envelope encryption: `FILE_ENCRYPTION_KEY` protege as chaves de conteúdo.
@@ -24,41 +53,66 @@ AegisShare é uma aplicação Django/ASGI com armazenamento no IPFS via Pinata, 
 - API tokens armazenados somente como hash.
 - Audit log com `django-auditlog` e tela administrativa em `/auditoria/`.
 - Sentry opcional, logging JSON e health checks.
-- PostgreSQL e Redis internos ou externos.
+
+### Plataforma
+
+- PostgreSQL 18 e Redis internos ou externos.
+- Django ASGI servido por Granian.
 - Quatro topologias de Docker Compose.
-- CI com PostgreSQL, Redis, testes, lint, migrations e smoke test do Compose.
+- PWA com cache deny-by-default para superfícies sensíveis.
+- Fila offline AES-GCM em IndexedDB, atualmente liberada somente para `nursing.vitals.record`.
+- CI com PostgreSQL, Redis, Ruff, migrations, suíte Django, Compose, Playwright, privacidade dos logs e Lighthouse.
+- CodeQL e teste arquitetural que impede introdução silenciosa de novas rotas públicas `/api/`.
 
 ## Arquitetura
 
 ```text
-                        HTTPS
-                          |
-                   Reverse Proxy
-                          |
-                    +-----v------+
-                    | AegisShare |
-                    | Django ASGI|
-                    |  Granian   |
-                    +--+------+--+
-                       |      |
-                +------v-+  +-v---------+
-                | Redis  |  | PostgreSQL|
-                +--------+  +-----------+
-                       |
-     arquivo -> validação -> ClamAV opcional -> AES-256-GCM
-                       |
-                       v
-                   Pinata/IPFS
-                (conteúdo cifrado)
+                         HTTPS
+                           |
+                    Reverse Proxy
+                           |
+                  +--------v---------+
+                  |    AegisShare    |
+                  | Django ASGI/HIS  |
+                  |     Granian      |
+                  +----+---------+---+
+                       |         |
+          +------------+         +----------------+
+          |                                       |
+   +------v------+                         +------v------+
+   | PostgreSQL  |                         |    Redis    |
+   | fonte de    |                         | Channels /  |
+   | verdade     |                         | cache       |
+   +-------------+                         +-------------+
+          |
+          | Core + PEP + ADT + RX + Enfermagem
+          |
+          +--> arquivos: validação -> ClamAV opcional -> AES-256-GCM -> Pinata/IPFS
 ```
 
-Redis é usado por Channels e cache. Sem Redis, esses componentes usam memória local e a aplicação força um único worker para manter consistência.
+Os módulos clínicos vivem no mesmo monólito Django e reutilizam identidades canônicas em vez de criar cadastros paralelos. Redis é usado por Channels e cache. Sem Redis, esses componentes usam memória local e a aplicação força um único worker para manter consistência.
+
+## Especificações e decisões arquiteturais
+
+O desenvolvimento clínico é orientado por specs versionadas e ADRs no próprio repositório:
+
+```text
+specs/000-core/                    núcleo, segurança e fronteiras arquiteturais
+specs/001-pep/                     prontuário eletrônico do paciente
+specs/002-adt/                     admissão, transferência, alta e leitos
+specs/003-prescricao-farmacia/     prescrição, safety review, estoque e dispensação
+specs/004-enfermagem/              sinais vitais e administração de medicamento
+specs/014-pwa/                     PWA, offline seguro e push
+adr/                               decisões arquiteturais aceitas
+```
+
+Cada spec mantém requisitos, contratos, tarefas e rastreabilidade. Gates dependentes de governança externa permanecem marcados como `BLOCKED` e não são implementados silenciosamente.
 
 ## Requisitos
 
 - Docker e Docker Compose para o deploy recomendado.
 - Python 3 disponível no host apenas para o gerador independente de segredos, se desejar usá-lo.
-- Token JWT da Pinata.
+- Token JWT da Pinata para os recursos de arquivos/IPFS.
 - `SECRET_KEY` e `FILE_ENCRYPTION_KEY` fortes.
 - HTTPS/reverse proxy em produção.
 
@@ -236,7 +290,7 @@ A migration de upgrade preserva arquivos anteriores como `FileVersion v1` legada
 
 ## Auditoria
 
-O projeto usa `django-auditlog` para alterações e eventos de acesso. Campos sensíveis, como hashes de tokens, segredo TOTP e chave protegida do arquivo, são excluídos do histórico.
+O projeto usa `django-auditlog` para alterações e eventos de acesso. Campos sensíveis, como hashes de tokens, segredo TOTP, chave protegida do arquivo e medidas clínicas explicitamente excluídas dos contratos de auditoria, não são copiados indiscriminadamente para o histórico.
 
 Administradores podem consultar:
 
@@ -245,6 +299,18 @@ Administradores podem consultar:
 ```
 
 A interface permite filtrar por ator, modelo e ação.
+
+## PWA e operação offline
+
+A política de cache é deny-by-default para conteúdo sensível. A infraestrutura offline usa IndexedDB com payload AES-GCM e chave não extraível no navegador.
+
+O único fluxo clínico atualmente autorizado a entrar na fila offline é:
+
+```text
+nursing.vitals.record
+```
+
+Na sincronização, o servidor revalida sessão, capacidade, escopo PEP e estado do encontro. Administração de medicamento, ADT e mutações de prescrição/dispensação permanecem `network-only`. O logout limpa os dados locais da fila da sessão.
 
 ## Health checks
 
@@ -259,6 +325,8 @@ A interface permite filtrar por ator, modelo e ação.
 ## API legada
 
 > **Depreciação:** as rotas públicas `api/v1/*` são compatibilidade legada e não devem receber novos consumidores. A Spec 000 prevê sua retirada somente após inventário e migração dos consumidores existentes. Consulte [`specs/000-core/contracts/api-deprecation.md`](specs/000-core/contracts/api-deprecation.md).
+
+Um teste arquitetural falha caso qualquer nova rota pública `/api/` seja introduzida fora da allowlist legada.
 
 Enquanto a compatibilidade estiver ativa, a API usa tokens Bearer gerados em **Segurança**:
 
@@ -309,7 +377,7 @@ O Dependabot mantém dependências Python, GitHub Actions e imagens Docker sob a
 
 ## Segurança
 
-Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet. Para alterações no código, consulte também [CONTRIBUTING.md](CONTRIBUTING.md) e [CHANGELOG.md](CHANGELOG.md).
+Leia [SECURITY.md](SECURITY.md) antes de publicar uma instalação na internet. Para alterações no código, consulte também [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md) e [CHANGELOG.md](CHANGELOG.md).
 
 ## Licença
 
