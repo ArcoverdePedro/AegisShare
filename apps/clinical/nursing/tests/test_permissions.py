@@ -7,6 +7,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter, Patient
+from apps.clinical.prescription.models import MedicationRequest
 
 from ..permissions import (
     can_administer_dispense_item,
@@ -91,14 +92,19 @@ class NursingPermissionTests(TestCase):
         self.assertFalse(can_view_nursing(self.client, self.encounter))
         self.assertFalse(can_record_vitals(self.client, self.encounter))
 
-    def test_administer_uses_dispense_item_encounter_scope(self):
+    def test_administer_uses_dispense_item_encounter_scope_and_validated_request(self):
         self.nurse.user_permissions.add(self.administer_permission)
         self.other_employee.user_permissions.add(self.administer_permission)
+        medication_request = SimpleNamespace(
+            encounter=self.encounter,
+            status=MedicationRequest.Status.VALIDATED,
+        )
         dispense_item = SimpleNamespace(
-            dispense=SimpleNamespace(
-                medication_request=SimpleNamespace(encounter=self.encounter)
-            )
+            dispense=SimpleNamespace(medication_request=medication_request)
         )
 
         self.assertTrue(can_administer_dispense_item(self.nurse, dispense_item))
         self.assertFalse(can_administer_dispense_item(self.other_employee, dispense_item))
+
+        medication_request.status = MedicationRequest.Status.CANCELLED
+        self.assertFalse(can_administer_dispense_item(self.nurse, dispense_item))

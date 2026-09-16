@@ -26,4 +26,14 @@ urlpatterns = [
         views.vitals_sync,
         name="vitals_sync",
     ),
+    path(
+        "enfermagem/encontros/<uuid:encounter_id>/medicacoes/",
+        views.medication_list,
+        name="medication_list",
+    ),
+    path(
+        "enfermagem/medicacoes/<uuid:dispense_item_id>/administrar/",
+        views.medication_administer,
+        name="medication_administer",
+    ),
 ]

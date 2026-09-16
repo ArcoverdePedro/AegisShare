@@ -2,11 +2,13 @@ import uuid
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.clinical.pep.models import Encounter
+from apps.clinical.prescription.models import MedicationDispenseItem
 
-from .models import VitalSignsRecord
-from .permissions import can_record_vitals
+from .models import MedicationAdministration, VitalSignsRecord
+from .permissions import can_administer_dispense_item, can_record_vitals
 
 MEASURE_FIELDS = (
     "temperature_c",
@@ -21,6 +23,14 @@ MEASURE_FIELDS = (
 
 class VitalSignsIdempotencyConflictError(RuntimeError):
     """Conflito idempotente seguro, sem PHI ou detalhes de banco."""
+
+
+class MedicationAdministrationIdempotencyConflictError(RuntimeError):
+    """Conflito idempotente seguro de administração."""
+
+
+class MedicationAdministrationStateError(RuntimeError):
+    """Estado incompatível com administração, sem expor detalhes clínicos."""
 
 
 def _normalize_idempotency_key(value):
@@ -161,6 +171,182 @@ def record_vital_signs(
             data=data,
             replaces=replaces,
             origin=origin,
+        )
+        if existing is not None:
+            return existing
+        raise
+
+
+def _normalize_operation_key(value):
+    if isinstance(value, uuid.UUID):
+        return value
+    try:
+        return uuid.UUID(str(value))
+    except (TypeError, ValueError, AttributeError) as exc:
+        raise MedicationAdministrationIdempotencyConflictError(
+            "Chave de operação inválida."
+        ) from exc
+
+
+def _administration_item_queryset():
+    return MedicationDispenseItem.objects.select_related(
+        "dispense__medication_request__encounter__patient",
+        "request_item__drug",
+        "lot__stock_item",
+    )
+
+
+def _validate_administration_state(*, actor, dispense_item, data):
+    medication_request = dispense_item.dispense.medication_request
+    encounter = medication_request.encounter
+    if not can_administer_dispense_item(actor, dispense_item):
+        raise PermissionDenied
+    if dispense_item.request_item.medication_request_id != medication_request.pk:
+        raise MedicationAdministrationStateError("Item dispensado incompatível.")
+    if dispense_item.lot.stock_item.drug_id != dispense_item.request_item.drug_id:
+        raise MedicationAdministrationStateError("Item dispensado incompatível.")
+
+    administered_at = data["administered_at"]
+    if administered_at > timezone.now():
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
+    if administered_at < encounter.started_at.replace(microsecond=0):
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
+    if administered_at < dispense_item.dispense.dispensed_at.replace(microsecond=0):
+        raise MedicationAdministrationStateError("Momento da administração inválido.")
+    return dispense_item
+
+
+def _normalize_administered_unit(value):
+    return " ".join((value or "").split())
+
+
+def _validate_existing_administration(
+    existing,
+    *,
+    dispense_item,
+    actor,
+    data,
+):
+    same_operation = (
+        existing.dispense_item_id == dispense_item.pk
+        and existing.administered_by_id == actor.pk
+        and existing.administered_at == data["administered_at"]
+        and existing.administered_dose == data["administered_dose"]
+        and existing.administered_dose_unit
+        == _normalize_administered_unit(data["administered_dose_unit"])
+    )
+    if not same_operation:
+        raise MedicationAdministrationIdempotencyConflictError(
+            "Esta chave de operação já foi usada em outra administração."
+        )
+    return existing
+
+
+def _resolve_administration_collision(
+    *,
+    dispense_item_id,
+    actor,
+    data,
+    operation_key,
+):
+    try:
+        dispense_item = _administration_item_queryset().get(pk=dispense_item_id)
+    except MedicationDispenseItem.DoesNotExist as exc:
+        raise MedicationAdministrationStateError("Item dispensado indisponível.") from exc
+    _validate_administration_state(
+        actor=actor,
+        dispense_item=dispense_item,
+        data=data,
+    )
+
+    existing = MedicationAdministration.objects.filter(operation_key=operation_key).first()
+    if existing is None:
+        return None
+    return _validate_existing_administration(
+        existing,
+        dispense_item=dispense_item,
+        actor=actor,
+        data=data,
+    )
+
+
+def administer_medication(
+    *,
+    dispense_item_id,
+    actor,
+    data,
+    operation_key,
+):
+    """Confirma uma administração online de forma atômica e idempotente."""
+
+    operation_key = _normalize_operation_key(operation_key)
+    administered_dose_unit = _normalize_administered_unit(data["administered_dose_unit"])
+    normalized_data = {
+        **data,
+        "administered_dose_unit": administered_dose_unit,
+    }
+
+    try:
+        with transaction.atomic():
+            try:
+                dispense_item = (
+                    _administration_item_queryset()
+                    .select_for_update()
+                    .get(pk=dispense_item_id)
+                )
+            except MedicationDispenseItem.DoesNotExist as exc:
+                raise MedicationAdministrationStateError(
+                    "Item dispensado indisponível."
+                ) from exc
+
+            _validate_administration_state(
+                actor=actor,
+                dispense_item=dispense_item,
+                data=normalized_data,
+            )
+
+            existing = (
+                MedicationAdministration.objects.select_for_update()
+                .filter(operation_key=operation_key)
+                .first()
+            )
+            if existing is not None:
+                return _validate_existing_administration(
+                    existing,
+                    dispense_item=dispense_item,
+                    actor=actor,
+                    data=normalized_data,
+                )
+
+            administration = MedicationAdministration(
+                dispense_item=dispense_item,
+                administered_by=actor,
+                administered_at=normalized_data["administered_at"],
+                administered_dose=normalized_data["administered_dose"],
+                administered_dose_unit=administered_dose_unit,
+                operation_key=operation_key,
+            )
+            administration.save()
+            return administration
+    except IntegrityError:
+        existing = _resolve_administration_collision(
+            dispense_item_id=dispense_item_id,
+            actor=actor,
+            data=normalized_data,
+            operation_key=operation_key,
+        )
+        if existing is not None:
+            return existing
+        raise
+    except ValidationError as exc:
+        errors = getattr(exc, "message_dict", {})
+        if set(errors) != {"operation_key"}:
+            raise
+        existing = _resolve_administration_collision(
+            dispense_item_id=dispense_item_id,
+            actor=actor,
+            data=normalized_data,
+            operation_key=operation_key,
         )
         if existing is not None:
             return existing

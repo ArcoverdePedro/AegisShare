@@ -1,0 +1,58 @@
+{% extends 'navbar/navbar.html' %}
+
+{% block title %}Confirmar administração - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container" style="max-width: 860px;">
+        <div class="mb-5">
+            <p class="heading">Enfermagem · Administração online</p>
+            <h1 class="title is-3 mb-1">Confirmar administração</h1>
+            <p class="muted">{{ encounter.patient.full_name }} · encontro iniciado em {{ encounter.started_at|date:'d/m/Y H:i' }}</p>
+        </div>
+
+        <div class="box aegis-card mb-5">
+            <h2 class="title is-5 mb-3">Item dispensado</h2>
+            <div class="content is-size-7">
+                <p><strong>Medicamento:</strong> {{ dispense_item.request_item.drug.name }} · {{ dispense_item.request_item.drug.presentation }}</p>
+                <p><strong>Prescrito:</strong> {{ dispense_item.request_item.dose }} {{ dispense_item.request_item.dose_unit }} · {{ dispense_item.request_item.route }} · {{ dispense_item.request_item.frequency }}</p>
+                <p><strong>Dispensado:</strong> {{ dispense_item.quantity }} {{ dispense_item.request_item.drug.dispense_unit }} · lote {{ dispense_item.lot.lot_number }}</p>
+                <p><strong>Dispensação:</strong> {{ dispense_item.dispense.dispensed_at|date:'d/m/Y H:i:s' }}</p>
+            </div>
+        </div>
+
+        <form method="post" class="box aegis-card" novalidate>
+            {% csrf_token %}
+            {{ form.operation_key }}
+
+            {% if form.non_field_errors %}
+            <div class="notification is-danger is-light" role="alert">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            {% for field in form.visible_fields %}
+            <div class="field">
+                <label class="label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <div class="control">{{ field }}</div>
+                {% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}
+                {% for error in field.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+            </div>
+            {% endfor %}
+
+            <div class="notification is-warning is-light" role="status">
+                Confirme somente o que foi efetivamente administrado. A dose e a unidade abaixo não são convertidas nem inferidas a partir da prescrição ou da quantidade dispensada.
+            </div>
+
+            <div class="notification is-light">
+                Esta confirmação é exclusivamente online. Se a conexão falhar, o sistema não enfileira nem confirma a administração neste dispositivo.
+            </div>
+
+            <div class="buttons mt-5">
+                <button class="button is-link" type="submit">Confirmar administração</button>
+                <a class="button is-light" href="{% url 'nursing:medication_list' encounter.pk %}">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

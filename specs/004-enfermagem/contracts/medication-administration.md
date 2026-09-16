@@ -4,6 +4,8 @@
 
 Registrar de forma rastreável uma administração **efetivamente confirmada** à beira do leito, sem duplicar prescrição, dispensação, medicamento ou lote e sem inventar políticas clínicas ainda não aprovadas.
 
+> Implementação T-NUR-10: núcleo online concluído. Auditoria explícita de leitura/mutação e emissão de `nursing.medication.administered` permanecem deliberadamente no T-NUR-12.
+
 ## Pré-condições
 
 - usuário autenticado;
@@ -12,10 +14,11 @@ Registrar de forma rastreável uma administração **efetivamente confirmada** �
 - `Encounter` aberto;
 - `MedicationDispenseItem` existente e acessível;
 - dispensação ligada a `MedicationRequest` do mesmo encontro;
-- prescrição em estado compatível com administração conforme contrato RX vigente;
+- prescrição permanece `VALIDATED` no momento da confirmação;
+- `request_item`, dispensação e lote preservam a cadeia de medicamento esperada;
 - requisição feita online.
 
-A implementação deve revalidar essas condições no POST, dentro da operação de domínio; não confiar apenas no GET anterior.
+A implementação revalida essas condições no POST, dentro da operação de domínio; não confia apenas no GET anterior.
 
 ## Entrada v1
 
@@ -47,20 +50,31 @@ A v1 **não modela** recusa, omissão, atraso, justificativa, erro, substituiç�
 - nenhuma recomendação de dose;
 - divergência entre dose prescrita e informada não pode ser “corrigida” automaticamente pelo sistema.
 
-Antes de suportar formalmente dose divergente como fluxo legítimo, a governança deve definir semântica, autorização e auditoria correspondentes. A UI v1 deve deixar claro que o fluxo suportado é confirmação de administração conforme o ato efetivamente realizado, sem oferecer mecanismo de ajuste terapêutico.
+Antes de suportar formalmente dose divergente como fluxo legítimo, a governança deve definir semântica, autorização e auditoria correspondentes. A UI v1 deixa claro que o fluxo suportado é confirmação de administração conforme o ato efetivamente realizado, sem oferecer mecanismo de ajuste terapêutico.
+
+## Integridade temporal técnica
+
+Sem implementar janela terapêutica ou horário programado, a confirmação recusa somente incoerências técnicas básicas:
+
+- horário futuro;
+- horário anterior ao início do encontro;
+- horário anterior à própria dispensação.
+
+Checagem de atraso, horário previsto, janela de administração ou decisão clínica continua fora da v1.
 
 ## Idempotência
 
 `operation_key` é UUID única.
 
 - primeiro POST válido cria a administração;
-- retry com mesma chave reconhece o registro existente;
+- retry com mesma chave e mesmos dados reconhece o registro existente;
 - mesma chave apontando para entrada incompatível gera conflito seguro;
+- retry revalida autorização e estado atual antes de reconhecer o registro existente;
 - refresh/double-click não pode produzir administração duplicada.
 
 ## Rastreabilidade
 
-A administração deve permitir reconstruir:
+A administração permite reconstruir:
 
 ```text
 ator + horário
@@ -83,20 +97,21 @@ Proibido nesta versão.
 - POST falha sem rede;
 - Cache Storage não recebe a mutação;
 - IndexedDB `aegisshare-offline` não recebe envelope de administração;
-- Background Sync não confirma administração.
+- Background Sync não confirma administração;
+- a superfície de administração não carrega `offline_queue.js` nem `vitals_offline.js`.
 
 ## Auditoria e evento
 
-Após commit bem-sucedido:
+T-NUR-12 deve, após commit bem-sucedido:
 
-- alteração fica auditável;
+- tornar leitura/mutação explicitamente auditável com ator correto;
 - emitir `nursing.medication.administered` com IDs técnicos e timestamp;
 - não incluir nome do paciente, dose, unidade, medicamento, lote textual ou instrução clínica no evento genérico.
 
 ## Erros seguros
 
 - fora de escopo: 404/negação sem PHI;
-- encontro fechado: conflito seguro;
+- encontro fechado ou prescrição não mais validada: negação/conflito seguro;
 - dispense item incompatível: conflito/404 sem detalhes de outro paciente;
 - operation key conflitante: conflito idempotente;
 - indisponibilidade de rede: nenhuma confirmação local.
@@ -109,7 +124,7 @@ Exigem revisão clínica/operacional antes de implementação:
 - atraso;
 - administração parcial;
 - dose divergente e respectiva justificativa;
-- checagens de horário/janela de administração;
+- checagens de horário/janela terapêutica de administração;
 - identificação por código de barras;
 - checagens automáticas de “certos” de medicação;
 - administração de medicamento trazido pelo paciente ou fora do estoque/dispensação AegisShare;

@@ -1,0 +1,75 @@
+{% extends 'navbar/navbar.html' %}
+{% load icon %}
+
+{% block title %}Medicações para administração - AegisShare{% endblock %}
+
+{% block page_content %}
+<section class="section pt-4">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="heading">Enfermagem · Administração online</p>
+                    <h1 class="title is-3 mb-1">{{ encounter.patient.full_name }}</h1>
+                    <p class="muted">
+                        Itens dispensados rastreáveis deste encontro. A confirmação de administração exige conexão ativa.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="notification is-info is-light" role="status">
+            Esta tela não interpreta dose, não converte unidades e não decide equivalência terapêutica. Registre somente uma administração efetivamente realizada.
+        </div>
+
+        <div class="box aegis-card">
+            <div class="table-container" role="region" aria-label="Medicações dispensadas para o encontro" tabindex="0">
+                <table class="table is-fullwidth is-hoverable is-size-7">
+                    <thead>
+                        <tr>
+                            <th>Medicamento</th>
+                            <th>Prescrição</th>
+                            <th>Frequência</th>
+                            <th>Lote</th>
+                            <th>Dispensado</th>
+                            <th>Dispensação</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for item in dispense_items %}
+                        <tr>
+                            <td>
+                                <strong>{{ item.request_item.drug.name }}</strong><br>
+                                <span class="muted">{{ item.request_item.drug.presentation }}</span>
+                            </td>
+                            <td>
+                                {{ item.request_item.dose }} {{ item.request_item.dose_unit }}<br>
+                                <span class="muted">{{ item.request_item.route }}</span>
+                            </td>
+                            <td>{{ item.request_item.frequency }}</td>
+                            <td>{{ item.lot.lot_number }}</td>
+                            <td>{{ item.quantity }} {{ item.request_item.drug.dispense_unit }}</td>
+                            <td>{{ item.dispense.dispensed_at|date:'d/m/Y H:i:s' }}</td>
+                            <td>
+                                <a class="button is-small is-link" href="{% url 'nursing:medication_administer' item.pk %}">
+                                    {% icon 'check' %}<span>Confirmar administração</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="has-text-centered muted py-5">
+                                Nenhum item dispensado e rastreável está disponível para este encontro.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <a class="button is-light" href="{% url 'nursing:encounter' encounter.pk %}">Voltar ao encontro</a>
+    </div>
+</section>
+{% endblock %}
