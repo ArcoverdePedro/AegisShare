@@ -49,7 +49,18 @@ async function queueMetadata(page) {
   return page.evaluate(() => window.AegisOfflineQueue.listMetadata());
 }
 
-test('piloto de sinais vitais permanece cifrado e acessível nos estados online, pendente e sincronizado', async ({ page, context }) => {
+test('registrar sinais vitais em encontro aberto', async ({ page }) => {
+  await login(page);
+  await openVitalsForm(page);
+
+  await page.getByLabel('Frequência cardíaca (bpm)').fill('77');
+  await page.getByRole('button', { name: 'Confirmar registro' }).click();
+
+  await expect(page).toHaveURL(ENCOUNTER_URL);
+  await expect(page.getByRole('row').filter({ hasText: '77 bpm' })).toHaveCount(1);
+});
+
+test('enfileirar sinais vitais durante perda de conexão', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await openVitalsForm(page);
@@ -107,7 +118,7 @@ test('piloto de sinais vitais permanece cifrado e acessível nos estados online,
   await expect(page.getByRole('row').filter({ hasText: /36[,.]51 °C/ })).toHaveCount(1);
 });
 
-test('encontro encerrado mantém envelope cifrado em conflito para revisão explícita', async ({ page, context }) => {
+test('encontro encerrado antes do sync gera conflito', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await openVitalsForm(page);
@@ -141,7 +152,7 @@ test('encontro encerrado mantém envelope cifrado em conflito para revisão expl
   expect(serialized).not.toContain('39.99');
 });
 
-test('resposta perdida após commit é reenviada sem duplicar o registro', async ({ page, context }) => {
+test('retry offline não duplica sinais vitais', async ({ page, context }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
   await openVitalsForm(page);
