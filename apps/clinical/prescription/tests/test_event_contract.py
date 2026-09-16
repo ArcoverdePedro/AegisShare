@@ -77,9 +77,9 @@ def _contract_payload_fields(schema_name):
 def _emit_and_capture(callback):
     layer = _RecordingChannelLayer()
     with (
-        patch("apps.clinical.prescription.events.get_channel_layer", return_value=layer),
+        patch("apps.clinical.events.get_channel_layer", return_value=layer),
         patch(
-            "apps.clinical.prescription.events.transaction.on_commit",
+            "apps.clinical.events.transaction.on_commit",
             side_effect=lambda commit_callback: commit_callback(),
         ),
     ):
@@ -192,7 +192,7 @@ class EventCommitSemanticsTests(TransactionTestCase):
             with self.subTest(event=event_name):
                 layer = _RecordingChannelLayer()
                 with patch(
-                    "apps.clinical.prescription.events.get_channel_layer",
+                    "apps.clinical.events.get_channel_layer",
                     return_value=layer,
                 ):
                     with transaction.atomic():
@@ -209,7 +209,7 @@ class EventCommitSemanticsTests(TransactionTestCase):
                 layer = _RecordingChannelLayer()
                 with (
                     patch(
-                        "apps.clinical.prescription.events.get_channel_layer",
+                        "apps.clinical.events.get_channel_layer",
                         return_value=layer,
                     ),
                     self.assertRaises(RuntimeError),

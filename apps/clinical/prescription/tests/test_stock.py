@@ -232,9 +232,9 @@ class PharmacyStockEventTests(TestCase):
         drug_id = uuid.uuid4()
 
         with (
-            patch("apps.clinical.prescription.events.get_channel_layer", return_value=layer),
+            patch("apps.clinical.events.get_channel_layer", return_value=layer),
             patch(
-                "apps.clinical.prescription.events.transaction.on_commit",
+                "apps.clinical.events.transaction.on_commit",
                 side_effect=lambda callback: callback(),
             ),
         ):

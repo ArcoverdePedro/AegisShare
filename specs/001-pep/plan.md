@@ -10,7 +10,7 @@ Modelos planejados: `Patient`, `Encounter`, `Observation`, `Condition`, `Allergy
 
 ## Rotas e Views
 
-Contratos em `contracts/routes.md`. As views serão server-rendered e HTMX para parciais. Nenhum endpoint REST público será criado.
+Contratos em `contracts/routes.md`. As nove views implementadas são FBVs com autorização explícita, ModelForms/Forms e templates Django. A paginação compartilhada usa `Paginator` e preserva página `last` e 404 para números inválidos. Nenhum endpoint REST público será criado.
 
 ## Formulários e Validação
 

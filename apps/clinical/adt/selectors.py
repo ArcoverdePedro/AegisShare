@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from django.db.models import Exists, OuterRef, Prefetch
 
 from apps.clinical.pep.models import Encounter
@@ -69,14 +67,6 @@ def active_admissions_for_user(user):
     )
 
 
-def transferable_admissions_for_user(user):
-    return active_admissions_for_user(user)
-
-
-def dischargeable_admissions_for_user(user):
-    return active_admissions_for_user(user)
-
-
 def bed_map_groups(user):
     active_occupancies = BedOccupancy.objects.filter(ended_at__isnull=True).select_related(
         "admission__encounter__patient"
@@ -97,7 +87,7 @@ def bed_map_groups(user):
     visible_patient_ids = set(
         accessible_patients(user).order_by().values_list("pk", flat=True)
     )
-    groups = OrderedDict()
+    groups = {}
     for bed in beds:
         occupancy = bed.active_occupancies[0] if bed.active_occupancies else None
         status = "OCCUPIED" if occupancy else bed.operational_status

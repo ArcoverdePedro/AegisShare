@@ -1,7 +1,6 @@
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.db import transaction
 from django.utils import timezone
+
+from apps.clinical.events import send_after_commit
 
 CLINICAL_EVENT_TYPES = {
     "encounter.created",
@@ -33,10 +32,4 @@ def emit_clinical_event(
         "occurred_at": timezone.now().isoformat(),
     }
 
-    def _send():
-        channel_layer = get_channel_layer()
-        if channel_layer is None:
-            return
-        async_to_sync(channel_layer.group_send)(patient_group_name(patient_id), payload)
-
-    transaction.on_commit(_send)
+    send_after_commit(patient_group_name(patient_id), payload)

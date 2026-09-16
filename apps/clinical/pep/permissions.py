@@ -7,7 +7,12 @@ from .models import Encounter, Patient
 def is_internal_professional(user) -> bool:
     if not getattr(user, "is_authenticated", False):
         return False
-    return bool(user.is_admin() or user.is_employee())
+    if getattr(user, "is_client", lambda: False)():
+        return False
+    return bool(
+        getattr(user, "is_admin", lambda: False)()
+        or getattr(user, "is_employee", lambda: False)()
+    )
 
 
 def can_create_patient(user) -> bool:

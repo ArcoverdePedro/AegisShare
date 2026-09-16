@@ -109,9 +109,9 @@ class ClinicalEventServiceTests(TestCase):
         layer = _RecordingChannelLayer()
 
         with (
-            patch("apps.clinical.pep.events.get_channel_layer", return_value=layer),
+            patch("apps.clinical.events.get_channel_layer", return_value=layer),
             patch(
-                "apps.clinical.pep.events.transaction.on_commit",
+                "apps.clinical.events.transaction.on_commit",
                 side_effect=lambda callback: callback(),
             ),
         ):

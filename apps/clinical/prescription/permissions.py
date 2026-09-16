@@ -1,4 +1,4 @@
-from apps.clinical.pep.permissions import can_access_patient
+from apps.clinical.pep.permissions import can_access_patient, is_internal_professional
 
 PERM_VIEW = "prescription.view_medication_request"
 PERM_PRESCRIBE = "prescription.prescribe_medication"
@@ -12,20 +12,9 @@ PERM_VIEW_STOCK = "prescription.view_pharmacy_stock"
 PERM_MANAGE_STOCK = "prescription.manage_pharmacy_stock"
 
 
-def _is_internal(user):
-    if not getattr(user, "is_authenticated", False):
-        return False
-    if getattr(user, "is_client", lambda: False)():
-        return False
-    return bool(
-        getattr(user, "is_admin", lambda: False)()
-        or getattr(user, "is_employee", lambda: False)()
-    )
-
-
 def has_rx_permission(user, permission):
     """A função técnica não substitui capacidade profissional explícita."""
-    return _is_internal(user) and user.has_perm(permission)
+    return is_internal_professional(user) and user.has_perm(permission)
 
 
 def can_view_prescription(user, medication_request):

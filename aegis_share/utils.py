@@ -4,21 +4,6 @@ from io import BytesIO
 
 from PIL import Image
 
-from .services.files import grant_access
-from .services.selectors import files_for_user
-
-
-def arquivos_por_permissao(user):
-    """Compatibilidade com templates/views antigas; consultas ficam em selectors."""
-    return files_for_user(user)
-
-
-def dar_acesso(arquivo, usuario_alvo, actor=None):
-    """Compatibilidade. Novos fluxos devem sempre informar o ator."""
-    if actor is None:
-        raise ValueError("O ator e obrigatorio para conceder acesso com auditoria.")
-    return grant_access(file=arquivo, recipient=usuario_alvo, actor=actor)
-
 
 def clear_strings(value):
     if not value:

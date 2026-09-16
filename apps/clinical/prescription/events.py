@@ -1,9 +1,8 @@
 import uuid
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.db import transaction
 from django.utils import timezone
+
+from apps.clinical.events import send_after_commit
 
 PRESCRIPTION_EVENT_GROUP = "clinical_prescription_events"
 PRESCRIPTION_CHANNEL_EVENT_TYPE = "prescription_event_handler"
@@ -14,16 +13,6 @@ PRESCRIPTION_EVENT_TYPES = {
     "stock.low",
 }
 PRESCRIPTION_STATUSES = {"DRAFT", "SUBMITTED", "VALIDATED", "CANCELLED"}
-
-
-def _schedule_event(event):
-    def _send():
-        channel_layer = get_channel_layer()
-        if channel_layer is None:
-            return
-        async_to_sync(channel_layer.group_send)(PRESCRIPTION_EVENT_GROUP, event)
-
-    transaction.on_commit(_send)
 
 
 def emit_prescription_event(
@@ -40,7 +29,8 @@ def emit_prescription_event(
     if status not in PRESCRIPTION_STATUSES:
         raise ValueError("Estado de prescrição inválido para evento interno.")
 
-    _schedule_event(
+    send_after_commit(
+        PRESCRIPTION_EVENT_GROUP,
         {
             "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),
@@ -64,7 +54,8 @@ def emit_medication_dispensed_event(
     """Agenda evento técnico de dispensação pós-commit sem conteúdo clínico textual."""
     if item_count < 1:
         raise ValueError("Evento de dispensação exige ao menos um item.")
-    _schedule_event(
+    send_after_commit(
+        PRESCRIPTION_EVENT_GROUP,
         {
             "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),
@@ -87,7 +78,8 @@ def emit_stock_low_event(
     minimum_level,
 ):
     """Agenda alerta técnico pós-commit sem dados de paciente ou conteúdo clínico."""
-    _schedule_event(
+    send_after_commit(
+        PRESCRIPTION_EVENT_GROUP,
         {
             "type": PRESCRIPTION_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),

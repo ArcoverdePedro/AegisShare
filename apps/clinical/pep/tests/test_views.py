@@ -121,3 +121,31 @@ class PatientViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "já existe")
         self.assertEqual(Patient.objects.filter(identifier="MRN-001").count(), 1)
+
+    def test_patient_pagination_keeps_search_scope_and_invalid_page_response(self):
+        Patient.objects.bulk_create(
+            [
+                Patient(
+                    identifier_type=Patient.IdentifierType.OTHER,
+                    identifier=f"PAGE-{number}",
+                    full_name=f"Paciente paginado {number:02}",
+                    birth_date=date(1980, 1, 1),
+                    created_by=self.owner,
+                )
+                for number in range(26)
+            ]
+        )
+        self.client.force_login(self.owner)
+        url = reverse("pep:patient_list")
+        first = self.client.get(url, {"q": "paginado"})
+        self.assertEqual(len(first.context["patients"]), 25)
+        self.assertTrue(first.context["is_paginated"])
+        last = self.client.get(url, {"q": "paginado", "page": "last"})
+        self.assertEqual(len(last.context["patients"]), 1)
+        self.assertContains(last, "Paciente paginado 25")
+        for page in ("0", "3", "invalid"):
+            with self.subTest(page=page):
+                self.assertEqual(
+                    self.client.get(url, {"q": "paginado", "page": page}).status_code, 404
+                )
+        self.assertEqual(self.client.head(url).status_code, 200)

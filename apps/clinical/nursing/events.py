@@ -1,9 +1,8 @@
 import uuid
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.db import transaction
 from django.utils import timezone
+
+from apps.clinical.events import send_after_commit
 
 NURSING_EVENT_GROUP = "clinical_nursing_events"
 NURSING_CHANNEL_EVENT_TYPE = "nursing_event_handler"
@@ -13,19 +12,10 @@ NURSING_EVENT_TYPES = {
 }
 
 
-def _schedule_event(event):
-    def _send():
-        channel_layer = get_channel_layer()
-        if channel_layer is None:
-            return
-        async_to_sync(channel_layer.group_send)(NURSING_EVENT_GROUP, event)
-
-    transaction.on_commit(_send)
-
-
 def emit_vitals_recorded_event(*, record_id, encounter_id, origin, replaces_id=None):
     """Agenda evento técnico pós-commit sem copiar medidas ou PHI textual."""
-    _schedule_event(
+    send_after_commit(
+        NURSING_EVENT_GROUP,
         {
             "type": NURSING_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),
@@ -41,7 +31,8 @@ def emit_vitals_recorded_event(*, record_id, encounter_id, origin, replaces_id=N
 
 def emit_medication_administered_event(*, administration_id, dispense_item_id, encounter_id):
     """Agenda evento técnico pós-commit sem dose, unidade ou medicamento textual."""
-    _schedule_event(
+    send_after_commit(
+        NURSING_EVENT_GROUP,
         {
             "type": NURSING_CHANNEL_EVENT_TYPE,
             "event_id": str(uuid.uuid4()),

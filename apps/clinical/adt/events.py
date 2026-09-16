@@ -1,9 +1,8 @@
 import uuid
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.db import transaction
 from django.utils import timezone
+
+from apps.clinical.events import send_after_commit
 
 ADT_EVENT_TYPES = {
     "encounter.admitted",
@@ -63,10 +62,4 @@ def emit_adt_event(
             }
         )
 
-    def _send():
-        channel_layer = get_channel_layer()
-        if channel_layer is None:
-            return
-        async_to_sync(channel_layer.group_send)(ADT_BED_MAP_GROUP, event)
-
-    transaction.on_commit(_send)
+    send_after_commit(ADT_BED_MAP_GROUP, event)

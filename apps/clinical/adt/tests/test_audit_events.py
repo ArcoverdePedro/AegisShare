@@ -168,9 +168,9 @@ class AdtEventTests(TestCase):
     def test_event_payload_contains_only_operational_identifiers(self):
         layer = _RecordingChannelLayer()
         with (
-            patch("apps.clinical.adt.events.get_channel_layer", return_value=layer),
+            patch("apps.clinical.events.get_channel_layer", return_value=layer),
             patch(
-                "apps.clinical.adt.events.transaction.on_commit",
+                "apps.clinical.events.transaction.on_commit",
                 side_effect=lambda callback: callback(),
             ),
         ):

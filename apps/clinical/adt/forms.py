@@ -7,10 +7,9 @@ from apps.clinical.pep.models import Encounter
 
 from .models import Admission, Bed, Discharge
 from .selectors import (
+    active_admissions_for_user,
     admissible_encounters_for_user,
     available_beds_for_user,
-    dischargeable_admissions_for_user,
-    transferable_admissions_for_user,
 )
 
 
@@ -102,7 +101,7 @@ class TransferForm(forms.Form):
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        self.fields["admission"].queryset = transferable_admissions_for_user(user)
+        self.fields["admission"].queryset = active_admissions_for_user(user)
         self.fields["destination_bed"].queryset = available_beds_for_user(user)
         self.fields["admission"].widget.attrs.update({"class": "select"})
         self.fields["destination_bed"].widget.attrs.update({"class": "select"})
@@ -162,7 +161,7 @@ class DischargeForm(forms.Form):
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        self.fields["admission"].queryset = dischargeable_admissions_for_user(user)
+        self.fields["admission"].queryset = active_admissions_for_user(user)
         self.fields["admission"].widget.attrs.update({"class": "select"})
         if not self.is_bound:
             self.initial.setdefault(

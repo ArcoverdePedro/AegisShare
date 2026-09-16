@@ -4,6 +4,13 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 
 ## [0.2.0] - Em desenvolvimento
 
+### Simplificado
+
+- PEP: nove FBVs substituem as classes e três mixins; rotas, forms e templates mantidos.
+- Transporte de eventos pós-commit compartilhado entre PEP, ADT, prescrição e enfermagem.
+- Reuso da regra de profissional interno e do queryset de internações ativas.
+- Removidos `aegis_share.views` e os adaptadores `arquivos_por_permissao`/`dar_acesso`, sem consumidores no repositório; imports devem usar `aegis_share.web` e os serviços existentes.
+
 ### Corrigido
 
 - Atualização transitiva de `click` de 8.3.0 para 8.3.3 para corrigir o alerta `PYSEC-2026-2132` identificado pelo pip-audit.

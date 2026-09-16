@@ -1,51 +1,41 @@
 from django.urls import path
 
-from .views import (
-    ClinicalEvolutionAmendmentCreateView,
-    ClinicalEvolutionCreateView,
-    ClinicalEvolutionDetailView,
-    EncounterCreateView,
-    EncounterDetailView,
-    EncounterListView,
-    PatientCreateView,
-    PatientDetailView,
-    PatientListView,
-)
+from . import views
 
 app_name = "pep"
 
 urlpatterns = [
-    path("pacientes/", PatientListView.as_view(), name="patient_list"),
-    path("pacientes/novo/", PatientCreateView.as_view(), name="patient_create"),
-    path("pacientes/<uuid:pk>/", PatientDetailView.as_view(), name="patient_detail"),
+    path("pacientes/", views.patient_list, name="patient_list"),
+    path("pacientes/novo/", views.patient_create, name="patient_create"),
+    path("pacientes/<uuid:pk>/", views.patient_detail, name="patient_detail"),
     path(
         "pacientes/<uuid:patient_id>/encontros/",
-        EncounterListView.as_view(),
+        views.encounter_list,
         name="encounter_list",
     ),
     path(
         "pacientes/<uuid:patient_id>/encontros/novo/",
-        EncounterCreateView.as_view(),
+        views.encounter_create,
         name="encounter_create",
     ),
     path(
         "encontros/<uuid:pk>/",
-        EncounterDetailView.as_view(),
+        views.encounter_detail,
         name="encounter_detail",
     ),
     path(
         "encontros/<uuid:encounter_id>/evolucoes/nova/",
-        ClinicalEvolutionCreateView.as_view(),
+        views.evolution_create,
         name="evolution_create",
     ),
     path(
         "evolucoes/<uuid:pk>/",
-        ClinicalEvolutionDetailView.as_view(),
+        views.evolution_detail,
         name="evolution_detail",
     ),
     path(
         "evolucoes/<uuid:pk>/adendo/",
-        ClinicalEvolutionAmendmentCreateView.as_view(),
+        views.evolution_amendment_create,
         name="evolution_amendment_create",
     ),
 ]

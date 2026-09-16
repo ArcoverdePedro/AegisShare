@@ -54,9 +54,9 @@ class NursingEventContractTests(TestCase):
     def _capture(self, callback):
         layer = _RecordingChannelLayer()
         with (
-            patch("apps.clinical.nursing.events.get_channel_layer", return_value=layer),
+            patch("apps.clinical.events.get_channel_layer", return_value=layer),
             patch(
-                "apps.clinical.nursing.events.transaction.on_commit",
+                "apps.clinical.events.transaction.on_commit",
                 side_effect=lambda fn: fn(),
             ),
         ):

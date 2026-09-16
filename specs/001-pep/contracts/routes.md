@@ -2,15 +2,15 @@
 
 | Método | URL | View | Template | Permissão |
 |---|---|---|---|---|
-| GET | `/pacientes/` | `PatientListView` | `clinical/pep/patient_list.html` | profissional interno autorizado |
-| GET/POST | `/pacientes/novo/` | `PatientCreateView` | `clinical/pep/patient_form.html` | `ADM`/`FUNC` |
-| GET | `/pacientes/<id>/` | `PatientDetailView` | `clinical/pep/patient_detail.html` | acesso ao paciente |
-| GET | `/pacientes/<id>/encontros/` | `EncounterListView` | `clinical/pep/encounter_list.html` | acesso ao paciente |
-| GET/POST | `/pacientes/<id>/encontros/novo/` | `EncounterCreateView` | `clinical/pep/encounter_form.html` | acesso ao paciente |
-| GET | `/encontros/<id>/` | `EncounterDetailView` | `clinical/pep/encounter_detail.html` | acesso ao encontro |
-| GET/POST | `/encontros/<id>/evolucoes/nova/` | `ClinicalEvolutionCreateView` | `clinical/pep/evolution_form.html` | profissional interno + acesso + encontro aberto |
-| GET | `/evolucoes/<id>/` | `ClinicalEvolutionDetailView` | `clinical/pep/evolution_detail.html` | acesso ao paciente do encontro |
-| GET/POST | `/evolucoes/<id>/adendo/` | `ClinicalEvolutionAmendmentCreateView` | `clinical/pep/evolution_form.html` | profissional interno + acesso + encontro aberto |
+| GET | `/pacientes/` | `patient_list` | `clinical/pep/patient_list.html` | profissional interno autorizado |
+| GET/POST | `/pacientes/novo/` | `patient_create` | `clinical/pep/patient_form.html` | `ADM`/`FUNC` |
+| GET | `/pacientes/<id>/` | `patient_detail` | `clinical/pep/patient_detail.html` | acesso ao paciente |
+| GET | `/pacientes/<id>/encontros/` | `encounter_list` | `clinical/pep/encounter_list.html` | acesso ao paciente |
+| GET/POST | `/pacientes/<id>/encontros/novo/` | `encounter_create` | `clinical/pep/encounter_form.html` | acesso ao paciente |
+| GET | `/encontros/<id>/` | `encounter_detail` | `clinical/pep/encounter_detail.html` | acesso ao encontro |
+| GET/POST | `/encontros/<id>/evolucoes/nova/` | `evolution_create` | `clinical/pep/evolution_form.html` | profissional interno + acesso + encontro aberto |
+| GET | `/evolucoes/<id>/` | `evolution_detail` | `clinical/pep/evolution_detail.html` | acesso ao paciente do encontro |
+| GET/POST | `/evolucoes/<id>/adendo/` | `evolution_amendment_create` | `clinical/pep/evolution_form.html` | profissional interno + acesso + encontro aberto |
 | WS | `/ws/clinical/patients/<id>/` | `PatientClinicalConsumer` | atualização de UI nas telas clínicas | sessão autenticada + acesso atual ao paciente, revalidado a cada evento |
 | GET/POST | `/documentos/<id>/assinar/` | `ClinicalDocumentSignView` | `clinical/pep/document_sign.html` | futuro T-PEP-08 |
 
