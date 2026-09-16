@@ -117,6 +117,15 @@
                 {% if user.is_authenticated %}
                     {% if user.is_admin or user.is_employee %}
                         <a class="navbar-item {% if request.resolver_match.namespace == 'pep' %}is-active{% endif %}" href="{% url 'pep:patient_list' %}">{% icon 'users' %} Pacientes</a>
+                        {% if perms.adt.view_bed_map %}
+                            <a class="navbar-item {% if request.resolver_match.namespace == 'adt' %}is-active{% endif %}" href="{% url 'adt:bed_map' %}">{% icon 'grid' %} Leitos</a>
+                        {% endif %}
+                        {% if perms.prescription.view_medication_request %}
+                            <a class="navbar-item {% if request.resolver_match.namespace == 'prescription' %}is-active{% endif %}" href="{% url 'prescription:prescription_list' %}">{% icon 'file-text' %} Prescricoes</a>
+                        {% endif %}
+                        {% if perms.nursing.view_nursing %}
+                            <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
+                        {% endif %}
                     {% endif %}
                     <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
                     {% if not user.is_client %}
@@ -199,7 +208,7 @@
         if (systemTheme.media.addEventListener) {
             systemTheme.media.addEventListener('change', systemTheme.apply);
         } else if (systemTheme.media.addListener) {
-            systemTheme.media.addListener(systemTheme.apply);
+            systemTheme.media.addListener('change', systemTheme.apply);
         }
     }
 
