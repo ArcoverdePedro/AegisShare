@@ -1,0 +1,17 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Contas em preparação · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Contas em preparação</h1>
+{% include 'admin/billing/_notice.html' %}
+<p class="mb-4">Para abrir uma conta, consulte o encontro no prontuário.</p>
+{% for account in page_obj %}
+<article class="box"><h2 class="title is-5">{{ account.encounter.patient.full_name }}</h2>
+<p>Encontro: {{ account.encounter_id }}</p>
+<p>Aberta por {{ account.opened_by.username }} em {{ account.opened_at|date:'d/m/Y H:i:s' }}</p>
+<a href="{% url 'billing:account_detail' account.pk %}" aria-label="Abrir conta {{ account.pk }}">Abrir conta</a>
+</article>
+{% empty %}<p>Nenhuma conta disponível.</p>{% endfor %}
+{% include 'admin/billing/_pagination.html' %}
+</div></section>
+{% endblock %}

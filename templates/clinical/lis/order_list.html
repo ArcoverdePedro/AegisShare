@@ -1,0 +1,22 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Pedidos laboratoriais · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width: 1000px; overflow-wrap: anywhere;">
+<h1 class="title is-3">Pedidos laboratoriais</h1>
+<p class="mb-4">Para solicitar um exame, abra um encontro no prontuário.</p>
+<form method="get" class="box">{% include 'compliance/_partials/form_fields.html' %}<button class="button" type="submit">Filtrar</button></form>
+{% for item in page_obj %}
+<article class="box">
+<h2 class="title is-5">{{ item.encounter.patient.full_name }}</h2>
+<p>{{ item.test_name }} · {{ item.requested_at|date:'d/m/Y H:i' }}</p>
+<p>{% if item.collected %}Coleta registrada{% else %}Solicitado{% endif %}</p>
+<a href="{% url 'lis:order_detail' item.pk %}" aria-label="Abrir pedido {{ item.pk }}">Abrir pedido</a>
+</article>
+{% empty %}<p>Nenhum pedido disponível.</p>{% endfor %}
+<nav aria-label="Paginação de pedidos" class="mt-4">
+{% if page_obj.has_previous %}<a href="?status={{ form.status.value|default:''|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a href="?status={{ form.status.value|default:''|urlencode }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</nav>
+</div></section>
+{% endblock %}

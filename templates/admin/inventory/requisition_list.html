@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Materiais e requisições · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Requisições internas</h1>
+{% include 'admin/inventory/_notice.html' %}
+<p class="mb-4"><a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a>{% if perms.inventory.request_material %} · <a href="{% url 'inventory:requisition_create' %}">Requisitar material</a>{% endif %}</p>
+{% for item in page_obj %}<article class="box"><h2 class="title is-5">{{ item.item_code }} · {{ item.item_name }}</h2><p>Quantidade: {{ item.quantity }} {{ item.item_unit }}</p><p>Registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p><a href="{% url 'inventory:requisition_detail' item.pk %}" aria-label="Abrir requisição {{ item.pk }}">Abrir requisição</a></article>
+{% empty %}<p>Nenhuma requisição registrada.</p>{% endfor %}
+{% include 'admin/inventory/_pagination.html' %}
+</div></section>
+{% endblock %}

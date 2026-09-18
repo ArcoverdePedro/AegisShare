@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Registrar item manual · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Registrar item manual</h1>
+<p class="mb-4">{{ account.encounter.patient.full_name }}</p>
+{% include 'admin/billing/_notice.html' %}
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+<button type="submit" class="button is-link">Registrar item</button>
+</form><a href="{% url 'billing:account_detail' account.pk %}">Voltar à conta</a>
+</div></section>
+{% endblock %}

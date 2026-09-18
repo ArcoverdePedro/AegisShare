@@ -3,7 +3,7 @@ import os
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 
-import django  # noqa: E402
+import django
 
 django.setup()
 

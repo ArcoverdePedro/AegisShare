@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Receber arquivo laboratorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Receber arquivo laboratorial</h1>
+<p class="notification is-warning is-light">Limite: 1 MiB por arquivo. A origem é declarada pelo operador. O conteúdo fica cifrado em quarentena, sem interpretação ou liberação como resultado. Exige conexão.</p>
+<form method="post" enctype="multipart/form-data" class="box">
+{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+<button class="button is-link" type="submit">Receber em quarentena</button>
+</form>
+<a href="{% url 'interoperability:lab_inbox_list' %}">Voltar aos recibos</a>
+</div></section>
+{% endblock %}

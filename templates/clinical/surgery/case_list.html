@@ -1,0 +1,24 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Solicitações de procedimentos · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Solicitações de procedimentos</h1>
+<p class="notification is-info is-light">Solicitação registrada — sem agendamento ou autorização cirúrgica</p>
+<p class="mb-4">Para solicitar procedimento, abra um encontro no prontuário. Este fluxo exige conexão.</p>
+{% for item in page_obj %}
+<article class="box">
+<h2 class="title is-5">{{ item.encounter.patient.full_name }}</h2>
+<p>Procedimento: {{ item.procedure_code }} · {{ item.procedure_name }}</p>
+<p>Encontro: {{ item.encounter_id }}</p>
+<p>Solicitação registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>
+<p>Solicitação registrada — sem agendamento ou autorização cirúrgica</p>
+<a href="{% url 'surgery:case_detail' item.pk %}" aria-label="Abrir solicitação {{ item.pk }}">Abrir solicitação</a>
+</article>
+{% empty %}<p>Nenhuma solicitação disponível.</p>{% endfor %}
+<nav aria-label="Paginação de solicitações" class="mt-4">
+{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</nav>
+</div></section>
+{% endblock %}

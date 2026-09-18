@@ -28,6 +28,18 @@
             <div class="column is-12-tablet is-7-desktop">
                 <div class="aegis-card p-5 mb-4">
                     <h2 class="title is-5">Dados do encontro</h2>
+                    {% if perms.billing.view_accounts and perms.billing.open_account %}
+                    <a class="button is-link is-light mb-3" href="{% url 'billing:account_open' encounter.pk %}">Conta em preparação</a>
+                    {% endif %}
+                    {% if perms.surgery.view_cases and perms.surgery.request_procedure and encounter.status == 'OPEN' %}
+                    <a class="button is-link is-light mb-3" href="{% url 'surgery:case_create' encounter.pk %}">Solicitar procedimento</a>
+                    {% endif %}
+                    {% if perms.ris.view_orders and perms.ris.order_exam and encounter.status == 'OPEN' %}
+                    <a class="button is-link is-light mb-3" href="{% url 'ris:order_create' encounter.pk %}">Solicitar imagem</a>
+                    {% endif %}
+                    {% if perms.lis.view_orders and perms.lis.order_test and encounter.status == 'OPEN' %}
+                    <a class="button is-link is-light mb-3" href="{% url 'lis:order_create' encounter.pk %}">Solicitar exame</a>
+                    {% endif %}
                     <dl>
                         <div class="columns is-mobile py-2" style="border-bottom: 1px solid var(--aegis-border);">
                             <dt class="column is-5 has-text-weight-semibold">Início</dt>

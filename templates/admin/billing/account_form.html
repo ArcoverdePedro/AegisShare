@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Abrir conta em preparação · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Abrir conta em preparação</h1>
+<p class="mb-4">{{ encounter.patient.full_name }}</p>
+{% include 'admin/billing/_notice.html' %}
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+<button type="submit" class="button is-link">Abrir conta em preparação</button>
+</form><a href="{% url 'pep:encounter_detail' encounter.pk %}">Voltar ao encontro</a>
+</div></section>
+{% endblock %}

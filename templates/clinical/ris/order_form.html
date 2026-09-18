@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Solicitar imagem · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Solicitar imagem</h1>
+<p class="mb-4">{{ encounter.patient.full_name }}</p>
+<p class="notification is-info is-light">Selecione um exame do catálogo institucional. Este registro é somente uma solicitação, sem estudo ou laudo. Exige conexão.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+<button type="submit" class="button is-link">Registrar pedido de imagem</button>
+</form>
+<a href="{% url 'pep:encounter_detail' encounter.pk %}">Voltar ao encontro</a>
+</div></section>
+{% endblock %}

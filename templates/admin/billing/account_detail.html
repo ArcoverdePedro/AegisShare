@@ -1,0 +1,26 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Conta em preparação · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Conta em preparação</h1>
+{% include 'admin/billing/_notice.html' %}
+<div class="box">
+<p>Protocolo: {{ account.pk }}</p><p>Paciente: {{ account.encounter.patient.full_name }}</p>
+<p>Encontro: {{ account.encounter_id }}</p>
+<p>Aberta por {{ account.opened_by.username }} em {{ account.opened_at|date:'d/m/Y H:i:s' }}</p>
+<p class="has-text-weight-bold mt-3">Total em preparação (BRL): {{ total|floatformat:2 }}</p>
+{% if perms.billing.add_item %}<a class="button is-link mt-3" href="{% url 'billing:item_create' account.pk %}">Adicionar item</a>{% endif %}
+</div>
+<h2 class="title is-4">Itens manuais</h2>
+{% for item in page_obj %}
+<article class="box">
+<h3 class="title is-5">{{ item.description }}</h3>
+<p>Quantidade: {{ item.quantity }} · Valor unitário (BRL): {{ item.unit_price|floatformat:2 }}</p>
+<p>Subtotal (BRL): {{ item.subtotal|floatformat:2 }}</p>
+<p>Registrado por {{ item.recorded_by.username }} em {{ item.recorded_at|date:'d/m/Y H:i:s' }}</p>
+</article>
+{% empty %}<p>Nenhum item registrado.</p>{% endfor %}
+{% include 'admin/billing/_pagination.html' %}
+<a href="{% url 'billing:account_list' %}">Voltar às contas</a> · <a href="{% url 'pep:encounter_detail' account.encounter_id %}">Encontro</a>
+</div></section>
+{% endblock %}

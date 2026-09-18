@@ -1,0 +1,19 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Caixa laboratorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Caixa laboratorial</h1>
+<p class="mb-4">Recibos de arquivos cifrados em quarentena. Conteúdo não validado.</p>
+{% if perms.interoperability.receive_lab_file %}<a class="button is-link mb-4" href="{% url 'interoperability:lab_inbox_receive' %}">Receber arquivo</a>{% endif %}
+<form method="get" class="box">{% include 'compliance/_partials/form_fields.html' %}<button class="button" type="submit">Filtrar</button></form>
+{% for item in page_obj %}<article class="box">
+<h2 class="title is-5">Origem: {{ item.source.code }}</h2>
+<p>{{ item.size }} bytes · {{ item.received_at|date:'d/m/Y H:i' }} · {{ item.received_by.username }}</p>
+<a href="{% url 'interoperability:lab_inbox_detail' item.pk %}" aria-label="Abrir recibo {{ item.pk }}">Abrir recibo</a>
+</article>{% empty %}<p>Nenhum recibo disponível.</p>{% endfor %}
+<nav aria-label="Paginação de recibos" class="mt-4">
+{% if page_obj.has_previous %}<a href="?source={{ form.source.value|default:''|urlencode }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a href="?source={{ form.source.value|default:''|urlencode }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</nav></div></section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Solicitar procedimento · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Solicitar procedimento</h1>
+<p class="mb-4">{{ encounter.patient.full_name }}</p>
+<p class="notification is-info is-light">Selecione um procedimento do catálogo institucional. Este registro é somente uma solicitação, sem agendamento ou autorização cirúrgica. Exige conexão.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+<button type="submit" class="button is-link">Registrar solicitação</button>
+</form>
+<a href="{% url 'pep:encounter_detail' encounter.pk %}">Voltar ao encontro</a>
+</div></section>
+{% endblock %}

@@ -102,7 +102,12 @@ specs/001-pep/                     prontuário eletrônico do paciente
 specs/002-adt/                     admissão, transferência, alta e leitos
 specs/003-prescricao-farmacia/     prescrição, safety review, estoque e dispensação
 specs/004-enfermagem/              sinais vitais e administração de medicamento
-specs/012-interoperabilidade/       exportação FHIR por arquivo
+specs/005-lis/                     pedidos laboratoriais e coleta manual
+specs/006-ris-pacs/                pedidos de imagem (RIS v1)
+specs/007-centro-cirurgico/        solicitações de procedimentos
+specs/008-faturamento/             preparação manual de contas implementada
+specs/009-estoque-compras/          catálogo e requisições de materiais
+specs/012-interoperabilidade/       exportação FHIR e caixa laboratorial cifrada
 specs/014-pwa/                     PWA, offline seguro e push
 adr/                               decisões arquiteturais aceitas
 ```
@@ -112,6 +117,19 @@ Cada spec mantém requisitos, contratos, tarefas e rastreabilidade. Gates depend
 A [Spec 012 — Interoperabilidade por arquivos](specs/012-interoperabilidade/spec.md) implementa exportação individual de cadastro mínimo em FHIR R4 JSON, com autorização PEP e recibo auditado. Consulte o [guia operacional](docs/interoperabilidade.md). A ingestão HL7/ASTM necessária ao LIS será uma extensão posterior.
 
 [Spec 013 — Solicitações do titular](specs/013-lgpd-anvisa/spec.md) implementada, com registro, análise e encerramento administrativo auditáveis. Consulte o [guia operacional](docs/solicitacoes-titular.md) para migrations e permissões. Não automatiza exclusão, anonimização, retenção ou decisões jurídicas.
+
+[Spec 005 — LIS v1](specs/005-lis/spec.md) implementa pedidos e coleta manual, com catálogo institucional, escopo PEP e auditoria. Consulte o [guia operacional](docs/laboratorio.md). Ingestão HL7/ASTM e resultados permanecem em etapa posterior.
+
+Implementado: [caixa laboratorial cifrada em quarentena](specs/012-interoperabilidade/extensions/lab-inbox/spec.md), com escopo por origem e deduplicação, sem interpretação ou liberação de resultados. Aprovada em 2026-09-18. [Guia operacional](docs/caixa-laboratorial.md) e [evidências](specs/012-interoperabilidade/extensions/lab-inbox/validation.md).
+
+
+[Spec 006 — pedidos de imagem (RIS v1)](specs/006-ris-pacs/spec.md) aprovada e implementada em 2026-09-18, com catálogo institucional, escopo PEP, snapshots e reenvios auditados. [Guia operacional](docs/imagem.md) e [evidências](specs/006-ris-pacs/validation.md). DICOM, viewer e laudos dependem de extensões com contratos próprios.
+
+[Spec 007 — Centro Cirúrgico v1](specs/007-centro-cirurgico/spec.md) implementada: solicitações de procedimentos vinculadas ao PEP, catálogo, snapshots, reenvios e auditoria. [Guia operacional](docs/centro-cirurgico.md) e [evidências](specs/007-centro-cirurgico/validation.md). Agenda, materiais e execução dependem de contratos próprios.
+
+[Spec 008 — preparação manual de contas](specs/008-faturamento/spec.md) autorizada e implementada em 2026-09-18, com conta por encontro e itens/total exato em BRL. [Guia operacional](docs/faturamento.md) e [evidências](specs/008-faturamento/validation.md). Não emite cobrança nem automatiza tabelas ou guias.
+
+[Spec 009 — catálogo e requisições de materiais](specs/009-estoque-compras/spec.md) autorizada e implementada em 2026-09-18, com catálogo não medicamentoso, snapshots, quantidades inteiras e consulta institucional por capacidade. [Guia operacional](docs/estoque-requisicoes.md) e [evidências](specs/009-estoque-compras/validation.md). Não duplica o estoque farmacêutico nem confirma compra, reserva ou entrega.
 
 ## Requisitos
 

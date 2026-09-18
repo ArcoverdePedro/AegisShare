@@ -1,0 +1,16 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Solicitação de procedimento · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Solicitação de procedimento</h1>
+<div class="box">
+<p>Protocolo: {{ item.pk }}</p>
+<p>Paciente: {{ item.encounter.patient.full_name }}</p>
+<p>Encontro: {{ item.encounter_id }}</p>
+<p>Procedimento: {{ item.procedure_code }} · {{ item.procedure_name }}</p>
+<p>Solicitação registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>
+<p class="my-3">Solicitação registrada — sem agendamento ou autorização cirúrgica</p>
+</div>
+<a href="{% url 'surgery:case_list' %}">Solicitações de procedimentos</a> · <a href="{% url 'pep:encounter_detail' item.encounter_id %}">Encontro</a>
+</div></section>
+{% endblock %}

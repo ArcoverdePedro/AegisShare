@@ -1,0 +1,24 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Pedido laboratorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width: 800px; overflow-wrap: anywhere;">
+<h1 class="title is-3">Pedido laboratorial</h1>
+<div class="box">
+<p>Protocolo: {{ item.pk }}</p>
+<p>Paciente: {{ item.encounter.patient.full_name }}</p>
+<p>Exame: {{ item.test_code }} · {{ item.test_name }}</p>
+<p>Material: {{ item.specimen_type }}</p>
+<p>Solicitado por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>
+{% if item.collected %}
+<h2 class="title is-5 mt-4">Coleta registrada</h2>
+<p>Código da amostra: {{ item.specimen.accession_code }}</p>
+<p>Coleta: {{ item.specimen.collected_at|date:'d/m/Y H:i:s' }}</p>
+<p>Registrada por {{ item.specimen.collected_by.username }} em {{ item.specimen.recorded_at|date:'d/m/Y H:i:s' }}</p>
+{% else %}
+<p class="my-3">Situação: Solicitado</p>
+{% if perms.lis.collect_specimen and item.encounter.status == 'OPEN' %}<a class="button is-link" href="{% url 'lis:specimen_create' item.pk %}">Registrar coleta</a>{% endif %}
+{% endif %}
+</div>
+<a href="{% url 'lis:order_list' %}">Pedidos laboratoriais</a> · <a href="{% url 'pep:encounter_detail' item.encounter_id %}">Encontro</a>
+</div></section>
+{% endblock %}

@@ -17,7 +17,17 @@ class PrivateWorkflowMiddleware:
         response = self.get_response(request)
         if request.path_info == reverse(
             "interoperability:patient_export"
-        ) or request.path_info.startswith(reverse("compliance:request_list")):
+        ) or request.path_info.startswith(
+            (
+                reverse("compliance:request_list"),
+                reverse("interoperability:lab_inbox_list"),
+                reverse("lis:order_list").removesuffix("pedidos/"),
+                reverse("ris:order_list").removesuffix("pedidos/"),
+                reverse("surgery:case_list").removesuffix("solicitacoes/"),
+                reverse("billing:account_list").removesuffix("contas/"),
+                reverse("inventory:item_list"),
+            )
+        ):
             response["Cache-Control"] = "private, no-store"
             response["X-Content-Type-Options"] = "nosniff"
             patch_vary_headers(response, ("Cookie",))

@@ -13,8 +13,8 @@ Status: v1 aprovada em 2026-09-16 e implementada. Cada tarefa deve caber em até
 - [x] **T-INT-09:** executar gates existentes de CI e registrar resultados/limitações sem marcar testes não executados (todos os critérios).
 - [x] **T-INT-10:** documentar piloto sintético, limites do arquivo, guarda e rollback; atualizar rastreabilidade com nomes reais dos testes (todos os critérios).
 
-## Próximos incrementos, ainda sem autorização
+## Continuidade e limites dos recortes
 
 - Spec 013: [acompanhamento de solicitações do titular](../013-lgpd-anvisa/spec.md) aprovado e implementado; evidências na respectiva spec. Bases legais, retenção e efeitos automáticos sobre os dados continuam reservados à governança institucional.
-- Extensão 012 para HL7/ASTM: contrato de importação, origem confiável, identificação, deduplicação e quarentena antes do LIS.
-- Spec 005: pedidos/amostras/resultados após aprovação de suas specs e dependências; valores críticos dependem de regras institucionais.
+- Extensão 012: [recebimento cifrado em quarentena](extensions/lab-inbox/spec.md) aprovado e implementado em 2026-09-18; [evidências](extensions/lab-inbox/validation.md). Parsing HL7/ASTM ainda requer perfil de equipamento, procedência, identificação e correlação antes de resultados LIS.
+- Spec 005: [v1 de pedidos e coleta manual](../005-lis/spec.md) aprovada e implementada em 2026-09-17. Ingestão e resultados continuam dependentes da extensão 012; valores críticos exigem regras institucionais.

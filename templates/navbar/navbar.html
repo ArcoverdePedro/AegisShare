@@ -116,7 +116,7 @@
                 <a class="navbar-item {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'home' %}">{% icon 'home' %} Inicio</a>
                 {% if user.is_authenticated %}
                     {% if user.is_admin or user.is_employee %}
-                        <div class="navbar-item has-dropdown {% if request.resolver_match.namespace == 'pep' or request.resolver_match.namespace == 'adt' or request.resolver_match.namespace == 'prescription' or request.resolver_match.namespace == 'nursing' or request.resolver_match.namespace == 'interoperability' or request.resolver_match.namespace == 'compliance' %}is-active{% endif %}" id="clinicalDropdown">
+                        <div class="navbar-item has-dropdown {% if request.resolver_match.namespace == 'pep' or request.resolver_match.namespace == 'adt' or request.resolver_match.namespace == 'prescription' or request.resolver_match.namespace == 'nursing' or request.resolver_match.namespace == 'interoperability' or request.resolver_match.namespace == 'compliance' or request.resolver_match.namespace == 'lis' or request.resolver_match.namespace == 'ris' or request.resolver_match.namespace == 'surgery' %}is-active{% endif %}" id="clinicalDropdown">
                             <button class="navbar-link button is-ghost has-text-light" id="clinicalDropdownButton" type="button" aria-expanded="false">
                                 {% icon 'heart' %} Clinico
                             </button>
@@ -131,6 +131,10 @@
                                 {% if perms.nursing.view_nursing %}
                                     <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
                                 {% endif %}
+                                {% if perms.surgery.view_cases %}<a class="navbar-item" href="{% url 'surgery:case_list' %}">Centro Cirúrgico</a>{% endif %}
+                                {% if perms.ris.view_orders %}<a class="navbar-item" href="{% url 'ris:order_list' %}">Imagem</a>{% endif %}
+                                {% if perms.lis.view_orders %}<a class="navbar-item" href="{% url 'lis:order_list' %}">Laboratório</a>{% endif %}
+                                {% if perms.interoperability.view_lab_inbox %}<a class="navbar-item" href="{% url 'interoperability:lab_inbox_list' %}">Caixa laboratorial</a>{% endif %}
                                 {% if perms.compliance.view_requests %}
                                     <a class="navbar-item {% if request.resolver_match.namespace == 'compliance' %}is-active{% endif %}" href="{% url 'compliance:request_list' %}">{% icon 'clipboard' %} Solicitações do titular</a>
                                 {% endif %}
@@ -139,6 +143,9 @@
                                 {% endif %}
                             </div>
                         </div>
+                    {% endif %}
+                    {% if not user.is_client and perms.inventory.view_requisitions %}
+                        <a class="navbar-item {% if request.resolver_match.namespace == 'inventory' %}is-active{% endif %}" href="{% url 'inventory:item_list' %}">Estoque</a>
                     {% endif %}
                     <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
                     {% if not user.is_client %}

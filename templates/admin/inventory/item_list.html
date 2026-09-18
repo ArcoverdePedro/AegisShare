@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Materiais e requisições · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Materiais não medicamentosos</h1>
+{% include 'admin/inventory/_notice.html' %}
+<p class="mb-4"><a href="{% url 'inventory:requisition_list' %}">Requisições internas</a>{% if perms.inventory.request_material %} · <a href="{% url 'inventory:requisition_create' %}">Requisitar material</a>{% endif %}</p>
+{% for item in page_obj %}<article class="box"><h2 class="title is-5">{{ item.code }} · {{ item.name }}</h2><p>Unidade de contagem: {{ item.unit }}</p></article>
+{% empty %}<p>Nenhum material disponível.</p>{% endfor %}
+{% include 'admin/inventory/_pagination.html' %}
+</div></section>
+{% endblock %}

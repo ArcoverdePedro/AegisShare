@@ -4,6 +4,18 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 
 ## [0.2.0] - Em desenvolvimento
 
+### Adicionado
+
+- Spec 009: catálogo de materiais não medicamentosos e requisições internas com snapshots, consulta institucional por capacidade, reenvios seguros, auditoria e fluxo online; sem reserva, compra, entrega ou alteração do estoque farmacêutico.
+
+- Spec 008: contas por encontro e itens manuais em BRL, total exato, permissões com escopo PEP, reenvios seguros, auditoria atômica e consulta paginada online; sem emissão de cobrança.
+
+- Spec 007: solicitações de procedimentos cirúrgicos, catálogo institucional no Admin, escopo PEP, snapshots imutáveis, reenvios concorrentes seguros, auditoria e fluxo online; sem agendamento ou autorização cirúrgica neste recorte.
+
+- Spec 006: pedidos de imagem (RIS v1), catálogo institucional no Admin, escopo PEP, retratos imutáveis, retries com locks/constraint e auditoria, exclusivamente online; sem DICOM ou laudos neste recorte.
+
+- Spec 012: caixa laboratorial cifrada em quarentena, com origens/operadores no Admin, recibos imutáveis, deduplicação por origem, limites multipart/ASGI, consulta auditada de metadados e fluxo exclusivamente online.
+
 ### Simplificado
 
 - PEP: nove FBVs substituem as classes e três mixins; rotas, forms e templates mantidos.
@@ -18,6 +30,8 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 ### Adicionado
 
 #### HIS clínico
+
+- Spec 005 LIS v1: catálogo institucional no Admin, pedidos e coleta manual com escopo PEP, auditoria minimizada, idempotência e proteção concorrente, exclusivamente online.
 
 - Spec 013: solicitações do titular com escopo PEP, histórico auditado, transições atômicas, conflito concorrente e fluxo exclusivamente online.
 - Spec 012: exportação individual de cadastro mínimo FHIR R4 via formulário autenticado, com escopo PEP, CSRF, recibo auditado e proteção no-store.

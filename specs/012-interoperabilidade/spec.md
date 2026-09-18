@@ -8,7 +8,7 @@
 
 O Core, PEP, ADT, Prescrição/Farmácia, Enfermagem e PWA possuem recortes implementados. As tarefas abertas de assinatura, referências farmacêuticas e exceções de administração dependem de governança externa. Não serão desbloqueadas por esta spec.
 
-A Spec 012, prevista como P0 no SDD v3, foi iniciada neste incremento para exportar o cadastro mínimo de **um paciente por operação**, em arquivo FHIR R4 JSON, pela interface autenticada. Isso estabelece a fronteira de intercâmbio sem duplicar o PEP. Não conclui a interoperabilidade necessária ao LIS: ingestão HL7/ASTM e mapeamento de resultados exigirão extensão aprovada antes do módulo 005.
+A Spec 012, prevista como P0 no SDD v3, foi iniciada neste incremento para exportar o cadastro mínimo de **um paciente por operação**, em arquivo FHIR R4 JSON, pela interface autenticada. Isso estabelece a fronteira de intercâmbio sem duplicar o PEP. Não conclui a interoperabilidade necessária ao LIS: ingestão HL7/ASTM e mapeamento de resultados exigem extensão aprovada antes dos resultados do módulo 005; pedidos e coleta manual já estão implementados na v1 LIS.
 
 ## User Stories
 
@@ -45,7 +45,7 @@ Importação, HL7/ASTM, DICOM, XML, TISS, Bundle, laudos, prescrições, exporta
 
 ## Dependências
 
-Specs 000 (sessão/auditoria), 001 (paciente/escopo) e 014 (fronteiras de cache). A Spec 013 continua pendente; aprovação técnica desta spec não estabelece base legal ou política institucional para transferência de dados reais.
+Specs 000 (sessão/auditoria), 001 (paciente/escopo) e 014 (fronteiras de cache). O recorte de solicitações do titular da Spec 013 está implementado; aprovação técnica desta spec não estabelece base legal ou política institucional para transferência de dados reais.
 
 ## Riscos
 
@@ -77,3 +77,7 @@ Jornadas de navegador: `tests/e2e/interop_journeys.spec.js`, preparadas por `pre
 - [x] Gates locais executados e resultados registrados em `validation.md`.
 - [ ] CI remota com PostgreSQL/Redis e gates institucionais de compliance; validação local não equivale a certificação.
 - [x] Documentação operacional e rastreabilidade atualizadas com testes reais.
+
+## Próxima extensão
+
+[Recebimento laboratorial cifrado em quarentena](extensions/lab-inbox/spec.md): extensão aprovada e implementada em 2026-09-18; [evidências](extensions/lab-inbox/validation.md). Não altera o contrato de exportação nem implementa parsing HL7/ASTM.
