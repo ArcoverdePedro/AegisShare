@@ -12,3 +12,7 @@ Recorte autorizado e implementado em 2026-09-18. [Evidências locais](validation
 - [x] T-INV-08: guia/evidências/rastreabilidade executável. CA-01–07.
 
 Gates posteriores: saldos/lotes/movimentos, setores/almoxarifados, correção/atendimento, fornecedores/compras/recebimento e integração farmacêutica. Não autorizados por este recorte.
+
+## Continuidade do roadmap
+
+[Spec 010 — cadastro funcional mínimo](../010-rh-escalas/spec.md), proposta em 2026-09-18, aguardando aprovação explícita. Preserva os gates de estoque/compras e não vincula perfis a atos clínicos.

@@ -26,6 +26,8 @@ class PrivateWorkflowMiddleware:
                 reverse("surgery:case_list").removesuffix("solicitacoes/"),
                 reverse("billing:account_list").removesuffix("contas/"),
                 reverse("inventory:item_list"),
+                reverse("hr:employee_list"),
+                reverse("admin:hr_employee_changelist"),
             )
         ):
             response["Cache-Control"] = "private, no-store"

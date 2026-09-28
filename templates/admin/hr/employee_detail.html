@@ -1,0 +1,17 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Cadastro funcional · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Cadastro funcional</h1>
+{% include 'admin/hr/_notice.html' %}
+<div class="box">
+<p>Protocolo: {{ employee.pk }}</p>
+<p>Nome atual: {{ employee.user.get_full_name|default:employee.user.username }}</p>
+<p>Usuário: {{ employee.user.username }}</p>
+<p>Setor: {{ employee.department }}</p>
+<p>Função: {{ employee.job_title }}</p>
+<p>Cadastro: {% if employee.active %}ativo{% else %}inativo{% endif %}</p>
+</div>
+<a href="{% url 'hr:employee_list' %}">Cadastros funcionais</a>
+</div></section>
+{% endblock %}

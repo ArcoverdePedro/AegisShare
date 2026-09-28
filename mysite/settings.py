@@ -13,6 +13,7 @@ INSTALLED_APPS = [
     "apps.clinical.surgery.apps.SurgeryConfig",
     "apps.admin.billing.apps.BillingConfig",
     "apps.admin.inventory.apps.InventoryConfig",
+    "apps.admin.hr.apps.HrConfig",
 ]
 
 MIDDLEWARE = [

@@ -107,6 +107,7 @@ specs/006-ris-pacs/                pedidos de imagem (RIS v1)
 specs/007-centro-cirurgico/        solicitações de procedimentos
 specs/008-faturamento/             preparação manual de contas implementada
 specs/009-estoque-compras/          catálogo e requisições de materiais
+specs/010-rh-escalas/               proposta de cadastro funcional mínimo
 specs/012-interoperabilidade/       exportação FHIR e caixa laboratorial cifrada
 specs/014-pwa/                     PWA, offline seguro e push
 adr/                               decisões arquiteturais aceitas
@@ -130,6 +131,8 @@ Implementado: [caixa laboratorial cifrada em quarentena](specs/012-interoperabil
 [Spec 008 — preparação manual de contas](specs/008-faturamento/spec.md) autorizada e implementada em 2026-09-18, com conta por encontro e itens/total exato em BRL. [Guia operacional](docs/faturamento.md) e [evidências](specs/008-faturamento/validation.md). Não emite cobrança nem automatiza tabelas ou guias.
 
 [Spec 009 — catálogo e requisições de materiais](specs/009-estoque-compras/spec.md) autorizada e implementada em 2026-09-18, com catálogo não medicamentoso, snapshots, quantidades inteiras e consulta institucional por capacidade. [Guia operacional](docs/estoque-requisicoes.md) e [evidências](specs/009-estoque-compras/validation.md). Não duplica o estoque farmacêutico nem confirma compra, reserva ou entrega.
+
+Próxima proposta: [Spec 010 — cadastro funcional mínimo](specs/010-rh-escalas/spec.md), com setor/função/status cadastral vinculados ao usuário existente, gestão pelo Admin e consulta institucional por capacidade. Aguarda aprovação explícita; sem escalas, ponto ou efeitos sobre autenticação.
 
 ## Requisitos
 

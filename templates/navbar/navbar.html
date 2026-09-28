@@ -147,6 +147,9 @@
                     {% if not user.is_client and perms.inventory.view_requisitions %}
                         <a class="navbar-item {% if request.resolver_match.namespace == 'inventory' %}is-active{% endif %}" href="{% url 'inventory:item_list' %}">Estoque</a>
                     {% endif %}
+                    {% if not user.is_client and perms.hr.view_employee %}
+                        <a class="navbar-item {% if request.resolver_match.namespace == 'hr' %}is-active{% endif %}" href="{% url 'hr:employee_list' %}">RH</a>
+                    {% endif %}
                     <a class="navbar-item {% if 'file' in request.resolver_match.url_name or request.resolver_match.url_name == 'arquivos' %}is-active{% endif %}" href="{% url 'arquivos' %}">{% icon 'folder' %} Arquivos</a>
                     {% if not user.is_client %}
                         <a class="navbar-item {% if request.resolver_match.url_name == 'upload' %}is-active{% endif %}" href="{% url 'upload' %}">{% icon 'upload' %} Enviar</a>

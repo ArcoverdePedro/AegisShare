@@ -1,0 +1,23 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Cadastro funcional · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Cadastro funcional</h1>
+{% include 'admin/hr/_notice.html' %}
+{% for employee in page_obj %}
+<article class="box">
+<h2 class="title is-5">{{ employee.user.get_full_name|default:employee.user.username }}</h2>
+<p>Usuário: {{ employee.user.username }}</p>
+<p>Setor: {{ employee.department }}</p>
+<p>Função: {{ employee.job_title }}</p>
+<p>Cadastro: {% if employee.active %}ativo{% else %}inativo{% endif %}</p>
+<a href="{% url 'hr:employee_detail' employee.pk %}" aria-label="Abrir cadastro funcional {{ employee.pk }}">Abrir cadastro</a>
+</article>
+{% empty %}<p>Nenhum cadastro funcional disponível.</p>{% endfor %}
+<nav aria-label="Paginação" class="mt-4">
+{% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+{% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</nav>
+</div></section>
+{% endblock %}
