@@ -6,6 +6,8 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 
 ### Adicionado
 
+- Spec 010: cadastro funcional mínimo vinculado ao usuário existente, com manutenção no Admin, consulta institucional por capacidade, auditoria minimizada e fluxo online; sem escalas, ponto ou efeitos sobre autenticação.
+
 - Spec 009: catálogo de materiais não medicamentosos e requisições internas com snapshots, consulta institucional por capacidade, reenvios seguros, auditoria e fluxo online; sem reserva, compra, entrega ou alteração do estoque farmacêutico.
 
 - Spec 008: contas por encontro e itens manuais em BRL, total exato, permissões com escopo PEP, reenvios seguros, auditoria atômica e consulta paginada online; sem emissão de cobrança.
@@ -24,6 +26,8 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 - Removidos `aegis_share.views` e os adaptadores `arquivos_por_permissao`/`dar_acesso`, sem consumidores no repositório; imports devem usar `aegis_share.web` e os serviços existentes.
 
 ### Corrigido
+
+- Atualização transitiva de `anyio` de 4.11.0 para 4.15.1 após alertas de segurança do `pip-audit`.
 
 - Atualização transitiva de `click` de 8.3.0 para 8.3.3 para corrigir o alerta `PYSEC-2026-2132` identificado pelo pip-audit.
 

@@ -1,6 +1,6 @@
-# Modelo proposto — cadastro funcional
+# Modelo implementado — cadastro funcional
 
-App apps.admin.hr, label hr; uma tabela. Sem migration nesta proposta.
+App apps.admin.hr, label hr; uma tabela criada por `hr.0001_initial`.
 
 | Modelo | Campos |
 |---|---|

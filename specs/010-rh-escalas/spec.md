@@ -2,7 +2,7 @@
 
 ## Status
 
-**Proposta de 2026-09-18, aguardando aprovação explícita. Não implementada.** Autorizações anteriores cobrem os respectivos recortes, sem aprovar automaticamente este módulo.
+**Autorizada e implementada em 2026-09-28.** O aceite foi registrado pelas mensagens “continue com o SDD” e “aprovado, continue”. Uso com dados reais ainda depende da validação institucional descrita abaixo.
 
 ## Recorte e histórias
 
@@ -10,7 +10,7 @@ A fase 4 continua pelo cadastro funcional de usuários internos existentes. Empl
 
 Como operador de RH autorizado, quero manter um perfil por profissional pelo Admin e consultar setor/função sem duplicar a identidade. Como auditor, quero identificar criação/alteração e as consultas da interface de RH sem copiar nomes, setores e funções para logs genéricos.
 
-Propõe-se **consulta institucional de todos os perfis**, incluindo desativados, por capacidade explícita hr.view_employee. Não há escopo por setor ou autoacesso do titular nesta v1. O alcance e os três campos novos dependem da aprovação deste recorte. Piloto sintético até validação institucional de finalidade, acesso e conteúdo dos campos.
+A consulta institucional inclui **todos os perfis**, inclusive desativados, por capacidade explícita hr.view_employee. Não há escopo por setor ou autoacesso do titular nesta v1. Piloto sintético até validação institucional de finalidade, acesso e conteúdo dos campos.
 
 ## Requisitos funcionais
 
@@ -24,7 +24,7 @@ Propõe-se **consulta institucional de todos os perfis**, incluindo desativados,
 
 ## Fronteira de auditoria
 
-ACCESS cobre as duas páginas de consulta RH. O Admin nativo audita **criação/alteração**, não emite ACCESS automaticamente em leituras de lista/formulário ou da seleção de usuários. Essa fronteira é explícita nesta proposta; não se declara auditoria de toda leitura administrativa ou conformidade integral. Caso a instituição exija ACCESS de todas essas leituras, o contrato deve ser estendido antes desse uso. Não alterar auditoria global de CustomUser nesta v1.
+ACCESS cobre as duas páginas de consulta RH. O Admin nativo audita **criação/alteração**, não emite ACCESS automaticamente em leituras de lista/formulário ou da seleção de usuários. Essa fronteira é explícita nesta versão; não se declara auditoria de toda leitura administrativa ou conformidade integral. Caso a instituição exija ACCESS de todas essas leituras, o contrato deve ser estendido antes desse uso. Não alterar auditoria global de CustomUser nesta v1.
 
 ## Requisitos não funcionais
 
@@ -39,9 +39,9 @@ Shift, TimeClock, Training, escalas/calendário, conflito de horários, jornada,
 
 Escalas/ponto exigem contrato de setor, horário/fuso, conflito, alterações, autoria e validação institucional das regras reais. Capacitação exige catálogo, critérios de conclusão, validade e efeitos aprovados. Não emitir shift.created/timeclock.recorded/training.completed sem fato persistido e consumidor contratado. Nenhuma decisão trabalhista ou clínica automática.
 
-## Rastreabilidade planejada
+## Rastreabilidade implementada
 
-| Requisito | Superfície | Template | Critério/teste futuro |
+| Requisito | Superfície | Template | Critério/teste |
 |---|---|---|---|
 | 01/02/07 | EmployeeAdmin add/change | Admin nativo | CA-HR-01, CA-HR-02, CA-HR-06 |
 | 03/04 | Admin e duas FBVs | Admin + templates RH | CA-HR-03, CA-HR-04 |
@@ -49,13 +49,13 @@ Escalas/ponto exigem contrato de setor, horário/fuso, conflito, alterações, a
 | 04/05/06 | employee_detail | admin/hr/employee_detail.html | CA-HR-04, CA-HR-05, CA-HR-06 |
 | RNF-02/03/04 | middleware/Admin/PWA/CI | layout existente | CA-HR-07 |
 
-[Inventário](research.md), [modelo](data-model.md), [contratos](contracts/routes-and-forms.md), [plano](plan.md), [tarefas](tasks.md), [aceitação](features/employees.feature). Critérios planejados; sem testes executáveis/evidências de implementação desta spec.
+[Inventário](research.md), [modelo](data-model.md), [contratos](contracts/routes-and-forms.md), [plano](plan.md), [tarefas](tasks.md), [aceitação](features/employees.feature), [evidências](validation.md) e [guia operacional](../../docs/cadastro-funcional.md).
 
 ## Definition of Done
 
 - [x] Inventário, recorte, modelo, contratos, plano, tarefas e aceitação.
-- [ ] Aprovação: três campos funcionais, consulta institucional incluindo inativos, manutenção pelo Admin e fronteira de auditoria.
-- [ ] App/model/Admin/FBVs/migration/privacidade.
-- [ ] Permissões/validação/isolamento de RBAC/auditoria/rollback/concorrência testados.
-- [ ] E2E/revogação/mobile/tablet/axe/offline/gates com evidências e guia.
+- [x] Aprovação: três campos funcionais, consulta institucional incluindo inativos, manutenção pelo Admin e fronteira de auditoria.
+- [x] App/model/Admin/FBVs/migration/privacidade.
+- [x] Permissões/validação/isolamento de RBAC/auditoria/rollback/concorrência testados.
+- [x] E2E/revogação/mobile/tablet/axe/offline/gates com evidências e guia.
 - [ ] Validação institucional antes do uso real.

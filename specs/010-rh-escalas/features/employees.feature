@@ -1,6 +1,6 @@
 # language: pt
 Funcionalidade: Manter cadastro funcional sem alterar acesso ou vínculo jurídico
-  # Critérios planejados; sem testes executáveis desta spec.
+  # Critérios cobertos pelos testes Django e Playwright referenciados em validation.md.
 
   Cenário: CA-HR-01 Cadastro mínimo e vínculo único
     Dado staff interno com capacidades de consulta e criação

@@ -1,6 +1,6 @@
 # Plano — RH v1
 
-Proposta de 2026-09-18; implementar após aprovação do recorte. Nível 1/2/3.
+Executado em 2026-09-28 após aprovação do recorte. Nível 1/2/3.
 
 1. App hr, Employee único por User, campos/validação nativa, permissões nativas e migration reversível; auditlog sem setor/função. Não adicionar modelo de setor/cargo ou services/selectors.
 2. ModelAdmin pequeno, ModelForm necessário para restrição da associação; papel interno/staff/view/add/change, sem excluir. Associação imutável na edição, sem alterar User/RBAC. Transação nativa, ator explícito e falha operacional genérica após rollback.

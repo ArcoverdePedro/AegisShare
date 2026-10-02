@@ -15,4 +15,4 @@ Gates posteriores: saldos/lotes/movimentos, setores/almoxarifados, correção/at
 
 ## Continuidade do roadmap
 
-[Spec 010 — cadastro funcional mínimo](../010-rh-escalas/spec.md), proposta em 2026-09-18, aguardando aprovação explícita. Preserva os gates de estoque/compras e não vincula perfis a atos clínicos.
+[Spec 010 — cadastro funcional mínimo](../010-rh-escalas/spec.md), autorizada e implementada em 2026-09-28. Preserva os gates de estoque/compras e não vincula perfis a atos clínicos.

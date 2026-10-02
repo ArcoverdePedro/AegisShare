@@ -1,4 +1,4 @@
-# Contratos propostos — cadastro funcional
+# Contratos implementados — cadastro funcional
 
 Namespace hr; sessão Django e reverse/URLs nomeadas. Consulta institucional de todos os Employee, ativos e inativos.
 
