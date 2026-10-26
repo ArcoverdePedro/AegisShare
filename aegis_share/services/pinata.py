@@ -4,10 +4,12 @@ from io import BytesIO
 import requests
 from django.conf import settings
 
+from .storage import StorageError
+
 logger = logging.getLogger(__name__)
 
 
-class PinataError(RuntimeError):
+class PinataError(StorageError):
     pass
 
 
@@ -58,6 +60,9 @@ class PinataClient:
     def delete_file(self, file_id: str) -> bool:
         if not file_id:
             return True
+        if not self.token:
+            logger.warning("pinata_delete_without_token", extra={"pinata_id": file_id})
+            return False
         try:
             response = requests.delete(
                 f"{self.api_base}/{self.network}/{file_id}",

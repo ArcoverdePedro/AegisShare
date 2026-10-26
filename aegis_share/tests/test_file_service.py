@@ -18,7 +18,7 @@ class FileServiceTests(TestCase):
         self.owner = make_user("client")
         self.employee = make_user("employee", role="FUNC")
 
-    @patch("aegis_share.services.files.PinataClient")
+    @patch("aegis_share.services.files.storage_client")
     def test_upload_is_encrypted_before_pinata(self, pinata_cls):
         pinata = pinata_cls.return_value
         pinata.upload_bytes.return_value = {
@@ -50,7 +50,7 @@ class FileServiceTests(TestCase):
             FileAccess.objects.filter(arquivo=file, user=self.employee).exists()
         )
 
-    @patch("aegis_share.services.files.PinataClient")
+    @patch("aegis_share.services.files.storage_client")
     def test_new_version_updates_current_metadata(self, pinata_cls):
         pinata = pinata_cls.return_value
         pinata.upload_bytes.side_effect = [
@@ -82,7 +82,7 @@ class FileServiceTests(TestCase):
         self.assertEqual(FileVersion.objects.filter(file=file).count(), 2)
         self.assertEqual(file.current_version.id, version.id)
 
-    @patch("aegis_share.services.files.PinataClient")
+    @patch("aegis_share.services.files.storage_client")
     def test_invalid_mime_is_rejected_before_external_upload(self, pinata_cls):
         uploaded = SimpleUploadedFile(
             "malware.exe",

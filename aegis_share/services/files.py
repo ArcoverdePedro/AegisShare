@@ -13,7 +13,7 @@ from aegis_share.models import FileAccess, FileVersion, IPFSFile, WorkspaceMembe
 from .antivirus import scan_bytes
 from .crypto import decrypt_file, encrypt_file, sha256_hex
 from .notifications import notify_file_shared
-from .pinata import PinataClient
+from .storage import LOCAL_PREFIX, LocalStorageClient, client_for, storage_client
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def create_file_from_upload(
         content, aad=_version_aad(version_id)
     )
 
-    client = PinataClient()
+    client = storage_client()
     remote = client.upload_bytes(
         encrypted,
         filename=_encrypted_name(uploaded_file.name, version_number),
@@ -154,7 +154,7 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
         content, aad=_version_aad(version_id)
     )
 
-    client = PinataClient()
+    client = storage_client()
     remote = client.upload_bytes(
         encrypted,
         filename=_encrypted_name(file.nome_arquivo, version_number),
@@ -214,7 +214,7 @@ def create_new_version(*, file: IPFSFile, uploaded_file, actor):
 
 
 def get_version_content(version: FileVersion) -> bytes:
-    remote_content = PinataClient().download_bytes(version.cid)
+    remote_content = client_for(version.cid).download_bytes(version.cid)
     if version.encrypted_sha256 and sha256_hex(remote_content) != version.encrypted_sha256:
         raise FileIntegrityError(
             "O conteudo criptografado nao corresponde ao hash registrado."
@@ -256,7 +256,6 @@ def revoke_access(*, file: IPFSFile, recipient, actor):
 
 
 def purge_file(file: IPFSFile):
-    client = PinataClient()
     failures = []
     versions = list(file.versions.all())
     if not versions and file.pinata_id:
@@ -264,7 +263,7 @@ def purge_file(file: IPFSFile):
         versions = [file]
     for version in versions:
         pinata_id = getattr(version, "pinata_id", "")
-        if pinata_id and not client.delete_file(pinata_id):
+        if pinata_id and not client_for(pinata_id).delete_file(pinata_id):
             failures.append(pinata_id)
     if failures:
         return failures
@@ -286,3 +285,55 @@ def purge_expired_trash(retention_days: int):
         else:
             purged += 1
     return purged, failures
+
+
+def copy_version_to_local(version: FileVersion, *, encrypt_plaintext=False):
+    """Copia uma versao para o backend local, conferindo bytes antes de trocar a referencia.
+
+    A origem nao e removida: retorna (cid, pinata_id) antigos para desativacao posterior.
+    """
+    if version.cid.startswith(LOCAL_PREFIX):
+        return None
+    if not version.is_encrypted and not encrypt_plaintext:
+        raise FileIntegrityError("Versao legada sem criptografia exige --encrypt-plaintext.")
+
+    content = client_for(version.cid).download_bytes(version.cid)
+    if version.is_encrypted:
+        if not version.encrypted_sha256 or sha256_hex(content) != version.encrypted_sha256:
+            raise FileIntegrityError("Conteudo de origem nao confere com o hash registrado.")
+    else:
+        if not version.sha256 or sha256_hex(content) != version.sha256:
+            raise FileIntegrityError("Conteudo legado nao confere com o SHA-256 registrado.")
+        content, version.wrapped_key, _, version.encrypted_sha256 = encrypt_file(
+            content, aad=_version_aad(version.id)
+        )
+        version.encrypted_size = len(content)
+        version.is_encrypted = True
+
+    old = (version.cid, version.pinata_id)
+    local = LocalStorageClient()
+    remote = local.upload_bytes(
+        content, filename=_encrypted_name(version.file.nome_arquivo, version.version_number)
+    )
+    version.cid = remote["cid"]
+    version.pinata_id = remote["id"]
+    try:
+        get_version_content(version)
+        with transaction.atomic():
+            version.save(
+                update_fields=[
+                    "cid",
+                    "pinata_id",
+                    "is_encrypted",
+                    "wrapped_key",
+                    "encrypted_sha256",
+                    "encrypted_size",
+                ]
+            )
+            IPFSFile.objects.filter(pk=version.file_id, cid=old[0]).update(
+                cid=version.cid, pinata_id=version.pinata_id, is_encrypted=True
+            )
+    except Exception:
+        local.delete_file(remote["id"])
+        raise
+    return old

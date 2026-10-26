@@ -1,0 +1,16 @@
+# Progresso do plano HIS
+
+Base: 38c6100 (master, 26/10/2026) | Escopo: G01 pendente — provisório sintético em `DECISOES.md`
+
+Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Encounter/evolução+adendo/grants; ADT com leitos e movimentos; RX com prescrição, revisão determinística, lotes e dispensação; enfermagem com sinais vitais e administração confirmada; LIS/RIS/cirurgia só pedido/coleta/solicitação; billing com conta manual; inventory com item e requisição (inteiros, sem ledger); HR cadastro; FHIR mínimo + caixa laboratorial; LGPD com protocolo do titular; arquivos cifrados só na Pinata (até H29). Ausentes: alergias, assinatura, agenda/recepção, triagem, resultados LIS, compras, contratos/TISS/SUS, financeiro, backup automatizado, indicadores.
+
+| ID | Estado | Evidência/commit | Bloqueio ou próxima ação |
+| --- | --- | --- | --- |
+| H00 | DONE | baseline: check, makemigrations --check, ruff check OK; 525 testes OK em PostgreSQL 18 descartável | Preexistente: `ruff format --check` acusa 74 arquivos com ruff 0.17 (não é gate do CI) |
+| H01 | BLOCKED | `docs/his/DECISOES.md` | G01 sem resposta; escopo provisório registrado, trabalho técnico segue |
+| H29 | READY | branch `his/h29-storage-local`; `aegis_share/tests/test_file_storage.py` | Falta instalação real com volume e migração de acervo Pinata real (G11) |
+| H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
+| demais | TODO | — | — |
+
+Última verificação: `manage.py test aegis_share` (PostgreSQL) → 67 OK
+Próxima tarefa: H19 — ledger de movimentações em `apps/admin/inventory/` (entrada, saída, ajuste com motivo), sem conversão de unidade (G09).
