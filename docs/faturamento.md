@@ -34,3 +34,10 @@ Piloto sintético até validação institucional de catálogo/preço informado, 
 Por YAGNI, sem pagador/convênio/tarifas/guias SUS ou TISS, documento fiscal, cobrança/pagamento, descontos/tributos, fechamento/correção/estorno, quantidades fracionárias, outras moedas ou produção clínica automática. Essas operações dependem de contratos institucionais próprios.
 
 [Evidências](../specs/008-faturamento/validation.md).
+
+## Origem, estorno e produção pendente (H22)
+
+- Todo item tem origem (`MANUAL` ou `DISPENSE`) e, quando aplicável, `source_id`. Item manual exige justificativa administrativa.
+- A conta lista "Produção sem lançamento": itens de dispensação farmacêutica do encontro sem item vigente. Lançar exige `billing.add_item` e o preço unitário (sem tabela aprovada, G09). Cada dispensação tem no máximo um item vigente, verificado com a conta travada; quantidade fracionada é recusada (conversão de unidade não aprovada).
+- Estorno (`billing.reverse_item`) cria item ligado ao original (`reverses`) com motivo; o total subtrai o estorno e nada é apagado. Após estorno a origem volta a ficar pendente para relançamento correto.
+- Pendentes (G09/H21/H23): tabela de preços versionada, pagador, momento aprovado da cobrança, produção de exames/procedimentos (pedido não prova execução), consumo de materiais por paciente.

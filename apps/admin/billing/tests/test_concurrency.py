@@ -109,6 +109,7 @@ class BillingConcurrencyTests(TransactionTestCase):
                 description="Sintético",
                 quantity=3,
                 unit_price="0.10",
+                justification="sintético",
             )
         )
         self.assertEqual(BillingItem.objects.count(), 1)
@@ -134,6 +135,7 @@ class BillingConcurrencyTests(TransactionTestCase):
                 description="Sintético",
                 quantity=1,
                 unit_price="0",
+                justification="sintético",
             )
         )
         self.assertEqual(BillingItem.objects.count(), 1)

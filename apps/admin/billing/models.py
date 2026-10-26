@@ -24,6 +24,7 @@ class HospitalAccount(models.Model):
             ("view_accounts", "Pode consultar contas em preparação"),
             ("open_account", "Pode abrir conta em preparação"),
             ("add_item", "Pode lançar item manual"),
+            ("reverse_item", "Pode estornar item lançado"),
         ]
 
     def __str__(self):
@@ -39,6 +40,10 @@ class HospitalAccount(models.Model):
 
 
 class BillingItem(models.Model):
+    class Source(models.TextChoices):
+        MANUAL = "MANUAL", "Lançamento manual"
+        DISPENSE = "DISPENSE", "Dispensação farmacêutica"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     account = models.ForeignKey(HospitalAccount, on_delete=models.PROTECT, related_name="items")
     description = models.CharField(max_length=200)
@@ -47,11 +52,19 @@ class BillingItem(models.Model):
     recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     recorded_at = models.DateTimeField(auto_now_add=True)
     operation_key = models.UUIDField()
+    source = models.CharField(max_length=10, choices=Source.choices, default=Source.MANUAL)
+    # Origem sem FK: produtores diferentes; unicidade por origem e garantida sob lock da conta.
+    source_id = models.UUIDField(null=True, blank=True)
+    justification = models.CharField(max_length=255, blank=True)
+    reverses = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversed_by"
+    )
 
     class Meta:
         ordering = ["-recorded_at", "-id"]
         indexes = [
-            models.Index(fields=["account", "-recorded_at", "-id"], name="billing_item_account_idx")
+            models.Index(fields=["account", "-recorded_at", "-id"], name="billing_item_account_idx"),
+            models.Index(fields=["source", "source_id"], name="billing_item_source_idx"),
         ]
         constraints = [
             models.UniqueConstraint(fields=["operation_key"], name="uniq_billing_item_operation"),
@@ -82,4 +95,6 @@ class BillingItem(models.Model):
 
 
 auditlog.register(HospitalAccount)
-auditlog.register(BillingItem, exclude_fields=["description", "quantity", "unit_price"])
+auditlog.register(
+    BillingItem, exclude_fields=["description", "quantity", "unit_price", "justification"]
+)

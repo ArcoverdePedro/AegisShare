@@ -6,6 +6,7 @@ from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients, require_module_permission
+from apps.clinical.prescription.models import MedicationDispenseItem
 
 from .forms import AccountOpenForm, BillingItemForm
 from .models import BillingItem, HospitalAccount
@@ -72,7 +73,9 @@ def open_account(*, user, encounter_id, operation_key, confirmed):
 
 
 @sensitive_variables()
-def add_item(*, user, account_id, description, quantity, unit_price, operation_key, confirmed):
+def add_item(
+    *, user, account_id, description, quantity, unit_price, justification, operation_key, confirmed
+):
     require_permission(user, "add_item")
     data = _validate(
         BillingItemForm(
@@ -80,6 +83,7 @@ def add_item(*, user, account_id, description, quantity, unit_price, operation_k
                 "description": description,
                 "quantity": quantity,
                 "unit_price": unit_price,
+                "justification": justification,
                 "operation_key": operation_key,
                 "confirmed": confirmed,
             }
@@ -104,3 +108,94 @@ def add_item(*, user, account_id, description, quantity, unit_price, operation_k
             if existing is None:
                 raise
             return _retry_item(existing, user, account.pk, data)
+
+
+def _locked_account(user, account_id, capability):
+    require_permission(user, capability)
+    account = get_object_or_404(
+        HospitalAccount.objects.select_for_update().select_related("encounter"), pk=account_id
+    )
+    get_object_or_404(accessible_patients(user), pk=account.encounter.patient_id)
+    return account
+
+
+def _replay(operation_key, user, account):
+    existing = BillingItem.objects.filter(operation_key=operation_key).first()
+    if existing and (existing.recorded_by_id, existing.account_id) != (user.pk, account.pk):
+        raise BillingConflict("Operação incompatível.")
+    return existing
+
+
+def _billed_sources(account, source):
+    """Origens com item vigente (lancado e nao estornado)."""
+    return set(
+        account.items.filter(source=source, reverses__isnull=True, reversed_by__isnull=True)
+        .exclude(source_id=None)
+        .values_list("source_id", flat=True)
+    )
+
+
+def pending_dispense_items(account):
+    """Producao confirmada (dispensacao) do encontro ainda sem item vigente na conta."""
+    billed = _billed_sources(account, BillingItem.Source.DISPENSE)
+    return [
+        item
+        for item in MedicationDispenseItem.objects.filter(
+            dispense__medication_request__encounter=account.encounter
+        ).select_related("request_item__drug", "dispense")
+        if item.pk not in billed
+    ]
+
+
+def capture_dispense(*, user, account_id, dispense_item_id, unit_price, operation_key):
+    with transaction.atomic(), set_actor(user):
+        account = _locked_account(user, account_id, "add_item")
+        existing = _replay(operation_key, user, account)
+        if existing:
+            return existing
+        item = get_object_or_404(
+            MedicationDispenseItem.objects.select_related("request_item__drug"),
+            pk=dispense_item_id,
+            dispense__medication_request__encounter=account.encounter,
+        )
+        if item.pk in _billed_sources(account, BillingItem.Source.DISPENSE):
+            raise BillingConflict("Esta dispensação já está lançada na conta.")
+        if item.quantity != item.quantity.to_integral_value():
+            raise BillingConflict(
+                "Quantidade fracionada exige regra de conversão aprovada; lance manualmente."
+            )
+        drug = item.request_item.drug
+        return BillingItem.objects.create(
+            account=account,
+            description=f"{drug.code} · {drug.name} ({drug.dispense_unit})"[:200],
+            quantity=int(item.quantity),
+            unit_price=unit_price,
+            recorded_by=user,
+            operation_key=operation_key,
+            source=BillingItem.Source.DISPENSE,
+            source_id=item.pk,
+        )
+
+
+def reverse_item(*, user, item_id, justification, operation_key):
+    with transaction.atomic(), set_actor(user):
+        original = get_object_or_404(BillingItem, pk=item_id)
+        account = _locked_account(user, original.account_id, "reverse_item")
+        existing = _replay(operation_key, user, account)
+        if existing:
+            return existing
+        original = BillingItem.objects.select_for_update().get(pk=original.pk)
+        if original.reverses_id or hasattr(original, "reversed_by"):
+            raise BillingConflict("Item já estornado ou é um estorno.")
+        return BillingItem.objects.create(
+            account=account,
+            description=f"Estorno: {original.description}"[:200],
+            quantity=original.quantity,
+            unit_price=original.unit_price,
+            recorded_by=user,
+            operation_key=operation_key,
+            source=original.source,
+            source_id=original.source_id,
+            justification=justification.strip(),
+            reverses=original,
+        )

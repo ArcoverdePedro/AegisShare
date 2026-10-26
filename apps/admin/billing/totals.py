@@ -18,7 +18,13 @@ class _CentSum:
 
 
 def account_total(account):
-    items = account.items.all()
+    """Estornos subtraem o item original; nada e apagado."""
+    return _sum(account.items.filter(reverses__isnull=True)) - _sum(
+        account.items.filter(reverses__isnull=False)
+    )
+
+
+def _sum(items):
     if connection.vendor == "sqlite":
         connection.ensure_connection()
         connection.connection.create_aggregate("billing_cent_sum", 2, _CentSum)

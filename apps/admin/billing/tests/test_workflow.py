@@ -68,6 +68,7 @@ class BillingTests(TestCase):
             "unit_price": "0.20",
             "operation_key": uuid.uuid4(),
             "confirmed": True,
+            "justification": "Lançamento sintético",
             **changes,
         }
 

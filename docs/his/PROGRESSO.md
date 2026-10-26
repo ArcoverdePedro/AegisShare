@@ -17,8 +17,9 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H27 | BLOCKED | caixa laboratorial já deduplica e mantém quarentena | Processador/retry sem formato de equipamento (G07) e RNDS sem credenciais (G11); FHIR ampliado depende de H04/H05 |
 | H13 | READY | `apps/clinical/adt/tests/test_bed_status.py`; spec 002 "Extensão operacional" | Reserva, isolamento, previsão de alta e integração com alta clínica pendentes (G01/G02, H04/H06/H08) |
 | H26 | READY | `apps/admin/hr/tests/test_registration.py`, `AbsenceIntegrationTests` | Escalas/plantões/ponto/folha e efeito do registro vencido aguardam G01/G06 |
+| H22 | READY | `apps/admin/billing/tests/test_capture.py` | Tabela de preço versionada, pagador e momento da cobrança (G09); produção de exames/cirurgia e consumo de materiais por paciente (H14–H18, H21) |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 570 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H22 — capturar produção na conta hospitalar: ligar entregas de material (`MaterialMovement` ISSUE com requisição de paciente?) e dispensações a `BillingItem` sem duplicar; ler `apps/admin/billing/`.
+Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 573 OK; ruff check e makemigrations --check OK
+Próxima tarefa: H34 — conferir instalação reproduzível (compose, `.env-example`, README) com FILE_STORAGE_BACKEND=local, sem Pinata; depois H14 (fase pré-analítica do LIS).

@@ -1,19 +1,28 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients
 
-from .forms import AccountOpenForm, BillingItemForm
+from .forms import AccountOpenForm, BillingItemForm, CaptureForm, ReverseItemForm
 from .models import BillingItem, HospitalAccount
-from .services import BillingConflict, add_item, open_account, require_permission
+from .services import (
+    BillingConflict,
+    add_item,
+    capture_dispense,
+    open_account,
+    pending_dispense_items,
+    require_permission,
+    reverse_item,
+)
 from .totals import account_total
 
 
@@ -50,11 +59,12 @@ def account_detail(request, pk):
     require_permission(request.user)
     try:
         account = get_object_or_404(_accounts(request.user), pk=pk)
-        page = Paginator(account.items.select_related("recorded_by"), 25).get_page(
+        page = Paginator(account.items.select_related("recorded_by", "reversed_by"), 25).get_page(
             request.GET.get("page")
         )
         page.object_list = list(page.object_list)
         total = account_total(account)
+        pending = pending_dispense_items(account)
         with transaction.atomic(), set_actor(request.user):
             accessed.send(HospitalAccount, instance=account)
             for item in page.object_list:
@@ -64,7 +74,14 @@ def account_detail(request, pk):
     return render(
         request,
         "admin/billing/account_detail.html",
-        {"account": account, "page_obj": page, "total": total},
+        {
+            "account": account,
+            "page_obj": page,
+            "total": total,
+            "pending": pending,
+            "capture_form": CaptureForm(),
+            "reverse_form": ReverseItemForm(),
+        },
     )
 
 
@@ -136,3 +153,39 @@ def item_create(request, pk):
     return render(
         request, "admin/billing/item_form.html", {"form": form, "account": account}, status=status
     )
+
+
+def _post_action(request, account_pk, action, form_class, **ids):
+    form = form_class(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Revise os dados informados.")
+        return redirect("billing:account_detail", pk=account_pk)
+    try:
+        action(user=request.user, **ids, **form.cleaned_data)
+    except BillingConflict as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Lançamento registrado.")
+    return redirect("billing:account_detail", pk=account_pk)
+
+
+@login_required
+@require_POST
+def dispense_capture(request, pk, item_id):
+    account = get_object_or_404(_accounts(request.user), pk=pk)
+    return _post_action(
+        request,
+        account.pk,
+        capture_dispense,
+        CaptureForm,
+        account_id=account.pk,
+        dispense_item_id=item_id,
+    )
+
+
+@login_required
+@require_POST
+def item_reverse(request, pk, item_id):
+    account = get_object_or_404(_accounts(request.user), pk=pk)
+    get_object_or_404(account.items, pk=item_id)
+    return _post_action(request, account.pk, reverse_item, ReverseItemForm, item_id=item_id)
