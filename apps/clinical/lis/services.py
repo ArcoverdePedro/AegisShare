@@ -2,12 +2,20 @@ from auditlog.context import set_actor
 from auditlog.signals import accessed
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
-from .models import LabTest, ServiceRequest, ServiceRequestCancellation, Specimen, SpecimenEvent
+from .models import (
+    LabResult,
+    LabTest,
+    ServiceRequest,
+    ServiceRequestCancellation,
+    Specimen,
+    SpecimenEvent,
+)
 
 
 class LisConflict(ValueError):
@@ -195,3 +203,57 @@ def cancel_order(*, user, order_id, reason):
         return ServiceRequestCancellation.objects.create(
             service_request=order, reason=reason.strip(), cancelled_by=user
         )
+
+
+RESULT_FIELDS = ("analyte", "value", "unit", "reference_range", "method")
+
+
+def enter_result(*, user, specimen_id, operation_key, supersedes=None, reason="", **data):
+    with transaction.atomic(), set_actor(user):
+        specimen = _lock_specimen(user, "enter_result", pk=specimen_id)
+        existing = LabResult.objects.filter(operation_key=operation_key).first()
+        if existing:
+            if (existing.entered_by_id, existing.specimen_id) != (user.pk, specimen.pk):
+                raise LisConflict("Operação incompatível. Consulte o histórico.")
+            return existing
+        if specimen.status != SpecimenEvent.Kind.RECEIVED:
+            raise LisConflict("Resultado exige amostra recebida e não rejeitada.")
+        if specimen.service_request.cancelled:
+            raise LisConflict("Pedido cancelado.")
+        if supersedes:
+            supersedes = LabResult.objects.select_for_update().get(pk=supersedes.pk)
+            if (
+                supersedes.specimen_id != specimen.pk
+                or supersedes.status != LabResult.Status.RELEASED
+            ):
+                raise LisConflict("Só resultado liberado desta amostra pode ser retificado.")
+            if hasattr(supersedes, "superseded_by"):
+                raise LisConflict("Resultado já retificado.")
+            if not reason.strip():
+                raise LisConflict("Informe o motivo da retificação.")
+        return LabResult.objects.create(
+            specimen=specimen,
+            supersedes=supersedes,
+            reason=reason.strip(),
+            entered_by=user,
+            operation_key=operation_key,
+            **{field: data.get(field, "").strip() for field in RESULT_FIELDS},
+        )
+
+
+def advance_result(*, user, result_id):
+    """Registrado -> validado -> liberado; liberacao torna visivel ao solicitante."""
+    with transaction.atomic(), set_actor(user):
+        result = get_object_or_404(LabResult.objects.select_for_update(), pk=result_id)
+        _lock_specimen(user, "validate_result", pk=result.specimen_id)
+        now = timezone.now()
+        if result.status == LabResult.Status.ENTERED:
+            result.status, result.validated_by, result.validated_at = "VALIDATED", user, now
+        elif result.status == LabResult.Status.VALIDATED:
+            result.status, result.released_by, result.released_at = "RELEASED", user, now
+        else:
+            raise LisConflict("Resultado já liberado; use retificação.")
+        result.save(
+            update_fields=["status", "validated_by", "validated_at", "released_by", "released_at"]
+        )
+        return result

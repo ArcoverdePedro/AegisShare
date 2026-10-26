@@ -19,5 +19,15 @@ urlpatterns = [
         views.specimen_reject,
         name="specimen_reject",
     ),
+    path(
+        "laboratorio/pedidos/<uuid:pk>/amostras/<uuid:specimen_id>/resultados/novo/",
+        views.result_create,
+        name="result_create",
+    ),
+    path(
+        "laboratorio/pedidos/<uuid:pk>/resultados/<uuid:result_id>/andamento/",
+        views.result_advance,
+        name="result_advance",
+    ),
     path("laboratorio/recebimento/", views.specimen_receive, name="specimen_receive"),
 ]

@@ -3,7 +3,7 @@ import uuid
 from django import forms
 from django.utils import timezone
 
-from .models import LabTest
+from .models import LabResult, LabTest
 
 
 class OrderForm(forms.Form):
@@ -75,3 +75,11 @@ class ReceiveForm(forms.Form):
 class ReasonForm(forms.Form):
     reason = forms.CharField(label="Motivo", max_length=255)
     operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+
+
+class ResultForm(forms.ModelForm):
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+
+    class Meta:
+        model = LabResult
+        fields = ["analyte", "value", "unit", "reference_range", "method", "reason"]

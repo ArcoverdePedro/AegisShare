@@ -56,3 +56,10 @@ Para retirar o piloto, revogue capacidades e remova os links pelo rollback do c�
 - Cancelamento (`lis.cancel_order`) com motivo; amostra recebida precisa ser rejeitada antes. Eventos e cancelamentos são append-only.
 - Etiqueta imprimível (código, paciente, nascimento, exame, material) em `/laboratorio/pedidos/<id>/etiqueta/`; código de barras/impressora térmica não implementados.
 - Pendentes (G07): múltiplos materiais por pedido, transporte/lotes de envio, catálogo de motivos de rejeição e critérios de aceitação.
+
+## Resultados manuais (H15)
+
+- `lis.enter_result` registra resultado em amostra recebida e não rejeitada: analito, valor (texto, como emitido), unidade, referência informada e método. Nada é calculado ou interpretado; não há sinalização de crítico (G07).
+- `lis.validate_result` valida e depois libera. Só resultado liberado aparece a quem tem apenas `lis.view_orders`.
+- Retificação cria nova versão ligada à liberada (`supersedes`) com motivo; a original permanece intacta. Conteúdo do resultado é imutável. `operation_key` evita duplicidade em reenvio.
+- Pendentes: catálogo de analitos/unidades, valores críticos e ciência (G07), importação HL7/ASTM a partir da caixa em quarentena (G07/G11), assinatura do laudo (H06/G05).

@@ -165,8 +165,68 @@ class ServiceRequestCancellation(models.Model):
         return super().save(*args, **kwargs)
 
 
+class LabResult(models.Model):
+    """Resultado digitado pelo laboratorio; referencia e texto informados, nunca calculados."""
+
+    class Status(models.TextChoices):
+        ENTERED = "ENTERED", "Registrado"
+        VALIDATED = "VALIDATED", "Validado"
+        RELEASED = "RELEASED", "Liberado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    specimen = models.ForeignKey(Specimen, on_delete=models.PROTECT, related_name="results")
+    analyte = models.CharField("Analito", max_length=120)
+    value = models.CharField("Valor", max_length=120)
+    unit = models.CharField("Unidade", max_length=40, blank=True)
+    reference_range = models.CharField("Referência informada", max_length=120, blank=True)
+    method = models.CharField("Método", max_length=120, blank=True)
+    status = models.CharField(max_length=9, choices=Status.choices, default=Status.ENTERED)
+    supersedes = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="superseded_by"
+    )
+    reason = models.CharField("Motivo da retificação", max_length=255, blank=True)
+    entered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    entered_at = models.DateTimeField(auto_now_add=True)
+    validated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    validated_at = models.DateTimeField(null=True, blank=True)
+    released_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    released_at = models.DateTimeField(null=True, blank=True)
+    operation_key = models.UUIDField(unique=True)
+
+    STATUS_FIELDS = {"status", "validated_by", "validated_at", "released_by", "released_at"}
+
+    class Meta:
+        ordering = ["analyte", "entered_at"]
+        permissions = [
+            ("enter_result", "Pode registrar e retificar resultado laboratorial"),
+            ("validate_result", "Pode validar e liberar resultado laboratorial"),
+        ]
+
+    def __str__(self):
+        return f"Resultado {self.pk}"
+
+    def save(self, *args, **kwargs):
+        # Conteudo e imutavel; so o andamento muda. Correcao = nova versao (supersedes).
+        if (
+            not self._state.adding
+            and not set(kwargs.get("update_fields") or ()) <= self.STATUS_FIELDS
+        ):
+            raise ValidationError("Resultados não podem ser editados; registre retificação.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Resultados não podem ser excluídos.")
+
+
 auditlog.register(LabTest, exclude_fields=["code", "name", "specimen_type"])
 auditlog.register(ServiceRequest, exclude_fields=["test_code", "test_name", "specimen_type"])
 auditlog.register(Specimen, exclude_fields=["accession_code"])
 auditlog.register(SpecimenEvent, exclude_fields=["reason"])
 auditlog.register(ServiceRequestCancellation, exclude_fields=["reason"])
+auditlog.register(LabResult, exclude_fields=["value", "reference_range", "reason"])

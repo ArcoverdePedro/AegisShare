@@ -13,12 +13,14 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients
 
-from .forms import OrderFilterForm, OrderForm, ReasonForm, ReceiveForm, SpecimenForm
-from .models import ServiceRequest, Specimen, SpecimenEvent
+from .forms import OrderFilterForm, OrderForm, ReasonForm, ReceiveForm, ResultForm, SpecimenForm
+from .models import LabResult, ServiceRequest, Specimen, SpecimenEvent
 from .services import (
     LisConflict,
+    advance_result,
     cancel_order,
     collect_specimen,
+    enter_result,
     order_test,
     receive_specimen,
     reject_specimen,
@@ -209,3 +211,58 @@ def specimen_label(request, pk):
     with transaction.atomic(), set_actor(request.user):
         accessed.send(Specimen, instance=item.specimen)
     return render(request, "clinical/lis/specimen_label.html", {"item": item})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def result_create(request, pk, specimen_id):
+    require_permission(request.user, "enter_result")
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    specimen = get_object_or_404(item.specimens.all(), pk=specimen_id)
+    supersedes = None
+    if request.GET.get("retificar"):
+        supersedes = get_object_or_404(specimen.results, pk=request.GET["retificar"])
+    form = ResultForm(
+        request.POST or None,
+        initial={
+            f: getattr(supersedes, f)
+            for f in ("analyte", "value", "unit", "reference_range", "method")
+        }
+        if supersedes
+        else None,
+    )
+    if not supersedes:
+        del form.fields["reason"]
+    status = 200
+    if request.method == "POST" and form.is_valid():
+        try:
+            enter_result(
+                user=request.user,
+                specimen_id=specimen.pk,
+                supersedes=supersedes,
+                **form.cleaned_data,
+            )
+        except LisConflict as exc:
+            form.add_error(None, str(exc))
+            status = 409
+        else:
+            messages.success(request, "Resultado registrado; aguarda validação.")
+            return redirect("lis:order_detail", pk=item.pk)
+    return render(
+        request,
+        "clinical/lis/result_form.html",
+        {"form": form, "item": item, "specimen": specimen, "supersedes": supersedes},
+        status=status,
+    )
+
+
+@login_required
+@require_POST
+def result_advance(request, pk, result_id):
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    get_object_or_404(LabResult, pk=result_id, specimen__service_request=item)
+    try:
+        advance_result(user=request.user, result_id=result_id)
+    except LisConflict as exc:
+        messages.error(request, str(exc))
+    return redirect("lis:order_detail", pk=item.pk)

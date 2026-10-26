@@ -15,6 +15,13 @@
 <h2 class="title is-5">Amostra {{ s.accession_code }} — {% if s.status == 'REJECTED' %}rejeitada{% elif s.status == 'RECEIVED' %}recebida no laboratório{% else %}coletada{% endif %}</h2>
 <p>Coleta: {{ s.collected_at|date:'d/m/Y H:i:s' }} · registrada por {{ s.collected_by.username }} em {{ s.recorded_at|date:'d/m/Y H:i:s' }}</p>
 {% if s.replaces_id %}<p class="is-size-7">Recoleta de amostra rejeitada.</p>{% endif %}
+{% with lab=perms.lis.enter_result|default:perms.lis.validate_result %}
+{% for r in s.results.all %}{% if r.status == 'RELEASED' or lab %}<div class="box"><p><strong>{{ r.analyte }}</strong>: {{ r.value }} {{ r.unit }}{% if r.reference_range %} (ref. {{ r.reference_range }}){% endif %}{% if r.method %} · {{ r.method }}{% endif %}</p>
+<p class="is-size-7">{{ r.get_status_display }}{% if r.superseded_by %} · retificado{% endif %}{% if r.supersedes_id %} · retificação: {{ r.reason }}{% endif %} · registrado por {{ r.entered_by.username }}{% if r.validated_by %} · validado por {{ r.validated_by.username }}{% endif %}{% if r.released_by %} · liberado em {{ r.released_at|date:'d/m/Y H:i' }}{% endif %}</p>
+{% if r.status != 'RELEASED' and perms.lis.validate_result %}<form method="post" action="{% url 'lis:result_advance' item.pk r.pk %}">{% csrf_token %}<button class="button is-small is-success" type="submit">{% if r.status == 'ENTERED' %}Validar{% else %}Liberar{% endif %}</button></form>{% endif %}
+{% if r.status == 'RELEASED' and not r.superseded_by and perms.lis.enter_result %}<a class="is-size-7" href="{% url 'lis:result_create' item.pk s.pk %}?retificar={{ r.pk }}">Retificar</a>{% endif %}</div>{% endif %}{% endfor %}
+{% if s.status == 'RECEIVED' and perms.lis.enter_result and not item.cancelled %}<a class="button is-small is-link" href="{% url 'lis:result_create' item.pk s.pk %}">Registrar resultado</a>{% endif %}
+{% endwith %}
 {% for e in s.events.all %}<p>{{ e.get_kind_display }} por {{ e.actor.username }} em {{ e.recorded_at|date:'d/m/Y H:i' }}{% if e.reason %} — {{ e.reason }}{% endif %}</p>{% endfor %}
 {% if s.status != 'REJECTED' and perms.lis.receive_specimen and not item.cancelled %}<form method="post" action="{% url 'lis:specimen_reject' item.pk s.pk %}" class="field has-addons mt-2">{% csrf_token %}{{ reason_form.operation_key }}<div class="control"><input class="input is-small" name="reason" aria-label="Motivo da rejeição" placeholder="Motivo da rejeição" maxlength="255" required></div><div class="control"><button class="button is-small is-danger" type="submit">Rejeitar amostra</button></div></form>{% endif %}
 </div>
