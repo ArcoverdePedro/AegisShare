@@ -10,8 +10,9 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H01 | BLOCKED | `docs/his/DECISOES.md` | G01 sem resposta; escopo provisório registrado, trabalho técnico segue |
 | H29 | READY | branch `his/plano-execucao`; `aegis_share/tests/test_file_storage.py` | Falta instalação real com volume e migração de acervo Pinata real (G11) |
 | H19 | READY | `apps/admin/inventory/tests/test_stock.py`, `test_concurrency.py` (PostgreSQL) | Reserva, conversão de embalagem e ponto de pedido aguardam G09; falta homologação com almoxarifado real |
+| H20 | READY | `apps/admin/inventory/tests/test_purchases.py`, `test_concurrency.py` | Cotação/alçadas/anexos/devolução ao fornecedor e vínculo financeiro aguardam G09/H25 |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 544 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H20 — Supplier/PurchaseOrder/recebimento parcial gerando `MaterialMovement` RECEIPT uma única vez (reusar `record_movement`).
+Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 550 OK; ruff check e makemigrations --check OK
+Próxima tarefa: H03 (parte técnica sem G02) — nome social, contatos/endereço e busca de possíveis duplicidades sem mesclagem automática em `apps/clinical/pep/`.

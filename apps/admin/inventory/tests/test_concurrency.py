@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from queue import Queue
 from threading import Barrier, Thread
 
@@ -6,8 +7,17 @@ from django.contrib.auth import get_user_model
 from django.db import close_old_connections, connections
 from django.test import TransactionTestCase, skipUnlessDBFeature
 
-from ..models import InventoryItem, MaterialBalance, MaterialMovement, Requisition, StockLocation
-from ..services import InventoryConflict, record_movement, request_material
+from ..models import (
+    InventoryItem,
+    MaterialBalance,
+    MaterialMovement,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    Requisition,
+    StockLocation,
+    Supplier,
+)
+from ..services import InventoryConflict, receive_purchase, record_movement, request_material
 
 
 @skipUnlessDBFeature("has_select_for_update")
@@ -134,3 +144,31 @@ class InventoryConcurrencyTests(TransactionTestCase):
         self.assertEqual(MaterialMovement.objects.count(), 1)
         self.assertEqual(results, [str(MaterialMovement.objects.get().pk)] * 2)
         self.assertEqual(MaterialBalance.objects.get().quantity, 5)
+
+    def test_parallel_receipts_never_exceed_ordered(self):
+        location = StockLocation.objects.create(code="ALM", name="Almoxarifado")
+        buyer = get_user_model().objects.create(username="po-buyer-conc", nivel_permissao="ADM")
+        order = PurchaseOrder.objects.create(
+            supplier=Supplier.objects.create(document="1", name="F"),
+            notes="x",
+            created_by=buyer,
+            approved_by=self.actor,
+            status=PurchaseOrder.Status.APPROVED,
+            operation_key=uuid.uuid4(),
+        )
+        line = PurchaseOrderLine.objects.create(
+            order=order, item=self.items[0], quantity=5, unit_price=Decimal("1.00")
+        )
+        results = self.run_concurrently(
+            lambda actor, index: receive_purchase(
+                user=actor,
+                line=line,
+                location=location,
+                quantity=3,
+                unit_price=Decimal("1.00"),
+                invoice_number="NF",
+                operation_key=uuid.uuid4(),
+            )
+        )
+        self.assertEqual(results.count("conflict"), 1)
+        self.assertEqual(MaterialBalance.objects.get().quantity, 3)

@@ -4,7 +4,7 @@
 <section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
 <h1 class="title is-3">Saldos de materiais</h1>
 {% include 'admin/inventory/_stock_notice.html' %}
-<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
+<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:purchase_list' %}">Compras</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
 {% if can_move %}<p class="mb-4"><a class="button is-link" href="{% url 'inventory:movement_create' %}">Registrar movimento</a></p>{% endif %}
 {% for b in page_obj %}<article class="box"><h2 class="title is-5">{{ b.item.code }} · {{ b.item.name }}</h2><p>Local: {{ b.location }}</p><p>Lote: {{ b.lot|default:'sem lote' }}{% if b.expires_on %} · validade {{ b.expires_on|date:'d/m/Y' }}{% endif %}</p><p><strong>{{ b.quantity }} {{ b.item.unit }}</strong></p></article>
 {% empty %}<p>Nenhum saldo disponível.</p>{% endfor %}

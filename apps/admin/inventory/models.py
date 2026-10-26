@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from auditlog.registry import auditlog
 from django.conf import settings
@@ -162,7 +163,130 @@ class MaterialMovement(models.Model):
         raise ValidationError("Movimentos não podem ser excluídos; registre um estorno.")
 
 
+class Supplier(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    document = models.CharField("CNPJ/CPF", max_length=18, unique=True)
+    name = models.CharField("Razão social", max_length=200)
+    active = models.BooleanField("Ativo", default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.document})"
+
+
+class PurchaseOrder(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "DRAFT", "Aguardando aprovação"
+        APPROVED = "APPROVED", "Aprovado"
+        PARTIAL = "PARTIAL", "Recebido parcialmente"
+        RECEIVED = "RECEIVED", "Recebido"
+        CANCELLED = "CANCELLED", "Cancelado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name="orders")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
+    notes = models.CharField("Justificativa", max_length=255)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="purchase_orders"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="approved_purchase_orders",
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="cancelled_purchase_orders",
+    )
+    cancel_reason = models.CharField(max_length=255, blank=True)
+    operation_key = models.UUIDField(unique=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        permissions = [
+            ("view_purchases", "Pode consultar fornecedores e pedidos de compra"),
+            ("request_purchase", "Pode registrar pedido de compra"),
+            ("approve_purchase", "Pode aprovar ou cancelar pedido de compra"),
+            ("receive_purchase", "Pode registrar recebimento de compra"),
+        ]
+        constraints = [
+            # Segregacao: quem solicita nao aprova o proprio pedido.
+            models.CheckConstraint(
+                condition=~models.Q(approved_by=models.F("created_by")),
+                name="inventory_po_approver_not_creator",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Pedido de compra {self.pk}"
+
+    @property
+    def total(self):
+        return sum((line.quantity * line.unit_price for line in self.lines.all()), Decimal("0"))
+
+
+class PurchaseOrderLine(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name="lines")
+    item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    received_quantity = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["item__code", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["order", "item"], name="uniq_inventory_po_item"),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1, received_quantity__lte=models.F("quantity")),
+                name="inventory_po_line_received_le_ordered",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(unit_price__gte=0), name="inventory_po_line_price_nonnegative"
+            ),
+        ]
+
+    def __str__(self):
+        return f"Item de compra {self.pk}"
+
+    @property
+    def pending(self):
+        return self.quantity - self.received_quantity
+
+
+class PurchaseReceipt(models.Model):
+    """Recebimento confirmado: gera exatamente uma entrada de estoque."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    line = models.ForeignKey(PurchaseOrderLine, on_delete=models.PROTECT, related_name="receipts")
+    movement = models.OneToOneField(
+        MaterialMovement, on_delete=models.PROTECT, related_name="purchase_receipt"
+    )
+    invoice_number = models.CharField("Nota fiscal", max_length=60)
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["received_at", "id"]
+
+    def __str__(self):
+        return f"Recebimento {self.pk}"
+
+
 auditlog.register(InventoryItem, exclude_fields=["code", "name", "unit"])
+auditlog.register(Supplier)
+auditlog.register(PurchaseOrder)
+auditlog.register(PurchaseOrderLine)
+auditlog.register(PurchaseReceipt)
 auditlog.register(StockLocation)
 auditlog.register(MaterialBalance)
 auditlog.register(MaterialMovement)

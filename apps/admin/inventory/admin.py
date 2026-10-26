@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.clinical.pep.permissions import is_internal_professional
 
-from .models import InventoryItem, StockLocation
+from .models import InventoryItem, StockLocation, Supplier
 
 
 @admin.register(InventoryItem)
@@ -31,3 +31,9 @@ class InventoryItemAdmin(admin.ModelAdmin):
 @admin.register(StockLocation)
 class StockLocationAdmin(InventoryItemAdmin):
     list_display = ["code", "name", "active"]
+
+
+@admin.register(Supplier)
+class SupplierAdmin(InventoryItemAdmin):
+    list_display = ["document", "name", "active"]
+    search_fields = ["document", "name"]

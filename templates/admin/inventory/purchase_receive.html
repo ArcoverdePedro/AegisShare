@@ -1,0 +1,11 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Compras de materiais · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Receber {{ line.item.code }} · {{ line.item.name }}</h1>
+<p class="notification is-info is-light">Pedido de compra não soma estoque. Só o recebimento conferido gera entrada, uma única vez. Quem solicita não aprova. Sem envio ao fornecedor nem obrigação financeira automática.</p>
+<p class="mb-4">Fornecedor {{ line.order.supplier }} · pendente {{ line.pending }} {{ line.item.unit }} a R$ {{ line.unit_price }}. Quantidade acima do pendente ou preço diferente são recusados e exigem nova aprovação.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Confirmar recebimento</button></form>
+<a href="{% url 'inventory:purchase_detail' line.order_id %}">Voltar ao pedido</a>
+</div></section>
+{% endblock %}

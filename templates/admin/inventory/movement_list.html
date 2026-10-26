@@ -4,7 +4,7 @@
 <section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
 <h1 class="title is-3">Movimentos de materiais</h1>
 {% include 'admin/inventory/_stock_notice.html' %}
-<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
+<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:purchase_list' %}">Compras</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
 {% for m in page_obj %}<article class="box"><h2 class="title is-5">{{ m.get_kind_display }}: {{ m.quantity_delta }} {{ m.balance.item.unit }}</h2><p>{{ m.balance.item.code }} · {{ m.balance.item.name }} · {{ m.balance.location }}{% if m.balance.lot %} · lote {{ m.balance.lot }}{% endif %}</p><p>Por {{ m.actor.username }} em {{ m.created_at|date:'d/m/Y H:i:s' }}</p><a href="{% url 'inventory:movement_detail' m.pk %}" aria-label="Abrir movimento {{ m.pk }}">Abrir movimento</a></article>
 {% empty %}<p>Nenhum movimento registrado.</p>{% endfor %}
 {% include 'admin/inventory/_pagination.html' %}

@@ -1,5 +1,6 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
@@ -9,14 +10,34 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_http_methods
 
-from .forms import MovementForm, RequisitionForm, ReversalForm, material_label
-from .models import InventoryItem, MaterialBalance, MaterialMovement, Requisition
+from .forms import (
+    MovementForm,
+    PurchaseLineFormSet,
+    PurchaseOrderForm,
+    PurchaseReceiptForm,
+    RequisitionForm,
+    ReversalForm,
+    material_label,
+)
+from .models import (
+    InventoryItem,
+    MaterialBalance,
+    MaterialMovement,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    Requisition,
+)
 from .services import (
     InventoryConflict,
+    approve_purchase_order,
+    cancel_purchase_order,
+    create_purchase_order,
     delivered_quantity,
+    receive_purchase,
     record_movement,
     request_material,
     require_permission,
+    require_purchase_permission,
     reverse_movement,
 )
 
@@ -211,5 +232,112 @@ def movement_detail(request, pk):
         request,
         "admin/inventory/movement_detail.html",
         {"movement": movement, "legs": legs, "reversed_by": reversed_by, "form": form},
+        status=status,
+    )
+
+
+@login_required
+@require_GET
+def purchase_list(request):
+    require_purchase_permission(request.user)
+    try:
+        page = _page(request, PurchaseOrder.objects.select_related("supplier", "created_by"))
+    except DatabaseError:
+        return _failed()
+    return render(request, "admin/inventory/purchase_list.html", {"page_obj": page})
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def purchase_create(request):
+    require_purchase_permission(request.user, "request_purchase")
+    data = request.POST if request.method == "POST" else None
+    form = PurchaseOrderForm(data)
+    lines = PurchaseLineFormSet(data, prefix="lines")
+    status = 200
+    try:
+        if request.method == "POST" and form.is_valid() and lines.is_valid():
+            try:
+                order = create_purchase_order(
+                    user=request.user,
+                    lines=[line.cleaned_data for line in lines if line.cleaned_data],
+                    **form.cleaned_data,
+                )
+            except InventoryConflict as exc:
+                form.add_error(None, str(exc))
+                status = 409
+            else:
+                return redirect("inventory:purchase_detail", pk=order.pk)
+    except DatabaseError:
+        return _failed()
+    return render(
+        request,
+        "admin/inventory/purchase_form.html",
+        {"form": form, "lines": lines},
+        status=status,
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def purchase_detail(request, pk):
+    require_purchase_permission(request.user)
+    cancel_form = ReversalForm(request.POST or None)
+    try:
+        order = get_object_or_404(
+            PurchaseOrder.objects.select_related("supplier", "created_by", "approved_by"), pk=pk
+        )
+        if request.method == "POST":
+            try:
+                if request.POST.get("action") == "approve":
+                    approve_purchase_order(user=request.user, order=order)
+                    messages.success(request, "Pedido aprovado.")
+                    return redirect("inventory:purchase_detail", pk=order.pk)
+                if cancel_form.is_valid():
+                    cancel_purchase_order(
+                        user=request.user, order=order, reason=cancel_form.cleaned_data["reason"]
+                    )
+                    messages.success(request, "Pedido cancelado.")
+                    return redirect("inventory:purchase_detail", pk=order.pk)
+            except InventoryConflict as exc:
+                messages.error(request, str(exc))
+                return redirect("inventory:purchase_detail", pk=order.pk)
+        lines = list(order.lines.select_related("item").prefetch_related("receipts__received_by"))
+        _audit_read(request.user, [order, *lines])
+    except DatabaseError:
+        return _failed()
+    return render(
+        request,
+        "admin/inventory/purchase_detail.html",
+        {"order": order, "lines": lines, "cancel_form": cancel_form},
+    )
+
+
+@sensitive_post_parameters()
+@login_required
+@require_http_methods(["GET", "POST"])
+def purchase_receive(request, pk):
+    require_purchase_permission(request.user, "receive_purchase")
+    form = PurchaseReceiptForm(request.POST or None)
+    status = 200
+    try:
+        line = get_object_or_404(
+            PurchaseOrderLine.objects.select_related("order__supplier", "item"), pk=pk
+        )
+        if request.method == "POST" and form.is_valid():
+            try:
+                receive_purchase(user=request.user, line=line, **form.cleaned_data)
+            except InventoryConflict as exc:
+                form.add_error(None, str(exc))
+                status = 409
+            else:
+                return redirect("inventory:purchase_detail", pk=line.order_id)
+        _audit_read(request.user, [line])
+    except DatabaseError:
+        return _failed()
+    return render(
+        request,
+        "admin/inventory/purchase_receive.html",
+        {"form": form, "line": line},
         status=status,
     )

@@ -12,4 +12,10 @@ urlpatterns = [
     path("estoque/movimentos/", views.movement_list, name="movement_list"),
     path("estoque/movimentos/novo/", views.movement_create, name="movement_create"),
     path("estoque/movimentos/<uuid:pk>/", views.movement_detail, name="movement_detail"),
+    path("estoque/compras/", views.purchase_list, name="purchase_list"),
+    path("estoque/compras/nova/", views.purchase_create, name="purchase_create"),
+    path("estoque/compras/<uuid:pk>/", views.purchase_detail, name="purchase_detail"),
+    path(
+        "estoque/compras/itens/<uuid:pk>/receber/", views.purchase_receive, name="purchase_receive"
+    ),
 ]

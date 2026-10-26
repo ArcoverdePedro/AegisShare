@@ -1,14 +1,23 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.permissions import require_module_permission
 
 from .forms import RequisitionForm
-from .models import InventoryItem, MaterialBalance, MaterialMovement, Requisition
+from .models import (
+    InventoryItem,
+    MaterialBalance,
+    MaterialMovement,
+    PurchaseOrder,
+    PurchaseOrderLine,
+    PurchaseReceipt,
+    Requisition,
+)
 
 
 class InventoryConflict(ValueError):
@@ -226,3 +235,124 @@ def reverse_movement(*, user, movement, reason, operation_key):
         if existing is None:
             raise
         return existing
+
+
+def require_purchase_permission(user, capability=None):
+    require_module_permission(user, "inventory", "view_purchases", capability)
+
+
+def create_purchase_order(*, user, supplier, notes, operation_key, lines):
+    require_purchase_permission(user, "request_purchase")
+    try:
+        with transaction.atomic(), set_actor(user):
+            existing = PurchaseOrder.objects.filter(operation_key=operation_key).first()
+            if existing:
+                if existing.created_by_id != user.pk or existing.supplier_id != supplier.pk:
+                    raise InventoryConflict("Operação incompatível.")
+                return existing
+            if not supplier.active:
+                raise InventoryConflict("Selecione um fornecedor ativo.")
+            order = PurchaseOrder.objects.create(
+                supplier=supplier, notes=notes.strip(), created_by=user, operation_key=operation_key
+            )
+            for line in lines:
+                PurchaseOrderLine.objects.create(order=order, **line)
+            return order
+    except IntegrityError:
+        existing = PurchaseOrder.objects.filter(operation_key=operation_key).first()
+        if existing is None or existing.created_by_id != user.pk:
+            raise
+        return existing
+
+
+def _locked_order(order):
+    return PurchaseOrder.objects.select_for_update().get(pk=order.pk)
+
+
+def approve_purchase_order(*, user, order):
+    require_purchase_permission(user, "approve_purchase")
+    with transaction.atomic(), set_actor(user):
+        order = _locked_order(order)
+        if order.status != PurchaseOrder.Status.DRAFT:
+            raise InventoryConflict("Somente pedidos aguardando aprovação podem ser aprovados.")
+        if order.created_by_id == user.pk:
+            raise InventoryConflict("Quem solicitou o pedido não pode aprová-lo.")
+        order.status = PurchaseOrder.Status.APPROVED
+        order.approved_by = user
+        order.approved_at = timezone.now()
+        order.save(update_fields=["status", "approved_by", "approved_at"])
+        return order
+
+
+def cancel_purchase_order(*, user, order, reason):
+    require_purchase_permission(user, "approve_purchase")
+    with transaction.atomic(), set_actor(user):
+        order = _locked_order(order)
+        if order.status not in {PurchaseOrder.Status.DRAFT, PurchaseOrder.Status.APPROVED}:
+            raise InventoryConflict(
+                "Pedido com recebimento ou já encerrado não pode ser cancelado."
+            )
+        order.status = PurchaseOrder.Status.CANCELLED
+        order.cancelled_by = user
+        order.cancel_reason = reason.strip()
+        order.save(update_fields=["status", "cancelled_by", "cancel_reason"])
+        return order
+
+
+def receive_purchase(
+    *,
+    user,
+    line,
+    location,
+    quantity,
+    unit_price,
+    invoice_number,
+    operation_key,
+    lot="",
+    expires_on=None,
+    confirmed=True,
+):
+    """Recebimento confirmado gera uma unica entrada de estoque, na mesma transacao."""
+    require_purchase_permission(user, "receive_purchase")
+    if not confirmed:
+        raise InventoryConflict("Confirme o recebimento.")
+    with transaction.atomic(), set_actor(user):
+        order = _locked_order(line.order)
+        existing = (
+            PurchaseReceipt.objects.filter(movement__operation_key=operation_key)
+            .select_related("movement")
+            .first()
+        )
+        if existing:
+            if (existing.line_id, existing.received_by_id) != (line.pk, user.pk):
+                raise InventoryConflict("Operação incompatível.")
+            return existing
+        line = PurchaseOrderLine.objects.select_for_update().get(pk=line.pk)
+        if order.status not in {PurchaseOrder.Status.APPROVED, PurchaseOrder.Status.PARTIAL}:
+            raise InventoryConflict("O pedido não está aprovado para recebimento.")
+        if quantity > line.pending:
+            raise InventoryConflict(
+                "Quantidade acima do pendente: registre a divergência e submeta novo pedido."
+            )
+        if unit_price != line.unit_price:
+            raise InventoryConflict(
+                "Preço diverge do aprovado: registre a divergência e submeta nova aprovação."
+            )
+        item = InventoryItem.objects.select_for_update().get(pk=line.item_id)
+        balance = _balance(item, location, lot, create=True, expires_on=expires_on)
+        movement = _apply(
+            balance,
+            quantity,
+            MaterialMovement.Kind.RECEIPT,
+            user=user,
+            operation_key=operation_key,
+            reason=f"Compra {order.pk} · NF {invoice_number.strip()}",
+        )
+        line.received_quantity += quantity
+        line.save(update_fields=["received_quantity"])
+        complete = not order.lines.filter(received_quantity__lt=F("quantity")).exists()
+        order.status = PurchaseOrder.Status.RECEIVED if complete else PurchaseOrder.Status.PARTIAL
+        order.save(update_fields=["status"])
+        return PurchaseReceipt.objects.create(
+            line=line, movement=movement, invoice_number=invoice_number.strip(), received_by=user
+        )

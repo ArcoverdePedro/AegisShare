@@ -5,6 +5,6 @@
 <h1 class="title is-3">Registrar movimento de material</h1>
 {% include 'admin/inventory/_stock_notice.html' %}
 <form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Registrar movimento</button></form>
-<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
+<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:purchase_list' %}">Compras</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
 </div></section>
 {% endblock %}

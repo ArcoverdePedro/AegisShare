@@ -1,0 +1,18 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Compras de materiais · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Pedido de compra — {{ order.get_status_display }}</h1>
+<p class="notification is-info is-light">Pedido de compra não soma estoque. Só o recebimento conferido gera entrada, uma única vez. Quem solicita não aprova. Sem envio ao fornecedor nem obrigação financeira automática.</p>
+<div class="box"><p>Fornecedor: {{ order.supplier }}</p><p>Justificativa: {{ order.notes }}</p><p>Solicitado por {{ order.created_by.username }} em {{ order.created_at|date:'d/m/Y H:i' }}</p>
+{% if order.approved_by %}<p>Aprovado por {{ order.approved_by.username }} em {{ order.approved_at|date:'d/m/Y H:i' }}</p>{% endif %}
+{% if order.cancel_reason %}<p>Cancelado: {{ order.cancel_reason }}</p>{% endif %}
+<p><strong>Total: R$ {{ order.total }}</strong></p></div>
+{% for line in lines %}<article class="box"><h2 class="title is-5">{{ line.item.code }} · {{ line.item.name }}</h2><p>Pedido: {{ line.quantity }} {{ line.item.unit }} × R$ {{ line.unit_price }} · recebido {{ line.received_quantity }} · pendente {{ line.pending }}</p>
+{% for r in line.receipts.all %}<p>NF {{ r.invoice_number }}: <a href="{% url 'inventory:movement_detail' r.movement_id %}">entrada</a> por {{ r.received_by.username }} em {{ r.received_at|date:'d/m/Y H:i' }}</p>{% endfor %}
+{% if line.pending and perms.inventory.receive_purchase and order.status in 'APPROVED PARTIAL' %}<a class="button is-small is-link" href="{% url 'inventory:purchase_receive' line.pk %}">Registrar recebimento</a>{% endif %}</article>{% endfor %}
+{% if perms.inventory.approve_purchase and order.status == 'DRAFT' and order.created_by_id != user.pk %}<form method="post" class="mb-4">{% csrf_token %}<input type="hidden" name="action" value="approve"><button type="submit" class="button is-success">Aprovar pedido</button></form>{% endif %}
+{% if perms.inventory.approve_purchase and order.status in 'DRAFT APPROVED' %}<form method="post" class="box">{% csrf_token %}<input type="hidden" name="action" value="cancel"><h2 class="title is-5">Cancelar pedido</h2>{% with form=cancel_form %}{% include 'compliance/_partials/form_fields.html' %}{% endwith %}<button type="submit" class="button is-danger">Cancelar pedido</button></form>{% endif %}
+<p class="mb-4"><a href="{% url 'inventory:purchase_list' %}">Pedidos de compra</a> · <a href="{% url 'inventory:balance_list' %}">Saldos</a></p>
+</div></section>
+{% endblock %}

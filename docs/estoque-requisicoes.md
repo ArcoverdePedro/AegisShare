@@ -47,6 +47,12 @@ Locais (`StockLocation`) são cadastrados no admin. `MaterialBalance` guarda o s
 
 Rotas: `/estoque/saldos/`, `/estoque/movimentos/`, `/estoque/movimentos/novo/`, `/estoque/movimentos/<id>/`. A requisição mostra entregue/pendente e o link "Registrar entrega"; requisitar continua sem confirmar entrega. Conciliação: para cada saldo, `quantity == Sum(movements.quantity_delta)` (teste `test_stock.py`). Quantidades inteiras na unidade do catálogo; conversão de embalagem, reserva e ponto de pedido aguardam G09.
 
+## Compras e recebimento (extensão H20)
+
+Fornecedores (`Supplier`) são cadastrados no admin. Fluxo em `/estoque/compras/`: pedido com itens e preços (`request_purchase`) → aprovação por outro usuário (`approve_purchase`; constraint impede aprovador = solicitante) → recebimento por item (`receive_purchase`) informando local, lote/validade, NF e preço da nota. O pedido não soma estoque; cada recebimento confirmado cria uma única entrada (`MaterialMovement` RECEIPT) na mesma transação, com chave idempotente e pedido travado. Quantidade acima do pendente ou preço diferente do aprovado são recusados (409) e exigem novo pedido/aprovação. Cancelamento só antes de qualquer recebimento.
+
+Pendentes (G09/H25): cotação obrigatória por faixa, alçadas de valor, devolução ao fornecedor, anexos da NF, obrigação financeira/contas a pagar e envio ao fornecedor.
+
 ## Extensões posteriores
 
 Fornecedores/compras/recebimento precisam de autorização e regras operacionais próprias. Integração farmacêutica exige fonte de verdade explícita; esta v1 não muda StockItem, Lot, StockMovement, dispensação ou faturamento.
