@@ -8,6 +8,7 @@ urlpatterns = [
     path("pacientes/", views.patient_list, name="patient_list"),
     path("pacientes/novo/", views.patient_create, name="patient_create"),
     path("pacientes/<uuid:pk>/", views.patient_detail, name="patient_detail"),
+    path("pacientes/<uuid:pk>/cadastro/", views.patient_update, name="patient_update"),
     path(
         "pacientes/<uuid:patient_id>/encontros/",
         views.encounter_list,

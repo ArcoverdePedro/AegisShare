@@ -11,8 +11,9 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H29 | READY | branch `his/plano-execucao`; `aegis_share/tests/test_file_storage.py` | Falta instalação real com volume e migração de acervo Pinata real (G11) |
 | H19 | READY | `apps/admin/inventory/tests/test_stock.py`, `test_concurrency.py` (PostgreSQL) | Reserva, conversão de embalagem e ponto de pedido aguardam G09; falta homologação com almoxarifado real |
 | H20 | READY | `apps/admin/inventory/tests/test_purchases.py`, `test_concurrency.py` | Cotação/alçadas/anexos/devolução ao fornecedor e vínculo financeiro aguardam G09/H25 |
+| H03 | BLOCKED | `apps/clinical/pep/tests/test_registration.py`; spec 001 "Extensão de cadastro" | Parte técnica entregue; desconhecido/provisório, múltiplos identificadores, responsáveis e mesclagem dependem de G02 |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 550 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H03 (parte técnica sem G02) — nome social, contatos/endereço e busca de possíveis duplicidades sem mesclagem automática em `apps/clinical/pep/`.
+Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 554 OK; ruff check e makemigrations --check OK
+Próxima tarefa: H30 — backup cifrado (banco + FILE_STORAGE_ROOT) e restauração verificada; depois H27 (processamento recuperável).

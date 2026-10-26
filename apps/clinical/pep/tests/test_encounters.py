@@ -124,12 +124,8 @@ class EncounterTests(TestCase):
         )
         self.client.force_login(self.other)
 
-        list_response = self.client.get(
-            reverse("pep:encounter_list", args=[self.patient.id])
-        )
-        detail_response = self.client.get(
-            reverse("pep:encounter_detail", args=[encounter.id])
-        )
+        list_response = self.client.get(reverse("pep:encounter_list", args=[self.patient.id]))
+        detail_response = self.client.get(reverse("pep:encounter_detail", args=[encounter.id]))
 
         self.assertEqual(list_response.status_code, 200)
         self.assertContains(list_response, "Consulta")

@@ -80,6 +80,58 @@
                     </div>
                 </div>
 
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.social_name.id_for_label }}">{{ form.social_name.label }}</label>
+                            <div class="control">{{ form.social_name }}</div>
+                            {% for error in form.social_name.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label" for="{{ form.postal_code.id_for_label }}">{{ form.postal_code.label }}</label>
+                            <div class="control">{{ form.postal_code }}</div>
+                            {% for error in form.postal_code.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+                            <div class="control">{{ form.address }}</div>
+                            {% for error in form.address.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label" for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+                            <div class="control">{{ form.city }}</div>
+                            {% for error in form.city.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                    <div class="column is-2">
+                        <div class="field">
+                            <label class="label" for="{{ form.state.id_for_label }}">{{ form.state.label }}</label>
+                            <div class="control">{{ form.state }}</div>
+                            {% for error in form.state.errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if duplicates %}
+                <div class="notification is-warning is-light" role="alert">
+                    <p class="has-text-weight-semibold">Há {{ duplicates.count }} cadastro(s) com o mesmo nome e data de nascimento.</p>
+                    {% for p in duplicates.visible %}<p><a href="{% url 'pep:patient_detail' p.pk %}">{{ p.display_name }} · {{ p.get_identifier_type_display }} {{ p.identifier }}</a></p>{% endfor %}
+                    {% if duplicates.count > duplicates.visible|length %}<p>Cadastros fora do seu acesso não são exibidos; confirme com a recepção antes de prosseguir.</p>{% endif %}
+                    <label class="checkbox mt-3">{{ form.confirm_new }} {{ form.confirm_new.label }}</label>
+                    <p class="is-size-7 mt-2">Nenhum cadastro é unido automaticamente.</p>
+                </div>
+                {% endif %}
+
                 <div class="is-flex is-justify-content-flex-end is-align-items-center mt-5" style="gap: .75rem;">
                     <a class="button" href="{% url 'pep:patient_list' %}">Cancelar</a>
                     <button class="button is-link" type="submit">

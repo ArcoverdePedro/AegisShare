@@ -11,8 +11,7 @@ def is_internal_professional(user) -> bool:
     if getattr(user, "is_client", lambda: False)():
         return False
     return bool(
-        getattr(user, "is_admin", lambda: False)()
-        or getattr(user, "is_employee", lambda: False)()
+        getattr(user, "is_admin", lambda: False)() or getattr(user, "is_employee", lambda: False)()
     )
 
 
@@ -62,9 +61,11 @@ def can_access_patient(user, patient: Patient) -> bool:
         return True
 
     now = timezone.now()
-    return patient.access_grants.filter(user=user).filter(
-        Q(expires_at__isnull=True) | Q(expires_at__gt=now)
-    ).exists()
+    return (
+        patient.access_grants.filter(user=user)
+        .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+        .exists()
+    )
 
 
 def can_create_encounter(user, patient: Patient) -> bool:

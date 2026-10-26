@@ -20,3 +20,12 @@ def validate_cpf(value: str) -> None:
 
     if numbers[9] != first or numbers[10] != second:
         raise ValidationError("CPF inválido.")
+
+
+def validate_cns(value: str) -> None:
+    """Cartao Nacional de Saude: 15 digitos, inicio 1/2/7/8/9 e soma ponderada multipla de 11."""
+    cns = normalize_cpf(value)
+    if len(cns) != 15 or cns[0] not in "12789":
+        raise ValidationError("CNS inválido.")
+    if sum(int(digit) * weight for digit, weight in zip(cns, range(15, 0, -1), strict=True)) % 11:
+        raise ValidationError("CNS inválido.")

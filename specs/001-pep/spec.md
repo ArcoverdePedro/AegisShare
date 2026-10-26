@@ -93,6 +93,13 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - `clinical/pep/evolution_detail.html`
 - `clinical/pep/document_sign.html` — futuro T-PEP-08
 
+## Extensão de cadastro (H03, 26/10/2026)
+
+- `Patient` ganha `social_name` (exibido com precedência, nome de registro visível), CEP/endereço/município/UF e identificador `CNS` com validação do dígito (soma ponderada múltipla de 11).
+- `/pep/pacientes/<id>/cadastro/` atualiza só contatos, endereço e nome social; identificador, nome de registro e nascimento não mudam por essa tela. Valores novos são mascarados no auditlog.
+- Cadastro com mesmo nome (sem diferenciar maiúsculas) e nascimento retorna 409 e exige confirmação explícita; fora do escopo do usuário só a contagem é revelada. Nada é unido automaticamente.
+- Pendentes por G02: múltiplos identificadores com emissor, paciente desconhecido/provisório e regularização, responsáveis legais, conciliação/mesclagem autorizada, acesso emergencial.
+
 ## Fora de Escopo
 
 - ADT operacional completo de leitos/transferências.

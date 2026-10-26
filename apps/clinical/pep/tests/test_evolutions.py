@@ -103,9 +103,7 @@ class ClinicalEvolutionTests(TestCase):
             reverse("pep:evolution_create", args=[self.encounter.id]),
             {"content": "Tentativa fora do escopo."},
         )
-        detail_response = self.client.get(
-            reverse("pep:evolution_detail", args=[evolution.id])
-        )
+        detail_response = self.client.get(reverse("pep:evolution_detail", args=[evolution.id]))
 
         self.assertEqual(create_response.status_code, 404)
         self.assertEqual(detail_response.status_code, 404)
@@ -197,9 +195,7 @@ class ClinicalEvolutionTests(TestCase):
         evolution = self.make_evolution()
         self.client.force_login(self.owner)
 
-        response = self.client.get(
-            reverse("pep:encounter_detail", args=[self.encounter.id])
-        )
+        response = self.client.get(reverse("pep:encounter_detail", args=[self.encounter.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, evolution.content)

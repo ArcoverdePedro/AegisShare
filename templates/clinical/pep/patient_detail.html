@@ -1,7 +1,7 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
 
-{% block title %}{{ patient.full_name }} · PEP{% endblock %}
+{% block title %}{{ patient.display_name }} · PEP{% endblock %}
 
 {% block page_content %}
 <section class="section pt-3">
@@ -12,7 +12,8 @@
                 <div class="level-left">
                     <div>
                         <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">PRONTUÁRIO ELETRÔNICO</p>
-                        <h1 class="title is-3 mb-2">{{ patient.full_name }}</h1>
+                        <h1 class="title is-3 mb-2">{{ patient.display_name }}</h1>
+                        {% if patient.social_name %}<p class="is-size-7 mb-2">Nome de registro: {{ patient.full_name }}</p>{% endif %}
                         <p class="muted">Identificação e histórico assistencial do paciente.</p>
                     </div>
                 </div>
@@ -49,7 +50,12 @@
                             <dt class="column is-5 has-text-weight-semibold">E-mail</dt>
                             <dd class="column">{{ patient.email|default:"Não informado" }}</dd>
                         </div>
+                        <div class="columns is-mobile py-2" style="border-top: 1px solid var(--aegis-border);">
+                            <dt class="column is-5 has-text-weight-semibold">Endereço</dt>
+                            <dd class="column">{% if patient.address or patient.city %}{{ patient.address }}{% if patient.city %} · {{ patient.city }}/{{ patient.state }}{% endif %}{% if patient.postal_code %} · CEP {{ patient.postal_code }}{% endif %}{% else %}Não informado{% endif %}</dd>
+                        </div>
                     </dl>
+                    {% if can_update_patient %}<a class="button is-small mt-3" href="{% url 'pep:patient_update' patient.pk %}">Atualizar dados cadastrais</a>{% endif %}
                 </div>
             </div>
 

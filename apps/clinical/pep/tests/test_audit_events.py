@@ -72,17 +72,13 @@ class ClinicalReadAuditTests(TestCase):
         self.assert_access_logged(self.patient)
 
     def test_encounter_detail_read_is_audited(self):
-        response = self.client.get(
-            reverse("pep:encounter_detail", args=[self.encounter.id])
-        )
+        response = self.client.get(reverse("pep:encounter_detail", args=[self.encounter.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assert_access_logged(self.encounter)
 
     def test_evolution_detail_read_is_audited(self):
-        response = self.client.get(
-            reverse("pep:evolution_detail", args=[self.evolution.id])
-        )
+        response = self.client.get(reverse("pep:evolution_detail", args=[self.evolution.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assert_access_logged(self.evolution)
