@@ -6,7 +6,8 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.debug import sensitive_variables
 
-from apps.clinical.pep.permissions import require_module_permission
+from apps.clinical.pep.models import Encounter
+from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
 from .forms import RequisitionForm
 from .models import (
@@ -131,6 +132,14 @@ def _existing_operation(operation_key, user, item):
     return first
 
 
+def _open_encounter(user, encounter):
+    encounter = get_object_or_404(Encounter.objects.select_for_update(), pk=encounter.pk)
+    get_object_or_404(accessible_patients(user), pk=encounter.patient_id)
+    if encounter.status != Encounter.Status.OPEN:
+        raise InventoryConflict("O encontro não está aberto.")
+    return encounter
+
+
 def record_movement(
     *,
     user,
@@ -143,10 +152,13 @@ def record_movement(
     lot="",
     expires_on=None,
     requisition=None,
+    encounter=None,
     reason="",
     confirmed=True,
 ):
     require_permission(user, "adjust_stock" if kind == "ADJUSTMENT" else "move_stock")
+    if encounter and kind != "ISSUE":
+        raise InventoryConflict("Consumo por paciente é registrado como saída.")
     if not confirmed:
         raise InventoryConflict("Confirme a movimentação.")
     try:
@@ -182,8 +194,12 @@ def record_movement(
                 if quantity > limit:
                     raise InventoryConflict("Quantidade excede o pendente da requisição.")
             if kind == "ISSUE":
+                if encounter:
+                    encounter = _open_encounter(user, encounter)
                 balance = _balance(item, location, lot)
-                return _apply(balance, -quantity, kind, requisition=requisition, **common)
+                return _apply(
+                    balance, -quantity, kind, requisition=requisition, encounter=encounter, **common
+                )
             if kind == "RETURN":
                 balance = _balance(item, location, lot, create=True)
                 return _apply(balance, quantity, kind, requisition=requisition, **common)
@@ -226,6 +242,7 @@ def reverse_movement(*, user, movement, reason, operation_key):
                     reason=reason.strip(),
                     reverses=leg,
                     requisition=leg.requisition,
+                    encounter=leg.encounter,
                 )
                 for leg in legs
             ]

@@ -17,9 +17,12 @@ from .models import BillingItem, HospitalAccount
 from .services import (
     BillingConflict,
     add_item,
+    billing_divergences,
     capture_dispense,
+    capture_material,
     open_account,
     pending_dispense_items,
+    pending_material_movements,
     require_permission,
     reverse_item,
 )
@@ -65,6 +68,8 @@ def account_detail(request, pk):
         page.object_list = list(page.object_list)
         total = account_total(account)
         pending = pending_dispense_items(account)
+        pending_materials = pending_material_movements(account)
+        divergences = billing_divergences(account)
         with transaction.atomic(), set_actor(request.user):
             accessed.send(HospitalAccount, instance=account)
             for item in page.object_list:
@@ -79,6 +84,8 @@ def account_detail(request, pk):
             "page_obj": page,
             "total": total,
             "pending": pending,
+            "pending_materials": pending_materials,
+            "divergences": divergences,
             "capture_form": CaptureForm(),
             "reverse_form": ReverseItemForm(),
         },
@@ -189,3 +196,17 @@ def item_reverse(request, pk, item_id):
     account = get_object_or_404(_accounts(request.user), pk=pk)
     get_object_or_404(account.items, pk=item_id)
     return _post_action(request, account.pk, reverse_item, ReverseItemForm, item_id=item_id)
+
+
+@login_required
+@require_POST
+def material_capture(request, pk, movement_id):
+    account = get_object_or_404(_accounts(request.user), pk=pk)
+    return _post_action(
+        request,
+        account.pk,
+        capture_material,
+        CaptureForm,
+        account_id=account.pk,
+        movement_id=movement_id,
+    )

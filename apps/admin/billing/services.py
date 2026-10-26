@@ -4,6 +4,7 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.debug import sensitive_variables
 
+from apps.admin.inventory.models import MaterialMovement
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 from apps.clinical.prescription.models import MedicationDispenseItem
@@ -198,4 +199,63 @@ def reverse_item(*, user, item_id, justification, operation_key):
             source_id=original.source_id,
             justification=justification.strip(),
             reverses=original,
+        )
+
+
+def _material_consumption(account):
+    return MaterialMovement.objects.filter(
+        encounter=account.encounter, kind=MaterialMovement.Kind.ISSUE
+    ).select_related("balance__item")
+
+
+def pending_material_movements(account):
+    """Consumo de material do encontro, nao estornado no estoque e sem item vigente na conta."""
+    billed = _billed_sources(account, BillingItem.Source.MATERIAL)
+    pending = [
+        movement
+        for movement in _material_consumption(account).filter(reversed_by__isnull=True)
+        if movement.pk not in billed
+    ]
+    for movement in pending:
+        movement.consumed = -movement.quantity_delta
+    return pending
+
+
+def billing_divergences(account):
+    """Itens vigentes cuja origem foi estornada no estoque: exigem estorno na conta."""
+    reversed_ids = set(
+        _material_consumption(account)
+        .filter(reversed_by__isnull=False)
+        .values_list("pk", flat=True)
+    )
+    return [
+        item
+        for item in account.items.filter(
+            source=BillingItem.Source.MATERIAL, reverses__isnull=True, reversed_by__isnull=True
+        )
+        if item.source_id in reversed_ids
+    ]
+
+
+def capture_material(*, user, account_id, movement_id, unit_price, operation_key):
+    with transaction.atomic(), set_actor(user):
+        account = _locked_account(user, account_id, "add_item")
+        existing = _replay(operation_key, user, account)
+        if existing:
+            return existing
+        movement = get_object_or_404(_material_consumption(account), pk=movement_id)
+        if hasattr(movement, "reversed_by"):
+            raise BillingConflict("Consumo estornado no estoque não é lançado.")
+        if movement.pk in _billed_sources(account, BillingItem.Source.MATERIAL):
+            raise BillingConflict("Este consumo já está lançado na conta.")
+        item = movement.balance.item
+        return BillingItem.objects.create(
+            account=account,
+            description=f"{item.code} · {item.name} ({item.unit})"[:200],
+            quantity=-movement.quantity_delta,
+            unit_price=unit_price,
+            recorded_by=user,
+            operation_key=operation_key,
+            source=BillingItem.Source.MATERIAL,
+            source_id=movement.pk,
         )

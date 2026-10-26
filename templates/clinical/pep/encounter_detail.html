@@ -37,6 +37,9 @@
                     {% if perms.ris.view_orders and perms.ris.order_exam and encounter.status == 'OPEN' %}
                     <a class="button is-link is-light mb-3" href="{% url 'ris:order_create' encounter.pk %}">Solicitar imagem</a>
                     {% endif %}
+                    {% if perms.inventory.move_stock and encounter.status == 'OPEN' %}
+                    <a class="button is-link is-light mb-3" href="{% url 'inventory:movement_create' %}?kind=ISSUE&encounter={{ encounter.pk }}">Registrar consumo de material</a>
+                    {% endif %}
                     {% if perms.lis.view_orders and perms.lis.order_test and encounter.status == 'OPEN' %}
                     <a class="button is-link is-light mb-3" href="{% url 'lis:order_create' encounter.pk %}">Solicitar exame</a>
                     {% endif %}

@@ -43,6 +43,7 @@ class BillingItem(models.Model):
     class Source(models.TextChoices):
         MANUAL = "MANUAL", "Lançamento manual"
         DISPENSE = "DISPENSE", "Dispensação farmacêutica"
+        MATERIAL = "MATERIAL", "Consumo de material"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     account = models.ForeignKey(HospitalAccount, on_delete=models.PROTECT, related_name="items")

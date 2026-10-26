@@ -2,6 +2,8 @@ import uuid
 
 from django import forms
 
+from apps.clinical.pep.models import Encounter
+
 from .models import InventoryItem, Requisition, StockLocation, Supplier
 
 
@@ -69,6 +71,12 @@ class MovementForm(forms.Form):
         to_field_name="pk",
         widget=forms.TextInput,
     )
+    encounter = forms.ModelChoiceField(
+        label="Encontro do paciente (consumo assistencial)",
+        queryset=Encounter.objects.all(),
+        required=False,
+        widget=forms.HiddenInput,
+    )
     reason = forms.CharField(label="Motivo", max_length=255, required=False)
     operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     confirmed = forms.BooleanField(label="Confirmo a movimentação física do material")
@@ -95,6 +103,8 @@ class MovementForm(forms.Form):
             self.add_error("reason", "Informe o motivo.")
         if kind not in {"ISSUE", "RETURN"}:
             data["requisition"] = None
+        if kind != "ISSUE":
+            data["encounter"] = None
         requisition = data.get("requisition")
         if requisition and data.get("item") and requisition.item_id != data["item"].pk:
             self.add_error("requisition", "A requisição é de outro material.")

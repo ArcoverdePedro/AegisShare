@@ -129,6 +129,14 @@ class MaterialMovement(models.Model):
     requisition = models.ForeignKey(
         Requisition, null=True, blank=True, on_delete=models.PROTECT, related_name="movements"
     )
+    # Consumo assistencial: saida ligada ao encontro do paciente (medicamento segue na farmacia).
+    encounter = models.ForeignKey(
+        "pep.Encounter",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="material_movements",
+    )
     reverses = models.OneToOneField(
         "self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversed_by"
     )

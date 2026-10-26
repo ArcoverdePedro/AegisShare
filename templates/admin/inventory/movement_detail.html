@@ -7,6 +7,7 @@
 <div class="box"><p>Operação: {{ movement.operation_key }}</p>
 {% for leg in legs %}<p><strong>{{ leg.get_kind_display }}</strong>: {{ leg.quantity_delta }} {{ movement.balance.item.unit }} em {{ leg.balance.location }}{% if leg.balance.lot %} · lote {{ leg.balance.lot }}{% endif %}</p>{% endfor %}
 <p>Material: {{ movement.balance.item.code }} · {{ movement.balance.item.name }}</p>
+{% if movement.encounter_id %}<p>Consumo assistencial do <a href="{% url 'pep:encounter_detail' movement.encounter_id %}">encontro</a></p>{% endif %}
 {% if movement.requisition %}<p>Requisição: <a href="{% url 'inventory:requisition_detail' movement.requisition.pk %}">{{ movement.requisition.pk }}</a></p>{% endif %}
 {% if movement.reverses %}<p>Estorna: <a href="{% url 'inventory:movement_detail' movement.reverses.pk %}">{{ movement.reverses.get_kind_display }}</a></p>{% endif %}
 {% if movement.reason %}<p>Motivo: {{ movement.reason }}</p>{% endif %}

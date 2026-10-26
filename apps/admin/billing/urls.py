@@ -18,6 +18,11 @@ urlpatterns = [
         name="dispense_capture",
     ),
     path(
+        "faturamento/contas/<uuid:pk>/materiais/<uuid:movement_id>/lancar/",
+        views.material_capture,
+        name="material_capture",
+    ),
+    path(
         "faturamento/contas/<uuid:pk>/itens/<uuid:item_id>/estornar/",
         views.item_reverse,
         name="item_reverse",

@@ -53,6 +53,10 @@ Fornecedores (`Supplier`) são cadastrados no admin. Fluxo em `/estoque/compras/
 
 Pendentes (G09/H25): cotação obrigatória por faixa, alçadas de valor, devolução ao fornecedor, anexos da NF, obrigação financeira/contas a pagar e envio ao fornecedor.
 
+## Consumo assistencial (H21)
+
+Fronteira: medicamentos seguem exclusivamente pelo estoque farmacêutico (prescrição → lote → dispensação → administração); `InventoryItem` é material não medicamentoso. No encontro aberto, "Registrar consumo de material" cria uma saída (`ISSUE`) ligada ao `Encounter` (exige `move_stock` e acesso ao paciente). A conta do encontro lista o consumo sem lançamento; cada movimento é lançado no máximo uma vez (`BillingItem.source=MATERIAL`). Devolução de material consumido é feita por estorno do movimento: a conta passa a acusar divergência até o item ser estornado. Kits, conversões e reserva aguardam G09.
+
 ## Extensões posteriores
 
 Fornecedores/compras/recebimento precisam de autorização e regras operacionais próprias. Integração farmacêutica exige fonte de verdade explícita; esta v1 não muda StockItem, Lot, StockMovement, dispensação ou faturamento.
