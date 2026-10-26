@@ -14,11 +14,12 @@ from django.views.decorators.http import require_GET, require_http_methods, requ
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients
 
-from .forms import ScheduleForm, SurgicalCaseForm
+from .forms import ExecutionForm, ScheduleForm, SurgicalCaseForm
 from .models import OperatingRoom, SurgerySchedule, SurgicalCase
 from .services import (
     SurgeryConflict,
     cancel_schedule,
+    record_execution,
     request_procedure,
     require_permission,
     schedule_case,
@@ -60,7 +61,11 @@ def case_detail(request, pk):
     require_permission(request.user)
     try:
         item = get_object_or_404(_cases(request.user), pk=pk)
-        schedules = list(item.schedules.select_related("room", "surgeon", "scheduled_by"))
+        schedules = list(
+            item.schedules.select_related("room", "surgeon", "scheduled_by").prefetch_related(
+                "executions__team", "executions__surgeon", "executions__recorded_by"
+            )
+        )
         with transaction.atomic(), set_actor(request.user):
             accessed.send(SurgicalCase, instance=item)
     except DatabaseError:
@@ -175,3 +180,36 @@ def schedule_cancel(request, pk, schedule_id):
     except SurgeryConflict as exc:
         messages.error(request, str(exc))
     return redirect("surgery:case_detail", pk=item.pk)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def execution_create(request, pk, schedule_id):
+    require_permission(request.user, "record_execution")
+    item = get_object_or_404(_cases(request.user), pk=pk)
+    schedule = get_object_or_404(item.schedules, pk=schedule_id)
+    supersedes = schedule.executions.filter(superseded_by__isnull=True).first()
+    form = ExecutionForm(
+        request.POST or None,
+        initial={"performed_procedure": item.procedure_name, "surgeon": schedule.surgeon_id},
+    )
+    if not supersedes:
+        del form.fields["reason"]
+    status = 200
+    if request.method == "POST" and form.is_valid():
+        try:
+            record_execution(
+                user=request.user, schedule=schedule, supersedes=supersedes, **form.cleaned_data
+            )
+        except SurgeryConflict as exc:
+            form.add_error(None, str(exc))
+            status = 409
+        else:
+            messages.success(request, "Execução registrada.")
+            return redirect("surgery:case_detail", pk=item.pk)
+    return render(
+        request,
+        "clinical/surgery/execution_form.html",
+        {"form": form, "item": item, "schedule": schedule, "supersedes": supersedes},
+        status=status,
+    )

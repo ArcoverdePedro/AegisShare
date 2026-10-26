@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Execução cirúrgica · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">{% if supersedes %}Corrigir{% else %}Registrar{% endif %} execução — {{ item.procedure_code }}</h1>
+<p class="mb-4">Agendado {{ schedule.starts_at|date:'d/m/Y H:i' }} em {{ schedule.room }}. Registre o que de fato ocorreu; o procedimento realizado pode diferir do solicitado. Checklist e anestesia aguardam conteúdo aprovado. Consumo de materiais é lançado pelo encontro.{% if supersedes %} A versão anterior é preservada.{% endif %}</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Salvar</button></form>
+<a href="{% url 'surgery:case_detail' item.pk %}">Voltar à solicitação</a>
+</div></section>
+{% endblock %}

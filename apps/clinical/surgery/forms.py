@@ -4,7 +4,7 @@ from datetime import timedelta
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import OperatingRoom, Procedure
+from .models import OperatingRoom, Procedure, SurgeryExecution
 
 
 class SurgicalCaseForm(forms.Form):
@@ -49,3 +49,32 @@ class ScheduleForm(forms.Form):
         if data.get("starts_at") and data.get("minutes"):
             data["ends_at"] = data["starts_at"] + timedelta(minutes=data.pop("minutes"))
         return data
+
+
+class ExecutionForm(forms.ModelForm):
+    class Meta:
+        model = SurgeryExecution
+        fields = [
+            "room_in_at",
+            "started_at",
+            "ended_at",
+            "room_out_at",
+            "performed_procedure",
+            "surgeon",
+            "team",
+            "incidents",
+            "destination",
+            "reason",
+        ]
+        widgets = {
+            field: forms.DateTimeInput(attrs={"type": "datetime-local"})
+            for field in ("room_in_at", "started_at", "ended_at", "room_out_at")
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        staff = get_user_model().objects.filter(is_active=True, nivel_permissao__in=["FUNC", "ADM"])
+        self.fields["surgeon"].queryset = staff
+        self.fields["team"].queryset = staff
+        for field in ("surgeon", "team"):
+            self.fields[field].label_from_instance = lambda u: u.get_full_name() or u.username

@@ -36,3 +36,7 @@ Por YAGNI, sem SurgicalSchedule/Material, diagnóstico/risco/anestesia/consentim
 - Remarcação cria novo agendamento ligado ao anterior ("Remarcada"); cancelamento exige motivo e libera a sala. Uma reserva vigente por solicitação (constraint parcial).
 - `/cirurgias/mapa/?dia=` lista salas e reservas; procedimento só aparece a quem acessa o paciente, demais veem "reservado".
 - Agendar não é autorização clínica. Pendentes (G08): análise/autorização, prioridade governada, equipe completa e anestesia, avaliações pré-operatórias, preparo, consentimentos e recursos/equipamentos.
+
+## Execução perioperatória (H18, parte estrutural)
+
+`surgery.record_execution` registra, para agendamento vigente, entrada/saída de sala, início/fim do procedimento (ordem garantida por constraint), procedimento efetivamente realizado (pode diferir do solicitado), cirurgião e equipe efetivos, intercorrências e destino. Correção cria nova versão com motivo; cirurgia executada não pode ser cancelada nem remarcada. Materiais consumidos seguem pelo encontro (H21). Pendentes (G08/H06): checklist aprovado, anestesia, OPME/CME, recuperação pós-anestésica e documentação assinada.

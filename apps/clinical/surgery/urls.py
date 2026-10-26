@@ -12,6 +12,11 @@ urlpatterns = [
     ),
     path("cirurgias/solicitacoes/<uuid:pk>/", views.case_detail, name="case_detail"),
     path("cirurgias/mapa/", views.room_map, name="room_map"),
+    path(
+        "cirurgias/solicitacoes/<uuid:pk>/agendamentos/<uuid:schedule_id>/execucao/",
+        views.execution_create,
+        name="execution_create",
+    ),
     path("cirurgias/solicitacoes/<uuid:pk>/agendar/", views.schedule_create, name="schedule_create"),
     path(
         "cirurgias/solicitacoes/<uuid:pk>/agendamentos/<uuid:schedule_id>/cancelar/",

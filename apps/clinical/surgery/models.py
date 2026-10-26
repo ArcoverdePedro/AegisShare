@@ -117,13 +117,69 @@ class SurgerySchedule(models.Model):
                 name="uniq_surgery_active_schedule",
             ),
         ]
-        permissions = [("schedule_case", "Pode agendar, remarcar e cancelar cirurgia")]
+        permissions = [
+            ("schedule_case", "Pode agendar, remarcar e cancelar cirurgia"),
+            ("record_execution", "Pode registrar execução perioperatória"),
+        ]
 
     def __str__(self):
         return f"Agendamento cirúrgico {self.pk}"
+
+
+class SurgeryExecution(models.Model):
+    """O que de fato ocorreu na sala; difere da solicitacao. Correcao = nova versao."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    schedule = models.ForeignKey(
+        SurgerySchedule, on_delete=models.PROTECT, related_name="executions"
+    )
+    supersedes = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="superseded_by"
+    )
+    room_in_at = models.DateTimeField("Entrada em sala")
+    started_at = models.DateTimeField("Início do procedimento")
+    ended_at = models.DateTimeField("Fim do procedimento")
+    room_out_at = models.DateTimeField("Saída de sala")
+    performed_procedure = models.CharField("Procedimento realizado", max_length=200)
+    surgeon = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    team = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="+")
+    incidents = models.TextField("Intercorrências", blank=True)
+    destination = models.CharField("Destino após a sala", max_length=120)
+    reason = models.CharField("Motivo da correção", max_length=255, blank=True)
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-recorded_at", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    started_at__gte=models.F("room_in_at"),
+                    ended_at__gte=models.F("started_at"),
+                    room_out_at__gte=models.F("ended_at"),
+                ),
+                name="surgery_execution_time_order",
+            )
+        ]
+
+    def __str__(self):
+        return f"Execução cirúrgica {self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Execuções são versionadas: registre correção.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Execuções não podem ser excluídas.")
 
 
 auditlog.register(Procedure, exclude_fields=["code", "name"])
 auditlog.register(SurgicalCase, exclude_fields=["procedure_code", "procedure_name"])
 auditlog.register(OperatingRoom)
 auditlog.register(SurgerySchedule, exclude_fields=["reason"])
+auditlog.register(SurgeryExecution, exclude_fields=["incidents", "reason"])

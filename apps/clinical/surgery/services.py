@@ -10,7 +10,7 @@ from apps.admin.hr.models import absent_on
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
-from .models import OperatingRoom, Procedure, SurgerySchedule, SurgicalCase
+from .models import OperatingRoom, Procedure, SurgeryExecution, SurgerySchedule, SurgicalCase
 
 
 class SurgeryConflict(ValueError):
@@ -107,7 +107,11 @@ def schedule_case(
             raise SurgeryConflict("Cirurgião já reservado no período.")
         if rescheduled_from:
             previous = SurgerySchedule.objects.select_for_update().get(pk=rescheduled_from.pk)
-            if previous.status != SurgerySchedule.Status.SCHEDULED or previous.case_id != case.pk:
+            if (
+                previous.status != SurgerySchedule.Status.SCHEDULED
+                or previous.case_id != case.pk
+                or previous.executions.exists()
+            ):
                 raise SurgeryConflict("Somente agendamento vigente pode ser remarcado.")
             previous.status = SurgerySchedule.Status.RESCHEDULED
             previous.save(update_fields=["status", "updated_at"])
@@ -133,7 +137,37 @@ def cancel_schedule(*, user, schedule, reason):
         schedule = SurgerySchedule.objects.select_for_update().get(pk=schedule.pk)
         if schedule.status != SurgerySchedule.Status.SCHEDULED:
             raise SurgeryConflict("Agendamento não está vigente.")
+        if schedule.executions.exists():
+            raise SurgeryConflict("Cirurgia já executada não pode ser cancelada.")
         schedule.status = SurgerySchedule.Status.CANCELLED
         schedule.reason = reason.strip()
         schedule.save(update_fields=["status", "reason", "updated_at"])
         return schedule
+
+
+def record_execution(*, user, schedule, team=(), supersedes=None, reason="", **data):
+    with transaction.atomic(), set_actor(user):
+        _lock_encounter(user, schedule.case.encounter_id, "record_execution")
+        schedule = SurgerySchedule.objects.select_for_update().get(pk=schedule.pk)
+        if schedule.status != SurgerySchedule.Status.SCHEDULED:
+            raise SurgeryConflict("Só agendamento vigente recebe registro de execução.")
+        current = schedule.executions.filter(superseded_by__isnull=True).first()
+        if current != supersedes:
+            raise SurgeryConflict("Execução já registrada; use correção da versão vigente.")
+        if supersedes and not reason.strip():
+            raise SurgeryConflict("Informe o motivo da correção.")
+        if not (
+            data["room_in_at"] <= data["started_at"] <= data["ended_at"] <= data["room_out_at"]
+        ):
+            raise SurgeryConflict("Horários fora de ordem (entrada ≤ início ≤ fim ≤ saída).")
+        if data["room_out_at"] > timezone.now():
+            raise SurgeryConflict("Registro de execução não pode estar no futuro.")
+        execution = SurgeryExecution.objects.create(
+            schedule=schedule,
+            supersedes=supersedes,
+            reason=reason.strip(),
+            recorded_by=user,
+            **data,
+        )
+        execution.team.set(team)
+        return execution

@@ -10,7 +10,12 @@
 <p>Procedimento: {{ item.procedure_code }} · {{ item.procedure_name }}</p>
 <p>Solicitação registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>
 {% for sch in schedules %}<div class="mt-3"><p><strong>{{ sch.get_status_display }}</strong>: {{ sch.starts_at|date:'d/m/Y H:i' }}–{{ sch.ends_at|time:'H:i' }} · {{ sch.room }} · {{ sch.surgeon.get_full_name|default:sch.surgeon.username }}{% if sch.reason %} — {{ sch.reason }}{% endif %}</p>
-{% if sch.status == 'SCHEDULED' and perms.surgery.schedule_case %}<a href="{% url 'surgery:schedule_create' item.pk %}?remarcar={{ sch.pk }}">Remarcar</a>
+{% for ex in sch.executions.all %}<div class="box mt-2{% if ex.superseded_by %} has-text-grey{% endif %}"><p><strong>Executado{% if ex.superseded_by %} (versão anterior){% endif %}</strong>: {{ ex.performed_procedure }} · {{ ex.surgeon.get_full_name|default:ex.surgeon.username }}</p>
+<p class="is-size-7">Sala {{ ex.room_in_at|date:'d/m H:i' }}–{{ ex.room_out_at|time:'H:i' }} · procedimento {{ ex.started_at|time:'H:i' }}–{{ ex.ended_at|time:'H:i' }} · destino {{ ex.destination }}{% if ex.team.all %} · equipe {% for u in ex.team.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
+{% if ex.incidents %}<p class="is-size-7">Intercorrências: {{ ex.incidents }}</p>{% endif %}{% if ex.reason %}<p class="is-size-7">Correção: {{ ex.reason }}</p>{% endif %}
+<p class="is-size-7">Registrado por {{ ex.recorded_by.username }} em {{ ex.recorded_at|date:'d/m/Y H:i' }}</p></div>{% endfor %}
+{% if sch.status == 'SCHEDULED' and perms.surgery.record_execution %}<a href="{% url 'surgery:execution_create' item.pk sch.pk %}">{% if sch.executions.all %}Corrigir execução{% else %}Registrar execução{% endif %}</a>{% endif %}
+{% if sch.status == 'SCHEDULED' and perms.surgery.schedule_case and not sch.executions.all %}<a href="{% url 'surgery:schedule_create' item.pk %}?remarcar={{ sch.pk }}">Remarcar</a>
 <form method="post" action="{% url 'surgery:schedule_cancel' item.pk sch.pk %}" class="field has-addons mt-2">{% csrf_token %}<div class="control"><input class="input is-small" name="reason" aria-label="Motivo do cancelamento" placeholder="Motivo do cancelamento" maxlength="255" required></div><div class="control"><button class="button is-small is-danger" type="submit">Cancelar agendamento</button></div></form>{% endif %}</div>{% empty %}
 <p class="my-3">Solicitação registrada — sem agendamento ou autorização cirúrgica</p>{% endfor %}
 {% if perms.surgery.schedule_case and item.encounter.status == 'OPEN' %}<p class="mt-3"><a class="button is-link" href="{% url 'surgery:schedule_create' item.pk %}">Agendar sala</a></p>{% endif %}

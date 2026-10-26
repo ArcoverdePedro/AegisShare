@@ -28,6 +28,7 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H04 | BLOCKED | lista de problemas versionada (`apps/clinical/pep/tests/test_problems.py`) | Terminologia aprovada, antecedentes, reconciliação, multiprofissional e resumo de alta dependem de conteúdo clínico aprovado/H06/H08 |
 | H02 | BLOCKED | `sync_role_groups` (proposta; `aegis_share/tests/test_role_groups.py`) | Aprovar matriz (G02), vínculos de equipe/unidade, multi-instituição (G01), acesso emergencial e consulta de inativos |
 | H15 | BLOCKED | resultados manuais com validação/liberação/retificação (`apps/clinical/lis/tests/test_results.py`) | Catálogo, críticos, importação de equipamento e assinatura dependem de G07/G11/G05 |
+| H18 | BLOCKED | execução versionada (`apps/clinical/surgery/tests/test_execution.py`) | Checklist, anestesia, OPME/CME e recuperação dependem de G08 |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
