@@ -10,7 +10,8 @@ from apps.clinical.pep.permissions import accessible_patients, require_module_pe
 from apps.clinical.prescription.models import MedicationDispenseItem
 
 from .forms import AccountOpenForm, BillingItemForm
-from .models import BillingItem, HospitalAccount
+from .models import AccountClosure, BillingItem, HospitalAccount
+from .totals import account_total
 
 
 class BillingConflict(ValueError):
@@ -99,6 +100,8 @@ def add_item(
         existing = BillingItem.objects.filter(operation_key=data["operation_key"]).first()
         if existing:
             return _retry_item(existing, user, account.pk, data)
+        if account.closed:
+            raise BillingConflict("Conta fechada: reabra com justificativa antes de lançar.")
         data.pop("confirmed")
         try:
             with transaction.atomic():
@@ -111,12 +114,14 @@ def add_item(
             return _retry_item(existing, user, account.pk, data)
 
 
-def _locked_account(user, account_id, capability):
+def _locked_account(user, account_id, capability, *, allow_closed=False):
     require_permission(user, capability)
     account = get_object_or_404(
         HospitalAccount.objects.select_for_update().select_related("encounter"), pk=account_id
     )
     get_object_or_404(accessible_patients(user), pk=account.encounter.patient_id)
+    if account.closed and not allow_closed:
+        raise BillingConflict("Conta fechada: reabra com justificativa antes de lançar.")
     return account
 
 
@@ -258,4 +263,38 @@ def capture_material(*, user, account_id, movement_id, unit_price, operation_key
             operation_key=operation_key,
             source=BillingItem.Source.MATERIAL,
             source_id=movement.pk,
+        )
+
+
+def close_account(*, user, account_id):
+    """Fecha somente conta consistente: sem producao pendente nem divergencia de estorno."""
+    with transaction.atomic(), set_actor(user):
+        account = _locked_account(user, account_id, "close_account")
+        if account.encounter.status == Encounter.Status.OPEN:
+            raise BillingConflict("Encerre o encontro antes de fechar a conta.")
+        if pending_dispense_items(account) or pending_material_movements(account):
+            raise BillingConflict("Há produção confirmada sem lançamento.")
+        if billing_divergences(account):
+            raise BillingConflict("Há consumo estornado com item vigente na conta.")
+        return AccountClosure.objects.create(
+            account=account,
+            action=AccountClosure.Action.CLOSE,
+            total=account_total(account),
+            recorded_by=user,
+        )
+
+
+def reopen_account(*, user, account_id, reason):
+    if not reason.strip():
+        raise BillingConflict("Informe o motivo da reabertura.")
+    with transaction.atomic(), set_actor(user):
+        account = _locked_account(user, account_id, "close_account", allow_closed=True)
+        if not account.closed:
+            raise BillingConflict("A conta não está fechada.")
+        return AccountClosure.objects.create(
+            account=account,
+            action=AccountClosure.Action.REOPEN,
+            total=account_total(account),
+            reason=reason.strip(),
+            recorded_by=user,
         )

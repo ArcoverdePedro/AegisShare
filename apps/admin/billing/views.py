@@ -20,9 +20,11 @@ from .services import (
     billing_divergences,
     capture_dispense,
     capture_material,
+    close_account,
     open_account,
     pending_dispense_items,
     pending_material_movements,
+    reopen_account,
     require_permission,
     reverse_item,
 )
@@ -87,6 +89,7 @@ def account_detail(request, pk):
             "pending_materials": pending_materials,
             "divergences": divergences,
             "capture_form": CaptureForm(),
+            "closures": list(account.closures.select_related("recorded_by")),
             "reverse_form": ReverseItemForm(),
         },
     )
@@ -210,3 +213,21 @@ def material_capture(request, pk, movement_id):
         account_id=account.pk,
         movement_id=movement_id,
     )
+
+
+@login_required
+@require_POST
+def account_close(request, pk):
+    account = get_object_or_404(_accounts(request.user), pk=pk)
+    try:
+        if request.POST.get("action") == "reopen":
+            reopen_account(
+                user=request.user, account_id=account.pk, reason=request.POST.get("reason", "")
+            )
+            messages.success(request, "Conta reaberta.")
+        else:
+            close_account(user=request.user, account_id=account.pk)
+            messages.success(request, "Conta fechada.")
+    except BillingConflict as exc:
+        messages.error(request, str(exc))
+    return redirect("billing:account_detail", pk=account.pk)

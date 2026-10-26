@@ -8,6 +8,8 @@ from django.db import models
 
 
 class HospitalAccount(models.Model):
+    """Conta em preparacao; o estado de fechamento vive em AccountClosure (append-only)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     encounter = models.OneToOneField("pep.Encounter", on_delete=models.PROTECT)
     opened_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
@@ -25,10 +27,16 @@ class HospitalAccount(models.Model):
             ("open_account", "Pode abrir conta em preparação"),
             ("add_item", "Pode lançar item manual"),
             ("reverse_item", "Pode estornar item lançado"),
+            ("close_account", "Pode fechar e reabrir conta em preparação"),
         ]
 
     def __str__(self):
         return f"Conta {self.pk}"
+
+    @property
+    def closed(self):
+        last = self.closures.order_by("-recorded_at", "-id").first()
+        return bool(last and last.action == AccountClosure.Action.CLOSE)
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
@@ -64,7 +72,9 @@ class BillingItem(models.Model):
     class Meta:
         ordering = ["-recorded_at", "-id"]
         indexes = [
-            models.Index(fields=["account", "-recorded_at", "-id"], name="billing_item_account_idx"),
+            models.Index(
+                fields=["account", "-recorded_at", "-id"], name="billing_item_account_idx"
+            ),
             models.Index(fields=["source", "source_id"], name="billing_item_source_idx"),
         ]
         constraints = [
@@ -95,7 +105,36 @@ class BillingItem(models.Model):
         raise ValidationError("Itens não podem ser excluídos.")
 
 
+class AccountClosure(models.Model):
+    class Action(models.TextChoices):
+        CLOSE = "CLOSE", "Fechamento"
+        REOPEN = "REOPEN", "Reabertura"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    account = models.ForeignKey(HospitalAccount, on_delete=models.PROTECT, related_name="closures")
+    action = models.CharField(max_length=6, choices=Action.choices)
+    total = models.DecimalField(max_digits=14, decimal_places=2)
+    reason = models.CharField(max_length=255, blank=True)
+    recorded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["recorded_at", "id"]
+
+    def __str__(self):
+        return f"{self.get_action_display()} {self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Histórico de fechamento é imutável.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Histórico de fechamento é imutável.")
+
+
 auditlog.register(HospitalAccount)
+auditlog.register(AccountClosure, exclude_fields=["reason"])
 auditlog.register(
     BillingItem, exclude_fields=["description", "quantity", "unit_price", "justification"]
 )

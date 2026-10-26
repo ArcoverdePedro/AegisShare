@@ -12,6 +12,7 @@ urlpatterns = [
     ),
     path("faturamento/contas/<uuid:pk>/", views.account_detail, name="account_detail"),
     path("faturamento/contas/<uuid:pk>/itens/novo/", views.item_create, name="item_create"),
+    path("faturamento/contas/<uuid:pk>/fechamento/", views.account_close, name="account_close"),
     path(
         "faturamento/contas/<uuid:pk>/dispensacoes/<uuid:item_id>/lancar/",
         views.dispense_capture,

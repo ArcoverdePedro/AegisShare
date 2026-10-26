@@ -342,7 +342,8 @@ class BillingTests(TestCase):
             for q in queries
             if q["sql"].startswith("SELECT") and '"aegis_share_customuser"' in q["sql"]
         ]
-        self.assertLessEqual(len(related), 4)
+        # +1 constante: histórico de fechamento (H23); continua sem N+1 por item.
+        self.assertLessEqual(len(related), 5)
         self.assertEqual(
             len(
                 self.client.get(

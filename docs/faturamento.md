@@ -41,3 +41,7 @@ Por YAGNI, sem pagador/convênio/tarifas/guias SUS ou TISS, documento fiscal, co
 - A conta lista "Produção sem lançamento": itens de dispensação farmacêutica do encontro sem item vigente. Lançar exige `billing.add_item` e o preço unitário (sem tabela aprovada, G09). Cada dispensação tem no máximo um item vigente, verificado com a conta travada; quantidade fracionada é recusada (conversão de unidade não aprovada).
 - Estorno (`billing.reverse_item`) cria item ligado ao original (`reverses`) com motivo; o total subtrai o estorno e nada é apagado. Após estorno a origem volta a ficar pendente para relançamento correto.
 - Pendentes (G09/H21/H23): tabela de preços versionada, pagador, momento aprovado da cobrança, produção de exames/procedimentos (pedido não prova execução), consumo de materiais por paciente.
+
+## Fechamento e reabertura (H23)
+
+`billing.close_account` fecha a conta somente com encontro encerrado, sem produção pendente (dispensação/material) e sem divergência de estorno; o total do momento fica registrado em `AccountClosure` (append-only). Conta fechada recusa lançamentos, capturas e estornos. Reabrir exige motivo e gera novo registro — nada é apagado. Fechar não emite cobrança: pagador, contrato/vigência, tabelas, pacotes, autorização, envio, glosa, recurso e recebimento aguardam G09/G01 (H23–H25).
