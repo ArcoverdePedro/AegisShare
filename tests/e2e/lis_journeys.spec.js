@@ -63,7 +63,7 @@ test('CA-LIS-01/02/05: pedido, coleta e conflito sem sobrescrever', async ({ pag
   const oldForm = await page.locator('form.box').evaluate(form => Object.fromEntries(new FormData(form)));
   await page.getByRole('button', { name: 'Registrar coleta', exact: true }).click();
   await expect(page).toHaveURL(detail);
-  await expect(page.getByRole('heading', { name: 'Coleta registrada' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /— coletada$/ })).toBeVisible();
   const conflict = await page.request.post(`${detail}coleta/`, { form: { ...oldForm, accession_code: 'CHANGED' } });
   expect(conflict.status()).toBe(409);
   await page.reload();

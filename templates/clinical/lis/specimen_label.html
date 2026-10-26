@@ -1,0 +1,14 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Etiqueta de amostra · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width: 420px;">
+<div class="box" style="font-family: monospace; border: 2px solid currentColor;">
+<p class="is-size-3 has-text-weight-bold" style="letter-spacing:.1em">{{ item.specimen.accession_code }}</p>
+<p>{{ item.encounter.patient.full_name }} · {{ item.encounter.patient.birth_date|date:'d/m/Y' }}</p>
+<p>{{ item.test_code }} · {{ item.specimen_type }}</p>
+<p>Coleta {{ item.specimen.collected_at|date:'d/m/Y H:i' }}</p>
+</div>
+<p class="is-size-7">Imprima pela função do navegador. Confira paciente e pedido antes de etiquetar.</p>
+<a href="{% url 'lis:order_detail' item.pk %}">Voltar ao pedido</a>
+</div></section>
+{% endblock %}

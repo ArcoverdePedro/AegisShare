@@ -61,3 +61,17 @@ class OrderFilterForm(forms.Form):
             ("collected", "Coleta registrada"),
         ],
     )
+
+
+class ReceiveForm(forms.Form):
+    accession_code = forms.CharField(
+        label="Código da amostra (leitor ou digitação)",
+        max_length=64,
+        widget=forms.TextInput(attrs={"class": "input", "autocomplete": "off", "autofocus": True}),
+    )
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+
+
+class ReasonForm(forms.Form):
+    reason = forms.CharField(label="Motivo", max_length=255)
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)

@@ -4,23 +4,41 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
+from django.db.models import Exists, OuterRef, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients
 
-from .forms import OrderFilterForm, OrderForm, SpecimenForm
-from .models import ServiceRequest, Specimen
-from .services import LisConflict, collect_specimen, order_test, require_permission
+from .forms import OrderFilterForm, OrderForm, ReasonForm, ReceiveForm, SpecimenForm
+from .models import ServiceRequest, Specimen, SpecimenEvent
+from .services import (
+    LisConflict,
+    cancel_order,
+    collect_specimen,
+    order_test,
+    receive_specimen,
+    reject_specimen,
+    require_permission,
+)
 
 
 def _orders(user):
-    return ServiceRequest.objects.filter(
-        encounter__patient__in=accessible_patients(user)
-    ).select_related("encounter__patient", "requested_by", "specimen__collected_by")
+    return (
+        ServiceRequest.objects.filter(encounter__patient__in=accessible_patients(user))
+        .select_related("encounter__patient", "requested_by", "cancellation")
+        .prefetch_related(
+            Prefetch(
+                "specimens",
+                queryset=Specimen.objects.select_related("collected_by").prefetch_related(
+                    "events__actor"
+                ),
+            )
+        )
+    )
 
 
 def _failed():
@@ -40,7 +58,12 @@ def order_list(request):
     if not form.is_valid():
         queryset = queryset.none()
     elif form.cleaned_data["status"]:
-        queryset = queryset.filter(specimen__isnull=form.cleaned_data["status"] == "requested")
+        active = Specimen.objects.filter(service_request=OuterRef("pk")).exclude(
+            events__kind=SpecimenEvent.Kind.REJECTED
+        )
+        queryset = queryset.filter(
+            Exists(active) if form.cleaned_data["status"] == "collected" else ~Exists(active)
+        )
     page = Paginator(queryset, 25).get_page(request.GET.get("page"))
     page.object_list = list(page.object_list)
     with transaction.atomic(), set_actor(request.user):
@@ -56,9 +79,11 @@ def order_detail(request, pk):
     item = get_object_or_404(_orders(request.user), pk=pk)
     with transaction.atomic(), set_actor(request.user):
         accessed.send(ServiceRequest, instance=item)
-        if item.collected:
-            accessed.send(Specimen, instance=item.specimen)
-    return render(request, "clinical/lis/order_detail.html", {"item": item})
+        for specimen in item.specimens.all():
+            accessed.send(Specimen, instance=specimen)
+    return render(
+        request, "clinical/lis/order_detail.html", {"item": item, "reason_form": ReasonForm()}
+    )
 
 
 @sensitive_post_parameters()
@@ -124,3 +149,63 @@ def specimen_create(request, pk):
     return render(
         request, "clinical/lis/specimen_form.html", {"form": form, "item": item}, status=status
     )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def specimen_receive(request):
+    require_permission(request.user, "receive_specimen")
+    form = ReceiveForm(request.POST or None)
+    status = 200
+    if request.method == "POST" and form.is_valid():
+        try:
+            event = receive_specimen(user=request.user, **form.cleaned_data)
+        except LisConflict as exc:
+            form.add_error(None, str(exc))
+            status = 409
+        else:
+            messages.success(request, f"Amostra {event.specimen.accession_code} recebida.")
+            return redirect("lis:specimen_receive")
+    return render(request, "clinical/lis/specimen_receive.html", {"form": form}, status=status)
+
+
+@login_required
+@require_POST
+def specimen_reject(request, pk, specimen_id):
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    form = ReasonForm(request.POST)
+    try:
+        if not form.is_valid():
+            raise LisConflict("Informe o motivo da rejeição.")
+        reject_specimen(user=request.user, specimen_id=specimen_id, **form.cleaned_data)
+        messages.success(request, "Amostra rejeitada; registre a recoleta.")
+    except LisConflict as exc:
+        messages.error(request, str(exc))
+    return redirect("lis:order_detail", pk=item.pk)
+
+
+@login_required
+@require_POST
+def order_cancel(request, pk):
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    form = ReasonForm(request.POST)
+    try:
+        if not form.is_valid():
+            raise LisConflict("Informe o motivo do cancelamento.")
+        cancel_order(user=request.user, order_id=item.pk, reason=form.cleaned_data["reason"])
+        messages.success(request, "Pedido cancelado.")
+    except LisConflict as exc:
+        messages.error(request, str(exc))
+    return redirect("lis:order_detail", pk=item.pk)
+
+
+@login_required
+@require_GET
+def specimen_label(request, pk):
+    require_permission(request.user, "collect_specimen")
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    if not item.collected:
+        return redirect("lis:order_detail", pk=pk)
+    with transaction.atomic(), set_actor(request.user):
+        accessed.send(Specimen, instance=item.specimen)
+    return render(request, "clinical/lis/specimen_label.html", {"item": item})

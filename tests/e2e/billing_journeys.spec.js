@@ -46,6 +46,7 @@ async function fillItem(page, quantity='3', price='0.10') {
   await page.getByLabel('Descrição administrativa').fill('ITEM-BILL-SYNTHETIC');
   await page.getByLabel('Quantidade inteira').fill(quantity);
   await page.getByLabel('Valor unitário (BRL)').fill(price);
+  await page.getByLabel('Justificativa do lançamento manual').fill('Lançamento sintético E2E');
   await page.getByLabel('Confirme os dados manuais').check();
 }
 test('CA-BILL-01/03/04: abertura, item, total e retry', async ({page}) => {

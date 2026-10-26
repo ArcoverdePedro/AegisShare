@@ -47,3 +47,12 @@ Use PostgreSQL descartável para testar concorrência. A preparação E2E cria c
 Para retirar o piloto, revogue capacidades e remova os links pelo rollback do código, preservando tabelas. A reversão `migrate lis zero` apaga registros e foi validada somente em banco descartável. Não a use após dados reais.
 
 [Spec](../specs/005-lis/spec.md) · [Evidências](../specs/005-lis/validation.md).
+
+## Fase pré-analítica (H14)
+
+- Pedido → amostra(s) → eventos. Uma amostra vigente por pedido; `accession_code` é único e nunca reaproveitado.
+- `/laboratorio/recebimento/` (`lis.receive_specimen`): a leitura do código confirma só a chegada ao laboratório. Amostra já recebida, rejeitada ou de pedido cancelado é recusada (409).
+- Rejeição com motivo (texto livre; catálogo de motivos aguarda G07) mantém a amostra e o evento; o pedido fica "aguardando recoleta" e a nova coleta liga-se à rejeitada (`replaces`).
+- Cancelamento (`lis.cancel_order`) com motivo; amostra recebida precisa ser rejeitada antes. Eventos e cancelamentos são append-only.
+- Etiqueta imprimível (código, paciente, nascimento, exame, material) em `/laboratorio/pedidos/<id>/etiqueta/`; código de barras/impressora térmica não implementados.
+- Pendentes (G07): múltiplos materiais por pedido, transporte/lotes de envio, catálogo de motivos de rejeição e critérios de aceitação.
