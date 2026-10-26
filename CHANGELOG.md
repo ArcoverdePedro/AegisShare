@@ -6,6 +6,21 @@ Todas as mudanças relevantes do AegisShare serão registradas neste arquivo.
 
 ### Adicionado
 
+- H29: `FILE_STORAGE_BACKEND=local` grava arquivos cifrados em volume privado (`aegis_files`), sem conta Pinata; `migrate_file_storage` copia CIDs legados conferindo hash.
+- H30: `backup_seal`/`backup_open` e `scripts/backup.sh` (banco + arquivos, chave própria `BACKUP_ENCRYPTION_KEY`).
+- H19/H20: saldos, movimentos, estornos, fornecedores, pedidos de compra com aprovação segregada e recebimento que gera entrada única.
+- H03: nome social, endereço, CNS e alerta de homônimos sem mesclagem.
+- H11: agenda ambulatorial, chegada (abre o encontro) e fila com senha.
+- H13: leito em higienização após alta/transferência e histórico de estado.
+- H26: registro profissional, especialidade e ausências que bloqueiam a agenda.
+- H22: origem do item de conta, estorno e produção de dispensação pendente.
+
+### Notas de atualização (0.2.0)
+
+- Rode `migrate` uma vez (migrations aditivas; dados legados preservados — upgrade de 38c6100 com dados sintéticos verificado). Leitos liberados após a atualização passam por `CLEANING`. Itens manuais novos exigem justificativa.
+- Compose ganhou o volume `aegis_files`. Para sair da Pinata: `FILE_STORAGE_BACKEND=local`, `migrate_file_storage`, conferir, só então desativar a origem.
+- Defina `BACKUP_ENCRYPTION_KEY` (diferente da chave de arquivos) antes de usar `scripts/backup.sh`.
+
 - Spec 010: cadastro funcional mínimo vinculado ao usuário existente, com manutenção no Admin, consulta institucional por capacidade, auditoria minimizada e fluxo online; sem escalas, ponto ou efeitos sobre autenticação.
 
 - Spec 009: catálogo de materiais não medicamentosos e requisições internas com snapshots, consulta institucional por capacidade, reenvios seguros, auditoria e fluxo online; sem reserva, compra, entrega ou alteração do estoque farmacêutico.

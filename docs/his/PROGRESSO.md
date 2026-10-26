@@ -18,8 +18,9 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H13 | READY | `apps/clinical/adt/tests/test_bed_status.py`; spec 002 "Extensão operacional" | Reserva, isolamento, previsão de alta e integração com alta clínica pendentes (G01/G02, H04/H06/H08) |
 | H26 | READY | `apps/admin/hr/tests/test_registration.py`, `AbsenceIntegrationTests` | Escalas/plantões/ponto/folha e efeito do registro vencido aguardam G01/G06 |
 | H22 | READY | `apps/admin/billing/tests/test_capture.py` | Tabela de preço versionada, pagador e momento da cobrança (G09); produção de exames/cirurgia e consumo de materiais por paciente (H14–H18, H21) |
+| H34 | READY | upgrade 38c6100→HEAD com dados sintéticos (scratch) OK; instalação limpa Compose sem Pinata saudável; `scripts/backup.sh` + restauração em banco novo OK (6,2 s / 3,8 s); CHANGELOG com notas de atualização | Comando de dados demonstrativos, guias por perfil, revisão de licenças de catálogos clínicos (nenhum distribuído) e release versionada pendentes |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
 Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 573 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H34 — conferir instalação reproduzível (compose, `.env-example`, README) com FILE_STORAGE_BACKEND=local, sem Pinata; depois H14 (fase pré-analítica do LIS).
+Próxima tarefa: H14 — ler `apps/clinical/lis/` e completar fase pré-analítica (recebimento/rejeição de amostra com motivo, recoleta) sem catálogo clínico novo (G07).
