@@ -1,0 +1,11 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Estado do leito · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Leito {{ bed.code }} · {{ bed.label }}</h1>
+<p class="mb-4">{{ bed.location.name }} — estado atual: <strong>{{ bed.get_operational_status_display }}</strong>. Leito liberado por alta ou transferência fica em higienização até ser registrado como disponível. Leito ocupado não muda de estado aqui.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Registrar</button></form>
+{% if history %}<h2 class="title is-5">Histórico</h2>{% for h in history %}<p>{{ h.changed_at|date:'d/m/Y H:i' }} · {{ h.get_from_status_display }} → {{ h.get_to_status_display }} · {{ h.reason }} · {{ h.changed_by.username }}</p>{% endfor %}{% endif %}
+<a href="{% url 'adt:bed_map' %}">Voltar ao mapa de leitos</a>
+</div></section>
+{% endblock %}

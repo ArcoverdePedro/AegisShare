@@ -8,13 +8,14 @@ from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import can_access_patient
 
 from .events import emit_adt_event
-from .models import Admission, Bed, BedOccupancy, Discharge, Transfer
+from .models import Admission, Bed, BedOccupancy, BedStatusChange, Discharge, Transfer
 from .permissions import (
     can_access_bed,
     can_discharge,
     can_discharge_admission,
     can_transfer,
     can_transfer_admission,
+    has_adt_permission,
 )
 from .services import AdtConflictError, BedUnavailableError, IdempotencyConflictError
 
@@ -25,6 +26,54 @@ class TransferStateError(AdtConflictError):
 
 class DischargeStateError(AdtConflictError):
     pass
+
+
+def _release_for_cleaning(bed_id, actor, reason):
+    """Leito liberado so volta a ficar disponivel apos higienizacao registrada."""
+    bed = Bed.objects.select_for_update().get(pk=bed_id)
+    if bed.operational_status == Bed.OperationalStatus.AVAILABLE:
+        BedStatusChange.objects.create(
+            bed=bed,
+            from_status=bed.operational_status,
+            to_status=Bed.OperationalStatus.CLEANING,
+            reason=reason,
+            changed_by=actor,
+        )
+        bed.operational_status = Bed.OperationalStatus.CLEANING
+        bed.save(update_fields=["operational_status", "updated_at"])
+    return bed
+
+
+def change_bed_status(*, actor, bed_id, status, reason):
+    if not has_adt_permission(actor, "adt.manage_bed_status"):
+        raise PermissionDenied
+    reason = " ".join((reason or "").split())
+    if not reason:
+        raise AdtConflictError("Informe o motivo da mudança de estado.")
+    with transaction.atomic():
+        bed = Bed.objects.select_for_update().select_related("location").get(pk=bed_id)
+        if not can_access_bed(actor, bed):
+            raise PermissionDenied
+        if status not in Bed.OperationalStatus.values or status == bed.operational_status:
+            raise AdtConflictError("Selecione um estado diferente do atual.")
+        if BedOccupancy.objects.filter(bed=bed, ended_at__isnull=True).exists():
+            raise AdtConflictError("Leito ocupado: registre transferência ou alta antes.")
+        change = BedStatusChange.objects.create(
+            bed=bed,
+            from_status=bed.operational_status,
+            to_status=status,
+            reason=reason,
+            changed_by=actor,
+        )
+        bed.operational_status = status
+        bed.save(update_fields=["operational_status", "updated_at"])
+        emit_adt_event(
+            event_type="bed.status_changed",
+            bed_id=bed.pk,
+            location_id=bed.location_id,
+            state=status,
+        )
+        return change
 
 
 def _operation_key(value):
@@ -157,6 +206,7 @@ def transfer_patient(
                 bed_id=destination.pk,
                 location_id=destination.location_id,
             )
+            source_bed = _release_for_cleaning(source_bed.pk, actor, "Liberado por transferência")
             emit_adt_event(
                 event_type="bed.released",
                 bed_id=source_bed.pk,
@@ -272,6 +322,7 @@ def discharge_patient(
                 bed_id=final_bed.pk,
                 location_id=final_bed.location_id,
             )
+            final_bed = _release_for_cleaning(final_bed.pk, actor, "Liberado por alta")
             emit_adt_event(
                 event_type="bed.released",
                 bed_id=final_bed.pk,

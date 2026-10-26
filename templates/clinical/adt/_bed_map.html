@@ -28,6 +28,8 @@
                                     <span class="tag is-success is-light">Disponível</span>
                                 {% elif row.status == 'OCCUPIED' %}
                                     <span class="tag is-link is-light">Ocupado</span>
+                                {% elif row.status == 'CLEANING' %}
+                                    <span class="tag is-info is-light">Higienização pendente</span>
                                 {% elif row.status == 'BLOCKED' %}
                                     <span class="tag is-warning is-light">Bloqueado</span>
                                 {% else %}
@@ -35,6 +37,9 @@
                                 {% endif %}
                             </div>
 
+                            {% if row.status != 'OCCUPIED' and perms.adt.manage_bed_status %}
+                                <a class="is-size-7" href="{% url 'adt:bed_status_change' row.bed.pk %}">Alterar estado</a>
+                            {% endif %}
                             {% if row.status == 'OCCUPIED' %}
                                 <hr class="my-3">
                                 {% if row.show_phi and row.patient %}

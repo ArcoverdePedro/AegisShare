@@ -185,3 +185,8 @@ class DischargeForm(forms.Form):
                 "A alta não pode anteceder a admissão ou a ocupação atual.",
             )
         return cleaned
+
+
+class BedStatusForm(forms.Form):
+    status = forms.ChoiceField(label="Novo estado", choices=Bed.OperationalStatus.choices)
+    reason = forms.CharField(label="Motivo", max_length=255)

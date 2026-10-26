@@ -1,20 +1,26 @@
 from auditlog.signals import accessed
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.cache import patch_vary_headers
+from django.views.decorators.http import require_http_methods
 from django.views.generic import FormView, ListView, TemplateView
 
-from .forms import AdmissionForm, DischargeForm, TransferForm
-from .lifecycle import discharge_patient, transfer_patient
+from .forms import AdmissionForm, BedStatusForm, DischargeForm, TransferForm
+from .lifecycle import change_bed_status, discharge_patient, transfer_patient
+from .models import Bed
 from .permissions import (
+    can_access_bed,
     can_admit,
     can_discharge,
     can_transfer,
     can_view_admissions,
     can_view_bed_map,
+    has_adt_permission,
 )
 from .selectors import admissions_for_user, bed_map_groups
 from .services import AdtConflictError, admit_patient
@@ -206,3 +212,32 @@ class BedMapView(LoginRequiredMixin, NoStoreResponseMixin, TemplateView):
 
 class BedMapPartialView(BedMapView):
     template_name = "clinical/adt/_bed_map.html"
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def bed_status_change(request, pk):
+    if not has_adt_permission(request.user, "adt.manage_bed_status"):
+        raise PermissionDenied
+    bed = get_object_or_404(Bed.objects.select_related("location"), pk=pk)
+    if not can_access_bed(request.user, bed):
+        raise PermissionDenied
+    form = BedStatusForm(request.POST or None)
+    status = 200
+    if request.method == "POST" and form.is_valid():
+        try:
+            change_bed_status(actor=request.user, bed_id=bed.pk, **form.cleaned_data)
+        except AdtConflictError as exc:
+            form.add_error(None, str(exc))
+            status = 409
+        else:
+            messages.success(request, "Estado do leito atualizado.")
+            return redirect("adt:bed_map")
+    response = render(
+        request,
+        "clinical/adt/bed_status_form.html",
+        {"bed": bed, "form": form, "history": bed.status_changes.select_related("changed_by")[:20]},
+        status=status,
+    )
+    response["Cache-Control"] = "private, no-store, max-age=0"
+    return response

@@ -15,8 +15,9 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H30 | READY | `aegis_share/tests/test_backup.py`; ensaio de restauração registrado no README | Agendamento, retenção, RPO/RTO, cópia externa, alertas e rotação/reempacotamento de chaves dependem de G11 |
 | H11 | READY | `apps/clinical/scheduling/tests/`; `docs/agenda-ambulatorial.md` | Acesso do profissional ao paciente agendado (G02/H02), integração com escala (H26), canal externo e painel público pendentes |
 | H27 | BLOCKED | caixa laboratorial já deduplica e mantém quarentena | Processador/retry sem formato de equipamento (G07) e RNDS sem credenciais (G11); FHIR ampliado depende de H04/H05 |
+| H13 | READY | `apps/clinical/adt/tests/test_bed_status.py`; spec 002 "Extensão operacional" | Reserva, isolamento, previsão de alta e integração com alta clínica pendentes (G01/G02, H04/H06/H08) |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 564 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H13 — ler `apps/clinical/adt/` e acrescentar estado operacional do leito (higienização/bloqueio justificado) sem misturar com ocupação.
+Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 568 OK; ruff check e makemigrations --check OK
+Próxima tarefa: H26 — ampliar `apps/admin/hr/Employee` com registro profissional/UF, especialidade e validade; afastamento bloqueando novos horários da agenda (H11).
