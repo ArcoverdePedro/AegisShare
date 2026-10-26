@@ -11,4 +11,10 @@ urlpatterns = [
         name="order_create",
     ),
     path("imagem/pedidos/<uuid:pk>/", views.order_detail, name="order_detail"),
+    path("imagem/pedidos/<uuid:pk>/laudo/", views.report_create, name="report_create"),
+    path(
+        "imagem/pedidos/<uuid:pk>/laudos/<uuid:report_id>/liberar/",
+        views.report_release,
+        name="report_release",
+    ),
 ]

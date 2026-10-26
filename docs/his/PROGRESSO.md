@@ -29,9 +29,10 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H02 | BLOCKED | `sync_role_groups` (proposta; `aegis_share/tests/test_role_groups.py`) | Aprovar matriz (G02), vínculos de equipe/unidade, multi-instituição (G01), acesso emergencial e consulta de inativos |
 | H15 | BLOCKED | resultados manuais com validação/liberação/retificação (`apps/clinical/lis/tests/test_results.py`) | Catálogo, críticos, importação de equipamento e assinatura dependem de G07/G11/G05 |
 | H18 | BLOCKED | execução versionada (`apps/clinical/surgery/tests/test_execution.py`) | Checklist, anestesia, OPME/CME e recuperação dependem de G08 |
+| H16 | BLOCKED | laudo versionado com liberação (`apps/clinical/ris/tests/test_reports.py`) | PACS/DICOM (G11), agenda/preparo (G07), assinatura (G05) |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
 E2E Playwright (réplica local do job CI em compose isolado, commit 1a09dd5): 71 passed, 1 flaky (`nursing_local_data_privacy` logout, passou no retry; área não alterada). As 5 falhas axe `link-in-text-block` preexistentes (confirmadas no 38c6100) foram corrigidas.
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 592 OK; ruff check e makemigrations --check OK
-Próxima tarefa: aguardar decisões G01–G11 (`DECISOES.md`). Cartões restantes (H05–H10, H12, H15, H16, H18, H24, H25, H27, H32, H33, H35) dependem de gate; H01 é o desbloqueio principal.
+Última verificação: `manage.py test` (PostgreSQL 18) → 597 OK; ruff check e makemigrations --check OK
+Próxima tarefa: aguardar decisões G01–G11 (`DECISOES.md`). Cartões restantes (H05–H10, H12, H24, H25, H27, H32, H33, H35) dependem de gate; H01 é o desbloqueio principal.

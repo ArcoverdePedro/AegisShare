@@ -1,19 +1,20 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
-from django.views.decorators.http import require_GET, require_http_methods
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import accessible_patients
 
-from .forms import ImagingOrderForm
+from .forms import ImagingOrderForm, ReportForm
 from .models import ImagingOrder
-from .services import RisConflict, order_exam, require_permission
+from .services import RisConflict, order_exam, release_report, require_permission, write_report
 
 
 def _orders(user):
@@ -51,11 +52,12 @@ def order_detail(request, pk):
     require_permission(request.user)
     try:
         item = get_object_or_404(_orders(request.user), pk=pk)
+        reports = list(item.reports.select_related("authored_by", "released_by", "superseded_by"))
         with transaction.atomic(), set_actor(request.user):
             accessed.send(ImagingOrder, instance=item)
     except DatabaseError:
         return _failed()
-    return render(request, "clinical/ris/order_detail.html", {"item": item})
+    return render(request, "clinical/ris/order_detail.html", {"item": item, "reports": reports})
 
 
 @sensitive_post_parameters()
@@ -94,3 +96,47 @@ def order_create(request, encounter_id):
         {"form": form, "encounter": encounter},
         status=status,
     )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def report_create(request, pk):
+    require_permission(request.user, "write_report")
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    current = item.reports.filter(superseded_by__isnull=True).first()
+    form = ReportForm(
+        request.POST or None,
+        initial={"findings": current.findings, "impression": current.impression}
+        if current
+        else None,
+    )
+    if not current:
+        del form.fields["reason"]
+    status = 200
+    if request.method == "POST" and form.is_valid():
+        try:
+            write_report(user=request.user, order=item, **form.cleaned_data)
+        except RisConflict as exc:
+            form.add_error(None, str(exc))
+            status = 409
+        else:
+            messages.success(request, "Laudo registrado; aguarda liberação.")
+            return redirect("ris:order_detail", pk=item.pk)
+    return render(
+        request,
+        "clinical/ris/report_form.html",
+        {"form": form, "item": item, "current": current},
+        status=status,
+    )
+
+
+@login_required
+@require_POST
+def report_release(request, pk, report_id):
+    item = get_object_or_404(_orders(request.user), pk=pk)
+    get_object_or_404(item.reports, pk=report_id)
+    try:
+        release_report(user=request.user, report_id=report_id)
+    except RisConflict as exc:
+        messages.error(request, str(exc))
+    return redirect("ris:order_detail", pk=item.pk)

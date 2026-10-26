@@ -20,3 +20,12 @@ class ImagingOrderForm(forms.Form):
         # O serviço valida catálogo ativo para pedidos novos. Retry pode usar exame desativado.
         if self.is_bound:
             self.fields["exam"].queryset = ImagingExam.objects.all()
+
+
+class ReportForm(forms.Form):
+    performed_at = forms.DateTimeField(
+        label="Exame realizado em", widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
+    findings = forms.CharField(label="Achados", widget=forms.Textarea, max_length=20000)
+    impression = forms.CharField(label="Impressão", widget=forms.Textarea, max_length=5000)
+    reason = forms.CharField(label="Motivo da retificação", max_length=255)

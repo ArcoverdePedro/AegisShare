@@ -29,3 +29,7 @@ Usar dados sintéticos até validação institucional. Definir responsáveis, ca
 Por YAGNI, não há modalidade/contraste/prioridade, preparo, agenda, estudo, imagem, viewer, laudo, assinatura, cobrança ou evento sem consumidor. PACS exige nó interno/protocolo real, correlação, autorização, armazenamento e recuperação. Laudos exigem contrato clínico e jurídico de assinatura; essas extensões não estão aprovadas por esta entrega.
 
 [Evidências e rastreabilidade](../specs/006-ris-pacs/validation.md).
+
+## Laudo (H16, parte estrutural)
+
+`ris.write_report` registra data de realização, achados e impressão; `ris.release_report` libera. Só laudo liberado aparece a quem tem apenas `ris.view_orders`. Retificação exige motivo, só após liberação, e cria nova versão preservando a anterior; pode ocorrer após o encerramento do encontro. Pendentes: agenda/preparo/prioridade (G07), integração PACS/DICOM e visualizador com controle de escopo (G11), assinatura do laudo (H06/G05).
