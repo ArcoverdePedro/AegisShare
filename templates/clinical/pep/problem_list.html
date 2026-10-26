@@ -1,0 +1,18 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Lista de problemas · PEP{% endblock %}
+{% block page_content %}
+<section class="section pt-3"><div class="container" style="max-width:900px;overflow-wrap:anywhere;">
+<a class="is-size-7" href="{% url 'pep:patient_detail' patient.pk %}">← Voltar ao paciente</a>
+<h1 class="title is-3 mt-3">Lista de problemas — {{ patient.display_name }}</h1>
+<p class="mb-4">Registro em texto livre. Código é opcional e exige sistema e versão de origem; o sistema não infere diagnóstico. Correções criam nova versão.</p>
+{% for p in current %}<article class="box"><h2 class="title is-5">{{ p.description }} <span class="tag is-light">{{ p.get_status_display }}</span></h2>
+{% if p.code %}<p>{{ p.code_system }} {{ p.code }} (versão {{ p.code_version }})</p>{% endif %}
+{% if p.onset_date %}<p>Início: {{ p.onset_date|date:'d/m/Y' }}</p>{% endif %}
+<p class="is-size-7">{{ p.author.username }} em {{ p.recorded_at|date:'d/m/Y H:i' }}{% if p.reason %} · revisão: {{ p.reason }}{% endif %}</p>
+{% if can_edit %}<a href="?revisar={{ p.pk }}">Revisar</a>{% endif %}</article>
+{% empty %}<p class="mb-4">Nenhum problema registrado. Ausência de registro não significa ausência de problemas.</p>{% endfor %}
+{% if can_edit %}<form method="post" class="box">{% csrf_token %}<h2 class="title is-5">{% if supersedes %}Revisar “{{ supersedes.description }}”<input type="hidden" name="revisar" value="{{ supersedes.pk }}">{% else %}Registrar problema{% endif %}</h2>
+{% include 'compliance/_partials/form_fields.html' %}<button class="button is-link" type="submit">Salvar</button></form>{% endif %}
+{% if history %}<details class="box"><summary>Versões anteriores ({{ history|length }})</summary>{% for h in history %}<p>{{ h.description }} · {{ h.get_status_display }} · {{ h.author.username }} {{ h.recorded_at|date:'d/m/Y H:i' }}</p>{% endfor %}</details>{% endif %}
+</div></section>
+{% endblock %}

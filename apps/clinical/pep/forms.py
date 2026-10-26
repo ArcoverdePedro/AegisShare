@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 
-from .models import ClinicalEvolution, Encounter, Patient
+from .models import ClinicalEvolution, Encounter, Patient, ProblemListEntry
 
 CONTACT_FIELDS = ["social_name", "phone", "email", "postal_code", "address", "city", "state"]
 CONTACT_WIDGETS = {
@@ -175,3 +175,34 @@ class ClinicalEvolutionAmendmentForm(forms.Form):
         if not content:
             raise forms.ValidationError("Informe o conteúdo do adendo.")
         return content
+
+
+class ProblemForm(forms.ModelForm):
+    class Meta:
+        model = ProblemListEntry
+        fields = [
+            "description",
+            "status",
+            "onset_date",
+            "code_system",
+            "code",
+            "code_version",
+            "reason",
+        ]
+        widgets = {
+            "description": forms.TextInput(attrs={"class": "input", "maxlength": "255"}),
+            "onset_date": forms.DateInput(attrs={"class": "input", "type": "date"}),
+            "code_system": forms.TextInput(attrs={"class": "input", "placeholder": "ex.: CID-10"}),
+            "code": forms.TextInput(attrs={"class": "input"}),
+            "code_version": forms.TextInput(attrs={"class": "input"}),
+            "reason": forms.TextInput(attrs={"class": "input", "maxlength": "255"}),
+        }
+        labels = {
+            "description": "Problema (texto livre)",
+            "status": "Situação",
+            "onset_date": "Início (opcional)",
+            "code_system": "Sistema de código (opcional)",
+            "code": "Código (opcional)",
+            "code_version": "Versão do sistema de código",
+            "reason": "Motivo da revisão",
+        }

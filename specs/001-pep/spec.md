@@ -100,6 +100,12 @@ Cenário: Usuário sem vínculo tenta abrir prontuário
 - Cadastro com mesmo nome (sem diferenciar maiúsculas) e nascimento retorna 409 e exige confirmação explícita; fora do escopo do usuário só a contagem é revelada. Nada é unido automaticamente.
 - Pendentes por G02: múltiplos identificadores com emissor, paciente desconhecido/provisório e regularização, responsáveis legais, conciliação/mesclagem autorizada, acesso emergencial.
 
+## Lista de problemas (H04, parte estrutural)
+
+- `ProblemListEntry` por paciente: descrição em texto livre, situação (ativo, resolvido, registrado por engano), início opcional, código opcional que exige sistema e versão de origem. Nenhuma inferência de diagnóstico a partir de texto.
+- `/pep/pacientes/<id>/problemas/`: profissionais internos com acesso ao paciente registram e revisam; revisão exige motivo e cria nova versão (`supersedes`, OneToOne evita revisão concorrente duplicada). Versões anteriores visíveis; nada é excluído. Ausência de registro é exibida como tal, não como "sem problemas".
+- Pendentes (catálogos/G-clínicos): terminologia aprovada carregada, antecedentes, procedimentos, reconciliação medicamentosa (H08), registros multiprofissionais e resumo de alta (H06 para assinatura).
+
 ## Fora de Escopo
 
 - ADT operacional completo de leitos/transferências.
