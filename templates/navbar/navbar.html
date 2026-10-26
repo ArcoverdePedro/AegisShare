@@ -131,6 +131,7 @@
                                 {% if perms.nursing.view_nursing %}
                                     <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
                                 {% endif %}
+                                {% if perms.scheduling.view_agenda %}<a class="navbar-item" href="{% url 'scheduling:agenda' %}">Agenda</a>{% endif %}
                                 {% if perms.surgery.view_cases %}<a class="navbar-item" href="{% url 'surgery:case_list' %}">Centro Cirúrgico</a>{% endif %}
                                 {% if perms.ris.view_orders %}<a class="navbar-item" href="{% url 'ris:order_list' %}">Imagem</a>{% endif %}
                                 {% if perms.lis.view_orders %}<a class="navbar-item" href="{% url 'lis:order_list' %}">Laboratório</a>{% endif %}

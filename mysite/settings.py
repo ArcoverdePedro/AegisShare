@@ -11,6 +11,7 @@ INSTALLED_APPS = [
     "apps.clinical.lis.apps.LisConfig",
     "apps.clinical.ris.apps.RisConfig",
     "apps.clinical.surgery.apps.SurgeryConfig",
+    "apps.clinical.scheduling.apps.SchedulingConfig",
     "apps.admin.billing.apps.BillingConfig",
     "apps.admin.inventory.apps.InventoryConfig",
     "apps.admin.hr.apps.HrConfig",

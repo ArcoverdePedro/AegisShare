@@ -1,0 +1,21 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Agenda ambulatorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Agendamento — {{ appointment.get_status_display }}</h1>
+<p class="notification is-info is-light">Agenda administrativa: não registra dados clínicos. Nomes aparecem só para quem já tem acesso ao paciente; demais veem a senha. Exige conexão.</p>
+<div class="box"><p>Paciente: <a href="{% url 'pep:patient_detail' appointment.patient_id %}">{{ appointment.patient.display_name }}</a> · senha {{ appointment.ticket }}</p>
+<p>{{ appointment.slot.starts_at|date:'d/m/Y H:i' }} · {{ appointment.slot.professional.get_full_name|default:appointment.slot.professional.username }} · {{ appointment.slot.location }}</p>
+{% if appointment.overbooked %}<p>Encaixe: {{ appointment.reason }}</p>{% elif appointment.reason %}<p>Motivo: {{ appointment.reason }}</p>{% endif %}
+{% if appointment.checked_in_at %}<p>Chegada {{ appointment.checked_in_at|date:'d/m/Y H:i' }}{% if appointment.called_at %} · chamado {{ appointment.called_at|time:'H:i' }}{% endif %}</p>{% endif %}
+{% if appointment.encounter %}<p><a href="{% url 'pep:encounter_detail' appointment.encounter.pk %}">Encontro clínico aberto na chegada</a></p>{% endif %}
+{% for old in history %}<p class="is-size-7">Remarcado de {{ old.slot.starts_at|date:'d/m/Y H:i' }}</p>{% endfor %}</div>
+{% if appointment.status == 'BOOKED' %}<div class="buttons">
+{% if perms.scheduling.checkin_appointment %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="check_in"><button class="button is-success" type="submit">Registrar chegada</button></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="no_show"><button class="button" type="submit">Registrar falta</button></form>{% endif %}
+{% if perms.scheduling.book_appointment %}<a class="button" href="{% url 'scheduling:appointment_create' appointment.patient_id %}?remarcar={{ appointment.pk }}">Remarcar</a>{% endif %}</div>
+{% if perms.scheduling.book_appointment %}<form method="post" class="box"><h2 class="title is-6">Cancelar</h2>{% csrf_token %}<input type="hidden" name="action" value="cancel">{% with form=cancel_form %}{% include 'compliance/_partials/form_fields.html' %}{% endwith %}<button class="button is-danger" type="submit">Cancelar agendamento</button></form>{% endif %}
+{% elif appointment.status in 'CHECKED_IN CALLED' and perms.scheduling.checkin_appointment %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="call"><button class="button is-link" type="submit">Chamar</button></form>{% endif %}
+<p class="mb-4"><a href="{% url 'scheduling:agenda' %}">Agenda do dia</a> · <a href="{% url 'scheduling:queue' %}">Fila de chegada</a>{% if perms.scheduling.manage_agenda %} · <a href="{% url 'scheduling:slot_create' %}">Abrir horários</a>{% endif %} · <a href="{% url 'pep:patient_list' %}">Buscar paciente para agendar</a></p>
+</div></section>
+{% endblock %}
