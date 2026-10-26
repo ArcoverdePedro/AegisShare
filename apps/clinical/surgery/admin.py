@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.clinical.pep.permissions import is_internal_professional
 
-from .models import Procedure
+from .models import OperatingRoom, Procedure
 
 
 @admin.register(Procedure)
@@ -26,3 +26,8 @@ class ProcedureAdmin(admin.ModelAdmin):
         return is_internal_professional(request.user) and super().has_delete_permission(
             request, obj
         )
+
+
+@admin.register(OperatingRoom)
+class OperatingRoomAdmin(ProcedureAdmin):
+    pass

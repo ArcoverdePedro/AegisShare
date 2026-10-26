@@ -28,3 +28,11 @@ Solicitações sem edição/exclusão nas entradas da aplicação ou Admin, sem 
 Por YAGNI, sem SurgicalSchedule/Material, diagnóstico/risco/anestesia/consentimento, salas/equipes, agenda, execução, checklist, recuperação, cobrança ou assinatura. Mapa exige contrato operacional de recursos/intervalos/conflitos; materiais dependem da Spec 009 sem estoque paralelo; execução/checklist/recuperação e assinatura precisam de contratos institucionais próprios.
 
 [Evidências e rastreabilidade](../specs/007-centro-cirurgico/validation.md).
+
+## Mapa cirúrgico e reservas (H17)
+
+- Salas (`OperatingRoom`) no Admin. `surgery.schedule_case` agenda a partir da solicitação: sala, cirurgião responsável, início e duração prevista.
+- Sobreposição impedida para sala e para cirurgião (travas na sala e no usuário, em ordem fixa; disputa simultânea testada em PostgreSQL). Ausência registrada no RH (H26) bloqueia o cirurgião.
+- Remarcação cria novo agendamento ligado ao anterior ("Remarcada"); cancelamento exige motivo e libera a sala. Uma reserva vigente por solicitação (constraint parcial).
+- `/cirurgias/mapa/?dia=` lista salas e reservas; procedimento só aparece a quem acessa o paciente, demais veem "reservado".
+- Agendar não é autorização clínica. Pendentes (G08): análise/autorização, prioridade governada, equipe completa e anestesia, avaliações pré-operatórias, preparo, consentimentos e recursos/equipamentos.
