@@ -3,6 +3,8 @@ import secrets
 from datetime import timedelta
 
 import pyotp
+from django.core.cache import cache
+from django.db import transaction
 from django.utils import timezone
 from django.utils.crypto import salted_hmac
 
@@ -11,6 +13,20 @@ from aegis_share.models import APIToken, UserSecuritySettings
 from .crypto import decrypt_secret, encrypt_secret
 
 API_TOKEN_HASH_SALT = "aegis_share.api_token"
+
+
+def too_many_attempts(key: str, limit: int, window_seconds: int = 300) -> bool:
+    """Conta mais uma tentativa e diz se o limite foi passado.
+
+    `incr` e atomico no cache, entao requisicoes em paralelo nao leem o mesmo valor.
+    """
+    cache.add(key, 0, window_seconds)
+    try:
+        attempts = cache.incr(key)
+    except ValueError:  # a chave expirou entre o add e o incr
+        cache.set(key, 1, window_seconds)
+        attempts = 1
+    return attempts > limit
 
 
 def _security_settings(user):
@@ -79,12 +95,15 @@ def disable_totp(user):
     security.save()
 
 
+@transaction.atomic
 def consume_recovery_code(user, code: str) -> bool:
-    security = _security_settings(user)
+    _security_settings(user)
+    # Trava a linha: dois logins ao mesmo tempo nao podem usar o mesmo codigo.
+    security = UserSecuritySettings.objects.select_for_update().get(user=user)
     candidate = hashlib.sha256((code or "").strip().upper().encode()).hexdigest()
     if candidate not in security.recovery_codes:
         return False
-    security.recovery_codes = [item for item in security.recovery_codes if item != candidate]
+    security.recovery_codes.remove(candidate)
     security.save(update_fields=["recovery_codes", "updated_at"])
     return True
 

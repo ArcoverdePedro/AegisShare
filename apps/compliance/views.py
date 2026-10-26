@@ -4,7 +4,6 @@ from auditlog.context import set_actor
 from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.http import HttpResponse
@@ -12,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_http_methods
 
-from apps.clinical.pep.permissions import accessible_patients, is_internal_professional
+from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
 from .forms import (
     CONFLICT_MESSAGE,
@@ -26,11 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def _require_permission(user, capability=None):
-    permissions = ["compliance.view_requests"]
-    if capability:
-        permissions.append(f"compliance.{capability}")
-    if not is_internal_professional(user) or not user.has_perms(permissions):
-        raise PermissionDenied
+    require_module_permission(user, "compliance", "view_requests", capability)
 
 
 def _accessible_requests(user):

@@ -26,9 +26,9 @@
                     </div>
                 </div>
 
-                {% if user.last_message %}
+                {% if user.last_message_content %}
                     <div class="last-message-preview">
-                        {{ user.last_message.content|truncatechars:40 }}
+                        {{ user.last_message_content|truncatechars:40 }}
                     </div>
                 {% else %}
                     <div class="last-message-preview">

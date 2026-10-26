@@ -238,6 +238,17 @@ class SafetyAndDispenseTests(TestCase):
             1,
         )
 
+        # Nova chave (outra aba ou outro farmacêutico) não pode dispensar o item de novo.
+        with self.assertRaises(DispenseStateError):
+            dispense_medication(
+                request_id=request.pk,
+                actor=self.pharmacist,
+                operation_key=uuid.uuid4(),
+                allocations=[allocation],
+            )
+        lot.refresh_from_db()
+        self.assertEqual(lot.quantity_available, Decimal("7"))
+
     def test_dispense_rejects_insufficient_locked_balance(self):
         request = self._submitted_request()
         request, _review = validate_medication_request(

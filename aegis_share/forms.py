@@ -2,6 +2,7 @@ from uuid import UUID
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from PIL import Image, UnidentifiedImageError
 
 from .file_policy import FilePolicyError, validate_uploaded_file
 from .models import CustomUser, Folder, Workspace, WorkspaceMember
@@ -365,4 +366,10 @@ class FotoForm(forms.Form):
             "image/webp",
         }:
             raise forms.ValidationError("Use PNG, JPEG ou WEBP.")
+        # O tipo vem do navegador; confere se o conteudo e mesmo uma imagem.
+        try:
+            Image.open(arquivo).verify()
+        except (UnidentifiedImageError, OSError, SyntaxError) as exc:
+            raise forms.ValidationError("O arquivo enviado nao e uma imagem valida.") from exc
+        arquivo.seek(0)  # verify() consome o arquivo; volta ao inicio para o uso real
         return arquivo

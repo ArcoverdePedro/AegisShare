@@ -1,12 +1,11 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
-from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.models import Encounter
-from apps.clinical.pep.permissions import accessible_patients, is_internal_professional
+from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
 from .forms import AccountOpenForm, BillingItemForm
 from .models import BillingItem, HospitalAccount
@@ -17,24 +16,13 @@ class BillingConflict(ValueError):
 
 
 def require_permission(user, capability=None):
-    permissions = ["billing.view_accounts"]
-    if capability:
-        permissions.append(f"billing.{capability}")
-    if not is_internal_professional(user) or not user.has_perms(permissions):
-        raise PermissionDenied
+    require_module_permission(user, "billing", "view_accounts", capability)
 
 
 def _validate(form):
     if not form.is_valid():
         raise BillingConflict("Revise os dados e a confirmação.")
     return form.cleaned_data
-
-
-def _operation_collision(exc, name, table):
-    return (
-        getattr(getattr(exc.__cause__, "diag", None), "constraint_name", None) == name
-        or str(exc) == f"UNIQUE constraint failed: {table}.operation_key"
-    )
 
 
 def _retry_account(item, user, encounter_id):
@@ -75,11 +63,8 @@ def open_account(*, user, encounter_id, operation_key, confirmed):
                 return HospitalAccount.objects.create(
                     encounter=encounter, opened_by=user, operation_key=data["operation_key"]
                 )
-        except IntegrityError as exc:
-            if not _operation_collision(
-                exc, "uniq_billing_account_operation", "billing_hospitalaccount"
-            ):
-                raise
+        except IntegrityError:
+            # Outra requisicao gravou a mesma chave ao mesmo tempo: devolve o registro dela.
             existing = HospitalAccount.objects.filter(operation_key=data["operation_key"]).first()
             if existing is None:
                 raise
@@ -113,9 +98,8 @@ def add_item(*, user, account_id, description, quantity, unit_price, operation_k
         try:
             with transaction.atomic():
                 return BillingItem.objects.create(account=account, recorded_by=user, **data)
-        except IntegrityError as exc:
-            if not _operation_collision(exc, "uniq_billing_item_operation", "billing_billingitem"):
-                raise
+        except IntegrityError:
+            # Outra requisicao gravou a mesma chave ao mesmo tempo: devolve o registro dela.
             existing = BillingItem.objects.filter(operation_key=data["operation_key"]).first()
             if existing is None:
                 raise

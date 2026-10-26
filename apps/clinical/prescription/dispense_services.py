@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from .events import emit_medication_dispensed_event, emit_stock_low_event
+from .events import emit_medication_dispensed_event
 from .models import (
     Lot,
     MedicationDispense,
@@ -16,6 +16,7 @@ from .models import (
     StockMovement,
 )
 from .permissions import can_dispense_prescription
+from .stock_services import eligible_total, emit_low_stock_if_needed
 
 
 class DispenseStateError(RuntimeError):
@@ -133,6 +134,11 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
     }
     if set(request_items) != request_item_ids:
         raise DispenseStateError("Item de prescrição inválido para esta dispensação.")
+    # Regra conservadora até a quantidade dispensável por item ser aprovada
+    # (specs/003-prescricao-farmacia/data-model.md): cada item é dispensado uma única vez.
+    # Sem isso, duas abas ou dois farmacêuticos (cada um com sua chave) dispensariam em dobro.
+    if MedicationDispenseItem.objects.filter(request_item_id__in=request_item_ids).exists():
+        raise DispenseStateError("Este item da prescrição já foi dispensado.")
 
     lot_ids = sorted({item["lot_id"] for item in normalized})
     lots = {
@@ -146,19 +152,10 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
         raise DispenseStateError("Lote inválido para esta dispensação.")
 
     today = timezone.localdate()
-    before_totals = {}
-    for lot in lots.values():
-        before_totals[lot.stock_item_id] = sum(
-            (
-                eligible.quantity_available
-                for eligible in Lot.objects.filter(
-                    stock_item_id=lot.stock_item_id,
-                    active=True,
-                    expires_on__gte=today,
-                )
-            ),
-            Decimal("0"),
-        )
+    before_totals = {
+        lot.stock_item_id: eligible_total(lot.stock_item_id, on_date=today)
+        for lot in lots.values()
+    }
 
     # Valida toda a operação antes de persistir o cabeçalho.
     projected_balances = {lot_id: lot.quantity_available for lot_id, lot in lots.items()}
@@ -226,25 +223,11 @@ def dispense_medication(*, request_id, actor, operation_key, allocations):
 
     touched_stock_items = {lot.stock_item_id: lot.stock_item for lot in lots.values()}
     for stock_item_id, stock_item in touched_stock_items.items():
-        after_total = sum(
-            (
-                eligible.quantity_available
-                for eligible in Lot.objects.filter(
-                    stock_item_id=stock_item_id,
-                    active=True,
-                    expires_on__gte=today,
-                )
-            ),
-            Decimal("0"),
+        emit_low_stock_if_needed(
+            stock_item,
+            before_total=before_totals[stock_item_id],
+            after_total=eligible_total(stock_item_id, on_date=today),
         )
-        if after_total <= stock_item.minimum_level and after_total != before_totals[stock_item_id]:
-            emit_stock_low_event(
-                stock_item_id=stock_item.pk,
-                drug_id=stock_item.drug_id,
-                storage_location=stock_item.storage_location,
-                quantity_available=after_total,
-                minimum_level=stock_item.minimum_level,
-            )
 
     emit_medication_dispensed_event(
         dispense_id=dispense.pk,

@@ -1,12 +1,11 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
-from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.models import Encounter
-from apps.clinical.pep.permissions import accessible_patients, is_internal_professional
+from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
 from .models import LabTest, ServiceRequest, Specimen
 
@@ -16,11 +15,7 @@ class LisConflict(ValueError):
 
 
 def require_permission(user, capability=None):
-    permissions = ["lis.view_orders"]
-    if capability:
-        permissions.append(f"lis.{capability}")
-    if not is_internal_professional(user) or not user.has_perms(permissions):
-        raise PermissionDenied
+    require_module_permission(user, "lis", "view_orders", capability)
 
 
 def _lock_encounter(user, encounter_id, capability):

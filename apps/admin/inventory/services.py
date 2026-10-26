@@ -1,11 +1,10 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
-from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.debug import sensitive_variables
 
-from apps.clinical.pep.permissions import is_internal_professional
+from apps.clinical.pep.permissions import require_module_permission
 
 from .forms import RequisitionForm
 from .models import InventoryItem, Requisition
@@ -16,11 +15,7 @@ class InventoryConflict(ValueError):
 
 
 def require_permission(user, capability=None):
-    permissions = ["inventory.view_requisitions"]
-    if capability:
-        permissions.append(f"inventory.{capability}")
-    if not is_internal_professional(user) or not user.has_perms(permissions):
-        raise PermissionDenied
+    require_module_permission(user, "inventory", "view_requisitions", capability)
 
 
 def _retry(existing, user, item_id, quantity):
@@ -67,12 +62,8 @@ def request_material(*, user, item, quantity, operation_key, confirmed):
                     requested_by=user,
                     operation_key=data["operation_key"],
                 )
-        except IntegrityError as exc:
-            name = getattr(getattr(exc.__cause__, "diag", None), "constraint_name", None)
-            if name != "uniq_inventory_req_operation" and str(exc) != (
-                "UNIQUE constraint failed: inventory_requisition.operation_key"
-            ):
-                raise
+        except IntegrityError:
+            # Outra requisicao gravou a mesma chave ao mesmo tempo: devolve o registro dela.
             existing = Requisition.objects.filter(operation_key=data["operation_key"]).first()
             if existing is None:
                 raise

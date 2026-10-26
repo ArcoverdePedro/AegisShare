@@ -1,3 +1,4 @@
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.utils import timezone
 
@@ -13,6 +14,19 @@ def is_internal_professional(user) -> bool:
         getattr(user, "is_admin", lambda: False)()
         or getattr(user, "is_employee", lambda: False)()
     )
+
+
+def require_module_permission(user, app_label, view_codename, capability=None):
+    """Exige profissional interno com a permissao de ver o modulo (e a acao, se houver).
+
+    Ex.: require_module_permission(user, "billing", "view_accounts", "add_item")
+    exige billing.view_accounts e billing.add_item.
+    """
+    permissions = [f"{app_label}.{view_codename}"]
+    if capability:
+        permissions.append(f"{app_label}.{capability}")
+    if not is_internal_professional(user) or not user.has_perms(permissions):
+        raise PermissionDenied
 
 
 def can_create_patient(user) -> bool:
@@ -37,7 +51,8 @@ def accessible_patients(user):
 
 
 def can_access_patient(user, patient: Patient) -> bool:
-    if not getattr(user, "is_authenticated", False):
+    # Mesma regra de accessible_patients: paciente inativo nao recebe novos atos clinicos.
+    if not getattr(user, "is_authenticated", False) or not patient.active:
         return False
     if user.is_admin():
         return True

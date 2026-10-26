@@ -11,7 +11,7 @@
             <p class="mb-4">Use um aplicativo TOTP como 1Password, Bitwarden, Google ou Microsoft Authenticator.</p>
             {% if totp_secret %}<div class="notification is-info is-light"><p><strong>Segredo:</strong> <span class="mono">{{ totp_secret }}</span></p><details class="mt-2"><summary>URI de provisionamento</summary><p class="mono is-size-7 mt-2" style="word-break:break-all">{{ totp_uri }}</p></details></div>
             <form method="post" action="{% url 'enable_2fa' %}">{% csrf_token %}{{ totp_form.as_p }}<button class="button is-success is-fullwidth" type="submit">Confirmar e ativar 2FA</button></form>
-            {% else %}<form method="post" action="{% url 'begin_2fa' %}">{% csrf_token %}<button class="button is-link" type="submit">Configurar 2FA</button></form>{% endif %}
+            {% else %}<form method="post" action="{% url 'begin_2fa' %}">{% csrf_token %}<div class="field"><label class="label" for="begin-2fa-password">Senha atual</label><input class="input" id="begin-2fa-password" name="password" type="password" autocomplete="current-password" required></div><button class="button is-link" type="submit">Configurar 2FA</button></form>{% endif %}
         {% else %}
             <p class="mb-4">O segundo fator sera solicitado apos a senha.</p>
             <form method="post" action="{% url 'disable_2fa' %}">{% csrf_token %}<div class="field"><label class="label">Senha atual para desativar</label><input class="input" name="password" type="password" required></div><button class="button is-danger is-light" type="submit">Desativar 2FA</button></form>

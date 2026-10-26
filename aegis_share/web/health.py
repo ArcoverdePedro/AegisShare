@@ -37,7 +37,8 @@ def services(request):
     checks = {
         "database": True,
         "redis_configured": bool(settings.REDIS_URL),
-        "pinata": PinataClient().ping(),
+        # Cache de 60s: chamadas publicas repetidas nao gastam a cota da Pinata.
+        "pinata": cache.get_or_set("health:pinata", PinataClient().ping, 60),
         "clamav_enabled": settings.CLAMAV_ENABLED,
     }
     return JsonResponse({"status": "ok" if checks["pinata"] else "degraded", "checks": checks})

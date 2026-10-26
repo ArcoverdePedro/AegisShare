@@ -153,7 +153,7 @@ class ValidationDispenseAuditActorTests(TestCase):
         )
         with (
             patch("apps.clinical.prescription.dispense_services.emit_medication_dispensed_event"),
-            patch("apps.clinical.prescription.dispense_services.emit_stock_low_event"),
+            patch("apps.clinical.prescription.stock_services.emit_stock_low_event"),
         ):
             dispense = dispense_medication(
                 request_id=validated.pk,

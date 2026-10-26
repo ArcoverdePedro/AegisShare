@@ -36,6 +36,10 @@ def security_settings(request):
 @login_required
 @require_POST
 def begin_2fa(request):
+    # Recomecar a configuracao desliga o 2FA atual, entao exige a senha como no desativar.
+    if not request.user.check_password(request.POST.get("password", "")):
+        messages.error(request, "Senha atual incorreta.")
+        return redirect("security_settings")
     secret, uri = begin_totp_setup(request.user)
     request.session["totp_secret"] = secret
     request.session["totp_uri"] = uri
@@ -88,9 +92,12 @@ def revoke_session(request, session_id):
 @login_required
 @require_POST
 def revoke_other_sessions(request):
-    current = request.session.session_key
-    for tracked in request.user.tracked_sessions.filter(revoked_at__isnull=True).exclude(session_key=current):
-        Session.objects.filter(session_key=tracked.session_key).delete()
+    others = request.user.tracked_sessions.filter(revoked_at__isnull=True).exclude(
+        session_key=request.session.session_key
+    )
+    Session.objects.filter(session_key__in=others.values("session_key")).delete()
+    # save() um a um (e nao update()) para o auditlog registrar cada revogacao.
+    for tracked in others:
         tracked.revoked_at = timezone.now()
         tracked.save(update_fields=["revoked_at"])
     messages.success(request, "Outras sessoes encerradas.")

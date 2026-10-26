@@ -1,14 +1,33 @@
-from django.db import transaction
+import logging
+from concurrent.futures import ThreadPoolExecutor
+
+from django.db import connection, transaction
 from django.urls import reverse
 
 from aegis_share.models import Notification
 
+logger = logging.getLogger(__name__)
 
-def _send_webpush_after_commit(user_id) -> None:
+# shortcut: pool em memoria do processo; pushes pendentes se perdem se o processo
+# reiniciar. Trocar por uma fila de jobs se a entrega precisar ser garantida.
+_push_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="webpush")
+
+
+def _send_webpush(user_id) -> None:
     # Import tardio evita acoplamento do Core ao app PWA durante o carregamento dos apps.
     from apps.pwa.push import send_generic_push
 
-    send_generic_push(user_id)
+    try:
+        send_generic_push(user_id)
+    except Exception:
+        logger.exception("webpush_background_failed", extra={"user_id": str(user_id)})
+    finally:
+        connection.close()  # cada thread abre a propria conexao com o banco
+
+
+def _send_webpush_after_commit(user_id) -> None:
+    # Fora da requisicao: um servico de push lento nao trava quem comentou ou compartilhou.
+    _push_pool.submit(_send_webpush, user_id)
 
 
 def notify(user, *, title: str, body: str = "", kind: str = "SYSTEM", link: str = ""):

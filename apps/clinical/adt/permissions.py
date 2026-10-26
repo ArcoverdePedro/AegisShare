@@ -7,8 +7,6 @@ PERM_VIEW_BED_MAP = "adt.view_bed_map"
 PERM_ADMIT = "adt.admit_patient"
 PERM_TRANSFER = "adt.transfer_patient"
 PERM_DISCHARGE = "adt.discharge_patient"
-PERM_MANAGE_BED = "adt.manage_bed_status"
-PERM_VIEW_HISTORY = "adt.view_movement_history"
 
 
 def _is_authenticated_internal(user):
@@ -100,14 +98,6 @@ def can_discharge_admission(user, admission):
         .first()
     )
     return bool(current and can_access_bed(user, current.bed))
-
-
-def can_manage_bed_status(user):
-    return has_adt_permission(user, PERM_MANAGE_BED)
-
-
-def can_view_movement_history(user):
-    return has_adt_permission(user, PERM_VIEW_HISTORY)
 
 
 def can_view_occupant_phi(user, patient):

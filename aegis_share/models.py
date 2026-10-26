@@ -191,7 +191,8 @@ class IPFSFile(models.Model):
 
     @property
     def current_version(self):
-        return self.versions.order_by("-version_number").first()
+        # versions.all() ja vem ordenado por -version_number (Meta) e aproveita prefetch.
+        return next(iter(self.versions.all()), None)
 
     def user_tem_acesso(self, user):
         if not getattr(user, "is_authenticated", False) or self.deleted_at:
@@ -503,12 +504,6 @@ class Conversation(models.Model):
 
     def get_other_user(self, user):
         return self.participants.exclude(id=user.id).first()
-
-    def get_last_message(self):
-        return self.messages.order_by("-created_at").first()
-
-    def get_unread_count(self, user):
-        return self.messages.filter(is_read=False).exclude(sender=user).count()
 
 
 class Message(models.Model):

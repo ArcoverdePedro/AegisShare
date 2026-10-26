@@ -7,6 +7,7 @@ from django.utils import timezone
 from aegis_share.tests.helpers import make_user
 
 from ..models import ClinicalEvolution, Encounter, Patient, PatientAccessGrant
+from ..permissions import can_access_patient
 
 TEST_STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
@@ -46,6 +47,12 @@ class ClinicalSecurityBoundaryTests(TestCase):
             author=self.owner,
             content="Conteúdo sintético restrito usado apenas no teste.",
         )
+
+    def test_inactive_patient_denies_clinical_actions(self):
+        self.patient.active = False
+        self.patient.save(update_fields=["active"])
+        self.assertFalse(can_access_patient(self.owner, self.patient))
+        self.assertFalse(can_access_patient(self.admin, self.patient))
 
     def test_expired_grant_denies_nested_clinical_resources(self):
         PatientAccessGrant.objects.create(

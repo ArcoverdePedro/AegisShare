@@ -54,7 +54,7 @@ def _serialize_file(file):
 def files_api(request):
     user = request.api_user
     if request.method == "GET":
-        qs = files_for_user(user)
+        qs = files_for_user(user).prefetch_related("versions")
         query = request.GET.get("q", "").strip()
         if query:
             qs = qs.filter(nome_arquivo__icontains=query)

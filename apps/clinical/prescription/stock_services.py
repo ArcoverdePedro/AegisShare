@@ -28,7 +28,7 @@ def _decimal(value, *, field_name):
         raise StockStateError(f"{field_name} inválido.") from exc
 
 
-def _eligible_total(stock_item_id, *, on_date=None):
+def eligible_total(stock_item_id, *, on_date=None):
     on_date = on_date or timezone.localdate()
     total = (
         Lot.objects.filter(
@@ -41,7 +41,7 @@ def _eligible_total(stock_item_id, *, on_date=None):
     return total
 
 
-def _emit_low_stock_if_needed(stock_item, *, before_total, after_total):
+def emit_low_stock_if_needed(stock_item, *, before_total, after_total):
     if not stock_item.active:
         return
     if after_total <= stock_item.minimum_level and after_total != before_total:
@@ -122,7 +122,7 @@ def _apply_stock_movement(
     else:
         raise StockStateError("Tipo de movimentação não permitido neste serviço.")
 
-    before_total = _eligible_total(stock_item.pk, on_date=today)
+    before_total = eligible_total(stock_item.pk, on_date=today)
     new_balance = lot.quantity_available + delta
     if new_balance < 0:
         raise StockStateError("A movimentação resultaria em saldo negativo.")
@@ -141,8 +141,8 @@ def _apply_stock_movement(
             reason=reason,
         )
     lot.refresh_from_db(fields=["quantity_available", "updated_at"])
-    after_total = _eligible_total(stock_item.pk, on_date=today)
-    _emit_low_stock_if_needed(
+    after_total = eligible_total(stock_item.pk, on_date=today)
+    emit_low_stock_if_needed(
         stock_item,
         before_total=before_total,
         after_total=after_total,

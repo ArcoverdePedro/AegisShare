@@ -1,9 +1,10 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Max, Q
+from django.db.models import Count, Max, OuterRef, Q, Subquery
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
-from aegis_share.models import Conversation, CustomUser
+from aegis_share.models import Conversation, CustomUser, Message
 from aegis_share.services.collaboration import file_chat_users
 from aegis_share.services.selectors import files_for_user, get_accessible_file
 
@@ -48,19 +49,30 @@ def user_list(request):
 
     # A lista lateral representa conversas gerais; conversas de documento
     # continuam acessiveis pelo detalhe do arquivo e nao substituem a conversa geral.
-    conversations = {
-        str(other.id): conversation
-        for conversation in Conversation.objects.filter(
-            participants=request.user, file__isnull=True
-        ).prefetch_related("participants", "messages__sender")
+    # Uma query traz, por conversa, o total nao lido e a ultima mensagem.
+    last_message = Message.objects.filter(conversation=OuterRef("pk")).order_by("-created_at")
+    conversations = (
+        Conversation.objects.filter(participants=request.user, file__isnull=True)
+        .prefetch_related("participants")
+        .annotate(
+            unread_count=Count(
+                "messages",
+                filter=Q(messages__is_read=False) & ~Q(messages__sender=request.user),
+            ),
+            last_message_content=Subquery(last_message.values("content")[:1]),
+            last_message_time=Subquery(last_message.values("created_at")[:1]),
+        )
+    )
+    conversation_by_user = {
+        other.id: conversation
+        for conversation in conversations
         for other in conversation.participants.all()
         if other.id != request.user.id
     }
 
     users_data = []
     for other in users[:100]:
-        conversation = conversations.get(str(other.id))
-        last_message = conversation.get_last_message() if conversation else None
+        conversation = conversation_by_user.get(other.id)
         users_data.append(
             {
                 "id": other.id,
@@ -68,15 +80,16 @@ def user_list(request):
                 "foto_perfil": other.foto_perfil,
                 "nivel_permissao": other.nivel_permissao,
                 "get_nivel_permissao_display": other.get_nivel_permissao_display(),
-                "last_message": last_message,
-                "unread_count": conversation.get_unread_count(request.user) if conversation else 0,
+                "last_message_content": conversation.last_message_content if conversation else "",
+                "last_message_time": conversation.last_message_time if conversation else None,
+                "unread_count": conversation.unread_count if conversation else 0,
             }
         )
 
     users_data.sort(
         key=lambda item: (
             -item["unread_count"],
-            -(item["last_message"].created_at.timestamp() if item["last_message"] else 0),
+            -(item["last_message_time"].timestamp() if item["last_message_time"] else 0),
         )
     )
     return render(request, "chat/partials/user_list.html", {"users": users_data})
@@ -98,7 +111,7 @@ def get_or_create_conversation(request, user_id):
     return JsonResponse(
         {
             "conversation_id": str(conversation.id),
-            "redirect_url": f"/chat/{conversation.id}/",
+            "redirect_url": reverse("load_conversation", args=[conversation.id]),
         }
     )
 

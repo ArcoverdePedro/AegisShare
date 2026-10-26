@@ -50,6 +50,8 @@ SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT") if not DEBUG else False
 SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE") if not DEBUG else False
 CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE") if not DEBUG else False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# IPs/redes do proxy reverso; so eles podem informar o IP real do cliente.
+TRUSTED_PROXY_IPS = env.list("TRUSTED_PROXY_IPS", default=["127.0.0.1"])
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"

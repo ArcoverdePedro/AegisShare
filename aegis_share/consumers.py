@@ -2,6 +2,7 @@ import json
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.urls import reverse
 from django.utils import timezone
 
 from .models import Conversation, Message, Notification
@@ -120,7 +121,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     kind="CHAT",
                     title=f"Nova mensagem de {self.user.username}",
                     body=content[:180],
-                    link=f"/chat/{conversation.id}/",
+                    link=reverse("load_conversation", args=[conversation.id]),
                 )
                 for recipient in recipients
             ]

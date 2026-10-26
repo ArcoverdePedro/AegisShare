@@ -8,7 +8,11 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
 from aegis_share.forms import ClienteForm, FirstUserForm, FormUserADM, FotoForm, TOTPCodeForm
-from aegis_share.services.security import consume_recovery_code, verify_totp
+from aegis_share.services.security import (
+    consume_recovery_code,
+    too_many_attempts,
+    verify_totp,
+)
 from aegis_share.utils import imagem_para_base64
 
 User = get_user_model()
@@ -55,16 +59,13 @@ def custom_login(request):
         return render(request, "registro/login.html", {"redirect_to": redirect_to})
 
     username = request.POST.get("username", "").strip()
-    password = request.POST.get("password", "")
     key = _rate_key("login", request, username)
-    attempts = int(cache.get(key, 0))
-    if attempts >= 10:
+    if too_many_attempts(key, limit=10):
         messages.error(request, "Muitas tentativas. Aguarde alguns minutos e tente novamente.")
         return redirect("login")
 
-    user = authenticate(request, username=username, password=password)
+    user = authenticate(request, username=username, password=request.POST.get("password", ""))
     if user is None:
-        cache.set(key, attempts + 1, 300)
         messages.error(request, "Usuario ou senha invalidos.")
         return redirect("login")
 
@@ -94,23 +95,19 @@ def login_2fa(request):
     form = TOTPCodeForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         key = _rate_key("login-2fa", request, user.username)
-        attempts = int(cache.get(key, 0))
-        if attempts >= 8:
+        if too_many_attempts(key, limit=8):
             messages.error(request, "Muitas tentativas de 2FA. Aguarde alguns minutos.")
             return render(request, "registro/login_2fa.html", {"form": form})
 
         code = form.cleaned_data["code"]
-        valid = verify_totp(user, code) or consume_recovery_code(user, code)
-        if not valid:
-            cache.set(key, attempts + 1, 300)
-            form.add_error("code", "Codigo invalido.")
-        else:
+        if verify_totp(user, code) or consume_recovery_code(user, code):
             cache.delete(key)
             redirect_to = request.session.pop("pending_2fa_next", reverse("home"))
             request.session.pop("pending_2fa_user", None)
             login(request, user)
             messages.success(request, "Autenticacao em dois fatores confirmada.")
             return redirect(redirect_to)
+        form.add_error("code", "Codigo invalido.")
 
     return render(request, "registro/login_2fa.html", {"form": form})
 

@@ -18,3 +18,10 @@
 {% empty %}
 <tr><td colspan="6" class="has-text-centered py-6"><p class="muted">Nenhum arquivo encontrado.</p></td></tr>
 {% endfor %}
+{% if arquivos.paginator.num_pages > 1 %}
+<tr><td colspan="6" class="has-text-centered">
+    {% if arquivos.has_previous %}<a href="{% querystring page=arquivos.previous_page_number %}">Anterior</a>{% endif %}
+    <span class="mx-3">Pagina {{ arquivos.number }} de {{ arquivos.paginator.num_pages }}</span>
+    {% if arquivos.has_next %}<a href="{% querystring page=arquivos.next_page_number %}">Proxima</a>{% endif %}
+</td></tr>
+{% endif %}

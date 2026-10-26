@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Max
 from django.utils import timezone
 
-from aegis_share.file_policy import validate_uploaded_file
+from aegis_share.file_policy import FilePolicyError, validate_uploaded_file
 from aegis_share.models import FileAccess, FileVersion, IPFSFile, WorkspaceMember
 
 from .antivirus import scan_bytes
@@ -35,7 +35,7 @@ def _read_validated(uploaded_file) -> bytes:
     validate_uploaded_file(uploaded_file)
     content = uploaded_file.read()
     if len(content) != uploaded_file.size:
-        raise ValueError("Nao foi possivel ler o arquivo completo.")
+        raise FilePolicyError("Nao foi possivel ler o arquivo completo.")
     scan_bytes(content)
     return content
 

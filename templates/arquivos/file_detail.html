@@ -64,7 +64,7 @@
         {% if can_share %}
         <div class="box aegis-card"><h2 class="title is-5">Compartilhar com usuario</h2>
             <form method="post" action="{% url 'share_file_access' arquivo.id %}">{% csrf_token %}
-                <div class="field"><label class="label">Usuario</label><div class="select is-fullwidth"><select name="usuario_id" required><option value="">Selecione</option>{% for candidate in share_candidates %}<option value="{{ candidate.id }}">{{ candidate.username }} ({{ candidate.get_nivel_permissao_display }})</option>{% endfor %}</select></div></div>
+                <div class="field"><label class="label" for="share-username">Nome de usuario</label><input class="input" id="share-username" name="username" type="text" autocomplete="off" required></div>
                 <button class="button is-link is-fullwidth" type="submit">Conceder acesso</button>
             </form>
             {% if arquivo.access_grants.all %}<hr><p class="heading">Acessos diretos</p>{% for grant in arquivo.access_grants.all %}<div class="level is-mobile mb-2"><div class="level-left"><span>{{ grant.user.username }}</span></div><div class="level-right"><form method="post" action="{% url 'revoke_file_access' arquivo.id grant.user.id %}">{% csrf_token %}<button class="button is-small is-danger is-light">Revogar</button></form></div></div>{% endfor %}{% endif %}

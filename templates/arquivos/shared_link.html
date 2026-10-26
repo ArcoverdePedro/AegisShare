@@ -17,7 +17,7 @@
             {% if link.allow_preview %}<a class="button" target="_blank" href="{% url 'shared_link_preview' token %}">{% icon 'eye' %}<span>Visualizar</span></a>{% endif %}
             {% if link.allow_download %}<a class="button is-link" href="{% url 'shared_link_download' token %}">{% icon 'download' %}<span>Baixar</span></a>{% endif %}
         </div>
-        {% if link.max_downloads %}<p class="is-size-7 muted mt-3">{{ link.download_count }} de {{ link.max_downloads }} downloads utilizados.</p>{% endif %}
+        {% if link.max_downloads %}<p class="is-size-7 muted mt-3">{{ link.download_count }} de {{ link.max_downloads }} acessos utilizados (visualizar ou baixar).</p>{% endif %}
     {% else %}<p class="muted">O link nao esta disponivel.</p>{% endif %}
 </div>
 </div></div></div></section>

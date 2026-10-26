@@ -1,12 +1,11 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
-from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.debug import sensitive_variables
 
 from apps.clinical.pep.models import Encounter
-from apps.clinical.pep.permissions import accessible_patients, is_internal_professional
+from apps.clinical.pep.permissions import accessible_patients, require_module_permission
 
 from .models import ImagingExam, ImagingOrder
 
@@ -16,11 +15,7 @@ class RisConflict(ValueError):
 
 
 def require_permission(user, capability=None):
-    permissions = ["ris.view_orders"]
-    if capability:
-        permissions.append(f"ris.{capability}")
-    if not is_internal_professional(user) or not user.has_perms(permissions):
-        raise PermissionDenied
+    require_module_permission(user, "ris", "view_orders", capability)
 
 
 def _lock_encounter(user, encounter_id, capability):
@@ -63,13 +58,8 @@ def order_exam(*, user, encounter_id, exam, operation_key):
                     requested_by=user,
                     operation_key=operation_key,
                 )
-        except IntegrityError as exc:
-            constraint = getattr(getattr(exc.__cause__, "diag", None), "constraint_name", None)
-            if (
-                constraint != "uniq_ris_operation_key"
-                and str(exc) != "UNIQUE constraint failed: ris_imagingorder.operation_key"
-            ):
-                raise
+        except IntegrityError:
+            # Outra requisicao gravou a mesma chave ao mesmo tempo: devolve o registro dela.
             existing = ImagingOrder.objects.filter(operation_key=operation_key).first()
             if existing is None:
                 raise

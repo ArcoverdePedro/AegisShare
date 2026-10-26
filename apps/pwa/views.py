@@ -13,6 +13,7 @@ from django.views.generic import TemplateView, View
 from PIL import Image, ImageOps
 
 from .models import PushSubscription
+from .session import session_fingerprint
 
 PWA_ICON_SIZES = {192, 512}
 MAX_PUSH_ENDPOINT_LENGTH = 4096
@@ -60,16 +61,6 @@ def _valid_subscription_payload(payload):
     if not auth or len(auth) > MAX_PUSH_KEY_LENGTH:
         return None
     return endpoint, p256dh, auth
-
-
-def _session_fingerprint(request):
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.save()
-        session_key = request.session.session_key
-    if not session_key:
-        return None
-    return PushSubscription.hash_session_key(session_key)
 
 
 class ManifestView(View):
@@ -179,8 +170,8 @@ class PushSubscribeView(LoginRequiredMixin, View):
                 JsonResponse({"error": "invalid_subscription"}, status=400)
             )
 
-        session_fingerprint = _session_fingerprint(request)
-        if not session_fingerprint:
+        fingerprint = session_fingerprint(request)
+        if not fingerprint:
             return _no_store(JsonResponse({"error": "invalid_session"}, status=409))
 
         endpoint, p256dh, auth = parsed
@@ -190,7 +181,7 @@ class PushSubscribeView(LoginRequiredMixin, View):
             defaults={
                 "user": request.user,
                 "endpoint": endpoint,
-                "session_fingerprint": session_fingerprint,
+                "session_fingerprint": fingerprint,
                 "p256dh": p256dh,
                 "auth": auth,
                 "active": True,

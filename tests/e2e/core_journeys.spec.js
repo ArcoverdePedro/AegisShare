@@ -58,11 +58,8 @@ test('compartilhamento direto e link publico protegido preservam autorizacao', a
 
   const shareBox = page.locator('.box').filter({ hasText: 'Compartilhar com usuario' });
   await expect(shareBox).toBeVisible();
-  const recipientOption = shareBox.locator('option').filter({ hasText: RECIPIENT.username }).first();
-  if (await recipientOption.count()) {
-    const recipientValue = await recipientOption.getAttribute('value');
-    expect(recipientValue).toBeTruthy();
-    await shareBox.locator('select[name="usuario_id"]').selectOption(recipientValue);
+  if (!(await shareBox.getByText(RECIPIENT.username).count())) {
+    await shareBox.locator('input[name="username"]').fill(RECIPIENT.username);
     await shareBox.getByRole('button', { name: 'Conceder acesso' }).click();
   }
   await expect(shareBox).toContainText(RECIPIENT.username);

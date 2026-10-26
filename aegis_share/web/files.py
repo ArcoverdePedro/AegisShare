@@ -4,6 +4,7 @@ from io import BytesIO
 from auditlog.signals import accessed
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponseForbidden, JsonResponse
@@ -12,6 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from aegis_share.file_policy import FilePolicyError
 from aegis_share.forms import (
     DocumentRequestForm,
     FileCommentForm,
@@ -33,6 +35,7 @@ from aegis_share.models import (
     Workspace,
     WorkspaceMember,
 )
+from aegis_share.services.antivirus import AntivirusUnavailable, MalwareDetected
 from aegis_share.services.files import (
     create_file_from_upload,
     create_new_version,
@@ -41,15 +44,28 @@ from aegis_share.services.files import (
     revoke_access,
 )
 from aegis_share.services.notifications import notify, notify_document_request
+from aegis_share.services.pinata import PinataError
+from aegis_share.services.security import too_many_attempts
 from aegis_share.services.selectors import files_for_user, get_accessible_file
 from aegis_share.services.sharing import (
     SharedLinkError,
-    consume_download,
+    consume_link_access,
     create_shared_link,
+    find_link,
     resolve_shared_link,
     revoke_shared_link,
-    token_hash,
 )
+
+# Erros esperados de upload, com mensagens seguras para o usuario.
+# Qualquer outro erro sobe para o Django, que registra no log e mostra a pagina 500.
+UPLOAD_ERRORS = (
+    FilePolicyError,
+    MalwareDetected,
+    AntivirusUnavailable,
+    PinataError,
+    PermissionError,
+)
+FILES_PER_PAGE = 50
 
 
 def _apply_file_filters(queryset, request):
@@ -123,18 +139,20 @@ def buscar_funcionario(request):
     )
 
 
+def _file_page(request):
+    queryset = _apply_file_filters(files_for_user(request.user), request)
+    return Paginator(queryset, FILES_PER_PAGE).get_page(request.GET.get("page"))
+
+
 @login_required
 def arquivos(request):
-    queryset = _apply_file_filters(files_for_user(request.user), request)
-    return render(request, "arquivos/arquivos.html", {"arquivos": queryset})
+    return render(request, "arquivos/arquivos.html", {"arquivos": _file_page(request)})
 
 
 @login_required
 def buscar_arquivo(request):
-    queryset = _apply_file_filters(files_for_user(request.user), request)
-    if request.headers.get("HX-Request"):
-        return render(request, "arquivos/htmx_arquivos.html", {"arquivos": queryset})
-    return render(request, "arquivos/arquivos.html", {"arquivos": queryset})
+    template = "arquivos/htmx_arquivos.html" if request.htmx else "arquivos/arquivos.html"
+    return render(request, template, {"arquivos": _file_page(request)})
 
 
 @login_required
@@ -159,7 +177,7 @@ def upload(request):
                 folder=form.cleaned_data.get("folder"),
                 description=form.cleaned_data.get("description", ""),
             )
-        except Exception as exc:
+        except UPLOAD_ERRORS as exc:
             messages.error(request, f"Nao foi possivel enviar o arquivo: {exc}")
         else:
             messages.success(request, "Arquivo criptografado e enviado com sucesso.")
@@ -176,14 +194,6 @@ def file_detail(request, file_id):
 
     can_share = file.user_pode_compartilhar(request.user)
     can_edit = file.user_pode_alterar(request.user)
-    share_candidates = CustomUser.objects.none()
-    if can_share:
-        share_candidates = (
-            CustomUser.objects.filter(is_active=True)
-            .exclude(id=request.user.id)
-            .exclude(file_access_grants__arquivo=file)
-            .order_by("username")
-        )
 
     return render(
         request,
@@ -198,7 +208,6 @@ def file_detail(request, file_id):
             "shared_links": (
                 file.shared_links.filter(revoked_at__isnull=True) if can_share else []
             ),
-            "share_candidates": share_candidates,
             "can_share": can_share,
             "can_edit": can_edit,
             "new_shared_link": request.session.pop("new_shared_link", None),
@@ -258,7 +267,7 @@ def add_file_version(request, file_id):
                 file=file, uploaded_file=form.cleaned_data["arquivo"], actor=request.user
             )
             messages.success(request, "Nova versao criada.")
-        except Exception as exc:
+        except UPLOAD_ERRORS as exc:
             messages.error(request, f"Falha ao criar versao: {exc}")
     else:
         messages.error(request, "Arquivo invalido para nova versao.")
@@ -271,9 +280,13 @@ def share_file_access(request, file_id):
     file = get_accessible_file(request.user, file_id)
     if not file:
         raise Http404
-    recipient = get_object_or_404(
-        CustomUser, id=request.POST.get("usuario_id"), is_active=True
-    )
+    # Busca por nome exato: a pagina nao lista os usuarios do sistema.
+    recipient = CustomUser.objects.filter(
+        username=request.POST.get("username", "").strip(), is_active=True
+    ).first()
+    if not recipient:
+        messages.error(request, "Usuario nao encontrado.")
+        return redirect("file_detail", file_id=file.id)
     try:
         _, created = grant_access(file=file, recipient=recipient, actor=request.user)
         messages.success(
@@ -363,81 +376,62 @@ def revoke_file_link(request, link_id):
     return redirect("file_detail", file_id=link.file_id)
 
 
-def _public_link(token):
-    return (
-        SharedLink.objects.select_related("file", "file__dono_arquivo")
-        .filter(token_hash=token_hash(token))
-        .first()
-    )
+def _password_session_key(link):
+    return f"shared-link-auth:{link.id}"
 
 
 def shared_link(request, token):
-    candidate = _public_link(token)
-    if not candidate or not candidate.is_active or candidate.file.deleted_at:
+    link = find_link(token)
+    if not link or not link.is_active or link.file.deleted_at:
         raise Http404
 
-    if candidate.password_hash and request.method != "POST":
-        return render(
-            request,
-            "arquivos/shared_link.html",
-            {"link": candidate, "token": token, "needs_password": True},
-        )
+    page = "arquivos/shared_link.html"
+    context = {"link": link, "token": token}
+    if link.password_hash and request.method != "POST":
+        return render(request, page, {**context, "needs_password": True})
+
+    if link.password_hash and too_many_attempts(f"shared-link-password:{link.id}", limit=10):
+        error = "Muitas tentativas. Aguarde alguns minutos."
+        return render(request, page, {**context, "needs_password": True, "error": error}, status=429)
 
     try:
-        link = resolve_shared_link(
-            token,
-            password=request.POST.get("password") if request.method == "POST" else None,
-            for_download=False,
-        )
+        resolve_shared_link(token, password=request.POST.get("password"))
     except SharedLinkError as exc:
         return render(
-            request,
-            "arquivos/shared_link.html",
-            {"link": candidate, "token": token, "needs_password": True, "error": str(exc)},
-            status=403,
+            request, page, {**context, "needs_password": True, "error": str(exc)}, status=403
         )
 
     if link.password_hash:
-        request.session[f"shared-link-auth:{link.id}"] = True
+        request.session[_password_session_key(link)] = True
     link.last_accessed_at = timezone.now()
     link.save(update_fields=["last_accessed_at"])
-    return render(
-        request,
-        "arquivos/shared_link.html",
-        {"link": link, "token": token, "authorized": True},
-    )
+    return render(request, page, {**context, "authorized": True})
 
 
-def _authorized_public_link(request, token, *, for_download=False):
-    candidate = _public_link(token)
-    if not candidate or not candidate.is_active:
+def _open_shared_file(request, token, *, for_download):
+    """Entrega o arquivo de um link publico, contando o acesso no limite do link."""
+    link = find_link(token)
+    if not link:
         raise Http404
-    password_verified = bool(
-        candidate.password_hash
-        and request.session.get(f"shared-link-auth:{candidate.id}")
-    )
-    if candidate.password_hash and not password_verified:
+    password_verified = bool(request.session.get(_password_session_key(link)))
+    if link.password_hash and not password_verified:
         raise Http404
     try:
-        if for_download:
-            return consume_download(token, password_verified=password_verified)
-        return resolve_shared_link(
-            token, for_download=False, password_verified=password_verified
+        link = consume_link_access(
+            token, for_download=for_download, password_verified=password_verified
         )
     except SharedLinkError as exc:
         raise Http404 from exc
+    accessed.send(link.file.__class__, instance=link.file)
+    return _file_response(link.file, _version_for_file(link.file), attachment=for_download)
 
 
 def shared_link_preview(request, token):
-    link = _authorized_public_link(request, token)
-    accessed.send(link.file.__class__, instance=link.file)
-    return _file_response(link.file, _version_for_file(link.file), attachment=False)
+    return _open_shared_file(request, token, for_download=False)
 
 
 def shared_link_download(request, token):
-    link = _authorized_public_link(request, token, for_download=True)
-    accessed.send(link.file.__class__, instance=link.file)
-    return _file_response(link.file, _version_for_file(link.file), attachment=True)
+    return _open_shared_file(request, token, for_download=True)
 
 
 @login_required
@@ -619,7 +613,7 @@ def fulfill_request_item(request, item_id):
             actor=request.user,
             description=f"Enviado para solicitacao: {item.request.title} / {item.label}",
         )
-    except Exception as exc:
+    except UPLOAD_ERRORS as exc:
         messages.error(request, f"Nao foi possivel enviar o documento: {exc}")
         return redirect("document_requests")
 

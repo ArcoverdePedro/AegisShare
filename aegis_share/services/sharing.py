@@ -49,41 +49,44 @@ def create_shared_link(
     return link, token
 
 
-def resolve_shared_link(token: str, *, password=None, for_download=False, password_verified=False):
-    link = (
-        SharedLink.objects.select_related("file", "file__dono_arquivo")
-        .filter(token_hash=token_hash(token))
-        .first()
-    )
+def find_link(token: str, *, lock=False):
+    queryset = SharedLink.objects.select_related("file", "file__dono_arquivo")
+    if lock:
+        queryset = queryset.select_for_update()
+    return queryset.filter(token_hash=token_hash(token)).first()
+
+
+def _check_link(link, *, password, password_verified):
     if not link or not link.is_active or link.file.deleted_at:
         raise SharedLinkError("Link invalido, expirado ou revogado.")
-    if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
+    needs_password = link.password_hash and not password_verified
+    if needs_password and not check_password(password or "", link.password_hash):
         raise SharedLinkError("Senha do link invalida.")
+
+
+def resolve_shared_link(token: str, *, password=None, password_verified=False):
+    """Valida o link e a senha. Nao entrega o conteudo do arquivo."""
+    link = find_link(token)
+    _check_link(link, password=password, password_verified=password_verified)
+    return link
+
+
+@transaction.atomic
+def consume_link_access(token: str, *, for_download, password=None, password_verified=False):
+    """Libera o conteudo do arquivo e conta o acesso no limite do link.
+
+    Visualizar tambem conta: o preview entrega o arquivo inteiro, so que inline.
+    """
+    link = find_link(token, lock=True)
+    _check_link(link, password=password, password_verified=password_verified)
     if for_download and not link.allow_download:
         raise SharedLinkError("Este link nao permite download.")
     if not for_download and not link.allow_preview:
         raise SharedLinkError("Este link nao permite visualizacao.")
+    link.download_count += 1
+    link.last_accessed_at = timezone.now()
+    link.save(update_fields=["download_count", "last_accessed_at"])
     return link
-
-
-def consume_download(token: str, *, password=None, password_verified=False):
-    with transaction.atomic():
-        link = (
-            SharedLink.objects.select_for_update()
-            .select_related("file", "file__dono_arquivo")
-            .filter(token_hash=token_hash(token))
-            .first()
-        )
-        if not link or not link.is_active or link.file.deleted_at:
-            raise SharedLinkError("Link invalido, expirado ou sem downloads disponiveis.")
-        if link.password_hash and not password_verified and not check_password(password or "", link.password_hash):
-            raise SharedLinkError("Senha do link invalida.")
-        if not link.allow_download:
-            raise SharedLinkError("Este link nao permite download.")
-        link.download_count += 1
-        link.last_accessed_at = timezone.now()
-        link.save(update_fields=["download_count", "last_accessed_at"])
-        return link
 
 
 def revoke_shared_link(link, actor):
