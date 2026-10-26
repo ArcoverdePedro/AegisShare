@@ -45,3 +45,7 @@ A preparação E2E cria credenciais públicas e dados sintéticos. Execute-a som
 Para retirar acesso ao piloto, revogue as capacidades dos usuários/grupos. Superusuários conservam acesso global; rollback do código remove a interface. Preserve as tabelas e o histórico após uso real. A reversão destrutiva `migrate compliance zero` foi testada apenas em banco descartável.
 
 Consulte [spec e rastreabilidade](../specs/013-lgpd-anvisa/spec.md) e [evidências](../specs/013-lgpd-anvisa/validation.md).
+
+## Revisão de acesso e inventário (H28)
+
+`python manage.py access_review` exporta em CSV as concessões vigentes para revisão periódica (somente leitura). O inventário técnico de onde ficam os dados pessoais está em [docs/his/INVENTARIO_DADOS.md](his/INVENTARIO_DADOS.md). Verificação de identidade, desfecho formal, retenção e incidentes dependem de G10 — esta tela continua registrando apenas o andamento administrativo.

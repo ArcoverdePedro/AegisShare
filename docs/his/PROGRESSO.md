@@ -21,9 +21,10 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H34 | READY | upgrade 38c6100→HEAD com dados sintéticos (scratch) OK; instalação limpa Compose sem Pinata saudável; `scripts/backup.sh` + restauração em banco novo OK (6,2 s / 3,8 s); CHANGELOG com notas de atualização | Comando de dados demonstrativos, guias por perfil, revisão de licenças de catálogos clínicos (nenhum distribuído) e release versionada pendentes |
 | H14 | READY | `apps/clinical/lis/tests/test_specimen_lifecycle.py`; `docs/laboratorio.md` | Múltiplos materiais, transporte, motivos padronizados e código de barras aguardam G07 |
 | H17 | READY | `apps/clinical/surgery/tests/test_schedule.py` (inclui concorrência PostgreSQL) | Autorização, prioridade, equipe/anestesia, preparo e consentimento aguardam G08 |
+| H28 | BLOCKED | `access_review` + `apps/compliance/tests/test_access_review.py`; `docs/his/INVENTARIO_DADOS.md` | Identidade do titular, desfecho, retenção/descarte, incidentes e fornecedores dependem de G10 |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
 E2E Playwright: specs de PEP, ADT, LIS e faturamento ajustados às novas telas; NÃO executados localmente (sem Playwright instalado) — validar no CI.
 Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 581 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H28 — ler `apps/compliance/` e separar fechamento de protocolo de atendimento efetivo (evidências), sem declarar conformidade jurídica (G10).
+Próxima tarefa: H31 — indicadores com numerador/denominador explícitos sobre módulos já produtores (ocupação/higienização ADT, agenda: faltas/espera, LIS: rejeição), com agregação no banco.
