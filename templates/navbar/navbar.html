@@ -53,6 +53,8 @@
         html, body { min-height: 100%; background: var(--aegis-bg); }
         body { display: flex; flex-direction: column; min-height: 100vh; }
         .content-wrapper { flex: 1; padding-top: 5rem; padding-bottom: 3rem; }
+        /* Link em texto corrido precisa de distinção além da cor (axe link-in-text-block). */
+        .content-wrapper :is(p, li, .container) > a:not(.button):not(.tag) { text-decoration: underline; }
         .navbar { box-shadow: 0 2px 14px rgba(10, 10, 10, .08); }
         .navbar-item .icon { margin-right: .35rem; }
         .aegis-card {

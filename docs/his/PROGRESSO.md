@@ -22,9 +22,10 @@ Mapa de capacidades na base (fluxo real, não nome de app): PEP com Patient/Enco
 | H14 | READY | `apps/clinical/lis/tests/test_specimen_lifecycle.py`; `docs/laboratorio.md` | Múltiplos materiais, transporte, motivos padronizados e código de barras aguardam G07 |
 | H17 | READY | `apps/clinical/surgery/tests/test_schedule.py` (inclui concorrência PostgreSQL) | Autorização, prioridade, equipe/anestesia, preparo e consentimento aguardam G08 |
 | H28 | BLOCKED | `access_review` + `apps/compliance/tests/test_access_review.py`; `docs/his/INVENTARIO_DADOS.md` | Identidade do titular, desfecho, retenção/descarte, incidentes e fornecedores dependem de G10 |
+| H31 | READY | `apps/admin/indicators/tests/test_panel.py`; `/indicadores/` (admin, só agregados) | Metas, indicadores de RX/enfermagem/glosa e medição com volume representativo dependem de G01/G11 e dados reais |
 | H05, H06, H07 | BLOCKED | specs/001-pep extensão, T-PEP-08, T-RX-02, T-NUR-09 | G03, G05, G04 |
 | demais | TODO | — | — |
 
-E2E Playwright: specs de PEP, ADT, LIS e faturamento ajustados às novas telas; NÃO executados localmente (sem Playwright instalado) — validar no CI.
-Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 581 OK; ruff check e makemigrations --check OK
-Próxima tarefa: H31 — indicadores com numerador/denominador explícitos sobre módulos já produtores (ocupação/higienização ADT, agenda: faltas/espera, LIS: rejeição), com agregação no banco.
+E2E Playwright (réplica local do job CI, commit 7c1d3f1): 67 OK, 5 falhas axe `link-in-text-block` — as mesmas falham no commit base 38c6100 (preexistente); corrigido via CSS em navbar.html, reexecução pendente.
+Última verificação: `manage.py test --parallel 4` (PostgreSQL 18) → 584 OK; ruff check e makemigrations --check OK
+Próxima tarefa: rodar E2E completo no HEAD (correção de link-in-text-block) e então H21 (consumo assistencial de materiais por encontro reusando `record_movement` + produção em conta).

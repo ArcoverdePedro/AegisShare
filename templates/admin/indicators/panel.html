@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Indicadores · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Indicadores operacionais</h1>
+<p class="mb-4">Janela: últimos {{ days }} dias até {{ now|date:'d/m/Y H:i' }} ({{ now|date:'e' }}). Somente agregados; metas institucionais não definidas (G01/G11). Sem dados no período aparece "—".</p>
+<form method="get" class="mb-4"><label class="label" for="dias">Dias</label><div class="field has-addons"><div class="control"><input class="input" type="number" min="1" max="366" id="dias" name="dias" value="{{ days }}"></div><div class="control"><button class="button" type="submit">Atualizar</button></div></div></form>
+<div class="table-container"><table class="table is-fullwidth is-striped">
+<thead><tr><th scope="col">Indicador</th><th scope="col">Valor</th><th scope="col">Definição e fonte</th></tr></thead>
+<tbody>{% for i in indicators %}<tr><th scope="row">{{ i.name }}</th><td>{% if i.value is None %}—{% else %}{{ i.value }} {{ i.unit }}{% endif %}</td><td>{{ i.definition }}</td></tr>{% endfor %}</tbody>
+</table></div>
+</div></section>
+{% endblock %}
