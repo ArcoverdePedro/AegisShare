@@ -16,7 +16,7 @@
                 <thead><tr><th scope="col">Paciente</th><th scope="col">Categoria</th><th scope="col">Estado</th><th scope="col">Recebimento</th><th scope="col">Ação</th></tr></thead>
                 <tbody>
                 {% for item in page_obj %}
-                    <tr><td>{{ item.patient.full_name }}</td><td>{{ item.get_category_display }}</td><td>{{ item.get_status_display }}</td><td>{{ item.created_at|date:'d/m/Y H:i' }}</td><td><a href="{% url 'compliance:request_detail' item.pk %}" aria-label="Ver solicitação {{ item.pk }}">Ver solicitação</a></td></tr>
+                    <tr><td>{{ item.patient.display_name }}</td><td>{{ item.get_category_display }}</td><td>{{ item.get_status_display }}</td><td>{{ item.created_at|date:'d/m/Y H:i' }}</td><td><a href="{% url 'compliance:request_detail' item.pk %}" aria-label="Ver solicitação {{ item.pk }}">Ver solicitação</a></td></tr>
                 {% empty %}<tr><td colspan="5">Nenhuma solicitação disponível.</td></tr>{% endfor %}
                 </tbody>
             </table>

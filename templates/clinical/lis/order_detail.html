@@ -5,7 +5,7 @@
 <h1 class="title is-3">Pedido laboratorial</h1>
 <div class="box">
 <p>Protocolo: {{ item.pk }}</p>
-<p>Paciente: {{ item.encounter.patient.full_name }}</p>
+<p>Paciente: {{ item.encounter.patient.display_name }}</p>
 <p>Exame: {{ item.test_code }} · {{ item.test_name }}</p>
 <p>Material: {{ item.specimen_type }}</p>
 <p>Solicitado por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>

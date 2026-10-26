@@ -5,7 +5,7 @@
 <h1 class="title is-3">Conta em preparação</h1>
 {% include 'admin/billing/_notice.html' %}
 <div class="box">
-<p>Protocolo: {{ account.pk }}</p><p>Paciente: {{ account.encounter.patient.full_name }}</p>
+<p>Protocolo: {{ account.pk }}</p><p>Paciente: {{ account.encounter.patient.display_name }}</p>
 <p>Encontro: {{ account.encounter_id }}</p>
 <p>Aberta por {{ account.opened_by.username }} em {{ account.opened_at|date:'d/m/Y H:i:s' }}</p>
 <p class="has-text-weight-bold mt-3">Total em preparação (BRL): {{ total|floatformat:2 }}</p>

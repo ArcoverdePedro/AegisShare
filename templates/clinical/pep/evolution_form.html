@@ -1,7 +1,7 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
 
-{% block title %}{% if is_amendment %}Novo adendo{% else %}Nova evolução{% endif %} · {{ patient.full_name }}{% endblock %}
+{% block title %}{% if is_amendment %}Novo adendo{% else %}Nova evolução{% endif %} · {{ patient.display_name }}{% endblock %}
 
 {% block page_content %}
 <section class="section pt-3">
@@ -9,7 +9,7 @@
         <div class="mb-5">
             <a class="is-size-7" href="{% url 'pep:encounter_detail' encounter.id %}">← Voltar para o encontro</a>
             <h1 class="title is-3 mt-3 mb-2">{% if is_amendment %}Registrar adendo{% else %}Nova evolução clínica{% endif %}</h1>
-            <p class="muted">{{ patient.full_name }} · {{ encounter.get_encounter_type_display }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
+            <p class="muted">{{ patient.display_name }} · {{ encounter.get_encounter_type_display }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
         </div>
 
         {% if is_amendment %}

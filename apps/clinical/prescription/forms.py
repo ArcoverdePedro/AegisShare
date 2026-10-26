@@ -19,7 +19,7 @@ def _make_fields_responsive(form):
 
 def _encounter_label(encounter):
     return (
-        f"{encounter.patient.full_name} — {encounter.get_encounter_type_display()} — "
+        f"{encounter.patient.display_name} — {encounter.get_encounter_type_display()} — "
         f"{encounter.started_at:%d/%m/%Y %H:%M}"
     )
 

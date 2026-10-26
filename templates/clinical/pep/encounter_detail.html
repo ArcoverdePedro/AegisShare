@@ -1,7 +1,7 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
 
-{% block title %}Encontro · {{ patient.full_name }}{% endblock %}
+{% block title %}Encontro · {{ patient.display_name }}{% endblock %}
 
 {% block page_content %}
 <section class="section pt-3">
@@ -13,7 +13,7 @@
                     <div>
                         <p class="is-size-7 has-text-weight-semibold has-text-link mb-2">ENCONTRO CLÍNICO</p>
                         <h1 class="title is-3 mb-2">{{ encounter.get_encounter_type_display }}</h1>
-                        <p class="muted">{{ patient.full_name }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
+                        <p class="muted">{{ patient.display_name }} · {{ encounter.started_at|date:"d/m/Y H:i" }}</p>
                     </div>
                 </div>
                 <div class="level-right">

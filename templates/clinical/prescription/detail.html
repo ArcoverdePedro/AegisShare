@@ -9,7 +9,7 @@
             <div class="level-left"><div>
                 <p class="heading">Prescrição e Farmácia</p>
                 <h1 class="title is-3 mb-1">Prescrição</h1>
-                <p class="muted">Paciente: {{ prescription.encounter.patient.full_name }} · Status: {{ prescription.get_status_display }}</p>
+                <p class="muted">Paciente: {{ prescription.encounter.patient.display_name }} · Status: {{ prescription.get_status_display }}</p>
             </div></div>
             <div class="level-right"><a class="button" href="{% url 'prescription:prescription_list' %}">Voltar</a></div>
         </div>
