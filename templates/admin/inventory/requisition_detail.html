@@ -4,7 +4,10 @@
 <section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
 <h1 class="title is-3">Requisição de material</h1>
 {% include 'admin/inventory/_notice.html' %}
-<div class="box"><p>Protocolo: {{ item.pk }}</p><p>Material: {{ item.item_code }} · {{ item.item_name }}</p><p>Quantidade: {{ item.quantity }} {{ item.item_unit }}</p><p>Registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p></div>
-<a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a>
+<div class="box"><p>Protocolo: {{ item.pk }}</p><p>Material: {{ item.item_code }} · {{ item.item_name }}</p><p>Quantidade: {{ item.quantity }} {{ item.item_unit }}</p><p>Registrada por {{ item.requested_by.username }} em {{ item.requested_at|date:'d/m/Y H:i:s' }}</p>
+<p><strong>Entregue: {{ delivered }} de {{ item.quantity }} {{ item.item_unit }}</strong> — {% if delivered == 0 %}pendente{% elif delivered < item.quantity %}atendimento parcial{% else %}atendida{% endif %}</p></div>
+{% if movements %}<h2 class="title is-5">Entregas e devoluções</h2>{% for m in movements %}<p><a href="{% url 'inventory:movement_detail' m.pk %}">{{ m.get_kind_display }}</a>: {{ m.quantity_delta }} em {{ m.balance.location }} · {{ m.actor.username }} · {{ m.created_at|date:'d/m/Y H:i' }}</p>{% endfor %}{% endif %}
+{% if perms.inventory.move_stock and delivered < item.quantity %}<p class="my-4"><a class="button is-link" href="{% url 'inventory:movement_create' %}?kind=ISSUE&item={{ item.item_id }}&requisition={{ item.pk }}">Registrar entrega</a></p>{% endif %}
+<a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a> · <a href="{% url 'inventory:balance_list' %}">Saldos</a>
 </div></section>
 {% endblock %}

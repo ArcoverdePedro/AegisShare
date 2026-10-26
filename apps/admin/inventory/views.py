@@ -1,6 +1,7 @@
 from auditlog.context import set_actor
 from auditlog.signals import accessed
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.http import HttpResponse
@@ -8,9 +9,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.debug import sensitive_post_parameters, sensitive_variables
 from django.views.decorators.http import require_GET, require_http_methods
 
-from .forms import RequisitionForm, material_label
-from .models import InventoryItem, Requisition
-from .services import InventoryConflict, request_material, require_permission
+from .forms import MovementForm, RequisitionForm, ReversalForm, material_label
+from .models import InventoryItem, MaterialBalance, MaterialMovement, Requisition
+from .services import (
+    InventoryConflict,
+    delivered_quantity,
+    record_movement,
+    request_material,
+    require_permission,
+    reverse_movement,
+)
 
 
 def _failed():
@@ -62,10 +70,16 @@ def requisition_detail(request, pk):
     require_permission(request.user)
     try:
         item = get_object_or_404(Requisition.objects.select_related("requested_by"), pk=pk)
-        _audit_read(request.user, [item])
+        movements = list(item.movements.select_related("balance__location", "actor"))
+        _audit_read(request.user, [item, *movements])
+        delivered = delivered_quantity(item)
     except DatabaseError:
         return _failed()
-    return render(request, "admin/inventory/requisition_detail.html", {"item": item})
+    return render(
+        request,
+        "admin/inventory/requisition_detail.html",
+        {"item": item, "movements": movements, "delivered": delivered},
+    )
 
 
 @sensitive_post_parameters()
@@ -97,3 +111,105 @@ def requisition_create(request):
     except DatabaseError:
         return _failed()
     return render(request, "admin/inventory/requisition_form.html", {"form": form}, status=status)
+
+
+def _can_move(user):
+    return user.has_perm("inventory.move_stock") or user.has_perm("inventory.adjust_stock")
+
+
+@login_required
+@require_GET
+def balance_list(request):
+    require_permission(request.user)
+    try:
+        page = _page(
+            request,
+            MaterialBalance.objects.filter(quantity__gt=0).select_related("item", "location"),
+        )
+    except DatabaseError:
+        return _failed()
+    return render(
+        request,
+        "admin/inventory/balance_list.html",
+        {"page_obj": page, "can_move": _can_move(request.user)},
+    )
+
+
+@login_required
+@require_GET
+def movement_list(request):
+    require_permission(request.user)
+    try:
+        page = _page(
+            request,
+            MaterialMovement.objects.select_related(
+                "balance__item", "balance__location", "actor", "requisition"
+            ),
+        )
+    except DatabaseError:
+        return _failed()
+    return render(request, "admin/inventory/movement_list.html", {"page_obj": page})
+
+
+@sensitive_post_parameters()
+@login_required
+@require_http_methods(["GET", "POST"])
+def movement_create(request):
+    require_permission(request.user)
+    if not _can_move(request.user):
+        raise PermissionDenied
+    form = MovementForm(request.POST or None, initial=request.GET.dict())
+    status = 200
+    try:
+        if request.method == "POST" and form.is_valid():
+            try:
+                movement = record_movement(user=request.user, **form.cleaned_data)
+            except InventoryConflict as exc:
+                form.add_error(None, str(exc))
+                status = 409
+            else:
+                return redirect("inventory:movement_detail", pk=movement.pk)
+    except DatabaseError:
+        return _failed()
+    return render(request, "admin/inventory/movement_form.html", {"form": form}, status=status)
+
+
+@sensitive_post_parameters()
+@login_required
+@require_http_methods(["GET", "POST"])
+def movement_detail(request, pk):
+    require_permission(request.user)
+    form = ReversalForm(request.POST or None)
+    status = 200
+    try:
+        movement = get_object_or_404(
+            MaterialMovement.objects.select_related(
+                "balance__item", "balance__location", "actor", "requisition", "reverses"
+            ),
+            pk=pk,
+        )
+        if request.method == "POST" and form.is_valid():
+            try:
+                reversal = reverse_movement(
+                    user=request.user, movement=movement, **form.cleaned_data
+                )
+            except InventoryConflict as exc:
+                form.add_error(None, str(exc))
+                status = 409
+            else:
+                return redirect("inventory:movement_detail", pk=reversal.pk)
+        legs = list(
+            MaterialMovement.objects.filter(operation_key=movement.operation_key).select_related(
+                "balance__location"
+            )
+        )
+        reversed_by = MaterialMovement.objects.filter(reverses__in=legs).first()
+        _audit_read(request.user, legs)
+    except DatabaseError:
+        return _failed()
+    return render(
+        request,
+        "admin/inventory/movement_detail.html",
+        {"movement": movement, "legs": legs, "reversed_by": reversed_by, "form": form},
+        status=status,
+    )

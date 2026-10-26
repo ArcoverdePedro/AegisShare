@@ -6,8 +6,8 @@ from django.contrib.auth import get_user_model
 from django.db import close_old_connections, connections
 from django.test import TransactionTestCase, skipUnlessDBFeature
 
-from ..models import InventoryItem, Requisition
-from ..services import InventoryConflict, request_material
+from ..models import InventoryItem, MaterialBalance, MaterialMovement, Requisition, StockLocation
+from ..services import InventoryConflict, record_movement, request_material
 
 
 @skipUnlessDBFeature("has_select_for_update")
@@ -93,3 +93,44 @@ class InventoryConcurrencyTests(TransactionTestCase):
         self.assertCountEqual(
             results, list(map(str, Requisition.objects.values_list("pk", flat=True)))
         )
+
+    def test_last_balance_dispute_never_goes_negative(self):
+        location = StockLocation.objects.create(code="ALM", name="Almoxarifado")
+        record_movement(
+            user=self.actor,
+            kind="RECEIPT",
+            item=self.items[0],
+            location=location,
+            quantity=1,
+            operation_key=uuid.uuid4(),
+        )
+        results = self.run_concurrently(
+            lambda actor, index: record_movement(
+                user=actor,
+                kind="ISSUE",
+                item=self.items[0],
+                location=location,
+                quantity=1,
+                operation_key=uuid.uuid4(),
+            )
+        )
+        self.assertEqual(results.count("conflict"), 1)
+        self.assertEqual(MaterialBalance.objects.get().quantity, 0)
+        self.assertEqual(MaterialMovement.objects.filter(kind="ISSUE").count(), 1)
+
+    def test_parallel_movement_retry_is_one_entry(self):
+        location = StockLocation.objects.create(code="ALM", name="Almoxarifado")
+        key = uuid.uuid4()
+        results = self.run_concurrently(
+            lambda actor, index: record_movement(
+                user=actor,
+                kind="RECEIPT",
+                item=self.items[0],
+                location=location,
+                quantity=5,
+                operation_key=key,
+            )
+        )
+        self.assertEqual(MaterialMovement.objects.count(), 1)
+        self.assertEqual(results, [str(MaterialMovement.objects.get().pk)] * 2)
+        self.assertEqual(MaterialBalance.objects.get().quantity, 5)

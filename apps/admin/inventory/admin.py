@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from apps.clinical.pep.permissions import is_internal_professional
 
-from .models import InventoryItem
+from .models import InventoryItem, StockLocation
 
 
 @admin.register(InventoryItem)
@@ -26,3 +26,8 @@ class InventoryItemAdmin(admin.ModelAdmin):
         return is_internal_professional(request.user) and super().has_delete_permission(
             request, obj
         )
+
+
+@admin.register(StockLocation)
+class StockLocationAdmin(InventoryItemAdmin):
+    list_display = ["code", "name", "active"]

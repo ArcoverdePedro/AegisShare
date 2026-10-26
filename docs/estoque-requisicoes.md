@@ -32,8 +32,23 @@ Todas as rotas /estoque/ exigem sessão e capacidades, CSRF nos POSTs e resposta
 
 Para retirar, revogar capacidades e impedir novos registros preservando catálogo, requisições e auditoria. Rollback de código conserva dados. Reverter schema somente em banco descartável; rollback em ambiente com dados exige procedimento de preservação previamente definido. Guardas append-only e PROTECT protegem as entradas da aplicação, não escrita direta no banco/ORM.
 
+## Saldos e movimentos (extensão H19)
+
+Locais (`StockLocation`) são cadastrados no admin. `MaterialBalance` guarda o saldo por material/local/lote (constraint `quantity >= 0`) e só muda junto de um `MaterialMovement` append-only, na mesma transação, com o material travado (`select_for_update`) — a disputa pelo último saldo resulta em uma entrega e um 409.
+
+| Movimento | Capacidade | Regra |
+| --- | --- | --- |
+| Entrada | `move_stock` | cria saldo do lote; validade divergente do lote é recusada |
+| Saída/entrega | `move_stock` | exige saldo; com requisição, não excede o pendente (atendimento parcial) |
+| Devolução | `move_stock` | motivo obrigatório; com requisição, não excede o entregue |
+| Transferência | `move_stock` | duas pernas com a mesma `operation_key`, lote e validade preservados |
+| Ajuste de inventário | `adjust_stock` | informa a quantidade contada; registra a diferença com motivo |
+| Estorno | `adjust_stock` | desfaz a operação inteira por movimentos opostos; não estorna duas vezes nem deixa saldo negativo |
+
+Rotas: `/estoque/saldos/`, `/estoque/movimentos/`, `/estoque/movimentos/novo/`, `/estoque/movimentos/<id>/`. A requisição mostra entregue/pendente e o link "Registrar entrega"; requisitar continua sem confirmar entrega. Conciliação: para cada saldo, `quantity == Sum(movements.quantity_delta)` (teste `test_stock.py`). Quantidades inteiras na unidade do catálogo; conversão de embalagem, reserva e ponto de pedido aguardam G09.
+
 ## Extensões posteriores
 
-Saldos/lotes/movimentos precisam de contratos de unidade/localização/validade/ajuste e concorrência. Fornecedores/compras/recebimento precisam de autorização e regras operacionais próprias. Integração farmacêutica exige fonte de verdade explícita; esta v1 não muda StockItem, Lot, StockMovement, dispensação ou faturamento.
+Fornecedores/compras/recebimento precisam de autorização e regras operacionais próprias. Integração farmacêutica exige fonte de verdade explícita; esta v1 não muda StockItem, Lot, StockMovement, dispensação ou faturamento.
 
 [Spec e critérios](../specs/009-estoque-compras/spec.md) · [Evidências executadas](../specs/009-estoque-compras/validation.md).
