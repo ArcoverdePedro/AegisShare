@@ -327,6 +327,25 @@ O comando não apaga a origem. Guarde as linhas `origem_cid/origem_id` impressas
 
 **Não perca `FILE_ENCRYPTION_KEY`.** Sem ela, versões cifradas não podem ser recuperadas.
 
+## Backup e restauração
+
+`scripts/backup.sh <destino>` gera, para a stack `compose.yml`/`compose.no-redis.yml`, dois arquivos cifrados com `BACKUP_ENCRYPTION_KEY` (AES-256-GCM em blocos; corrupção, troca de ordem ou truncamento falham na abertura): `db-*.dump.aegisbak` (`pg_dump -Fc`) e `files-*.tar.aegisbak` (`FILE_STORAGE_ROOT`). Cada arquivo é aberto e autenticado antes de perder o sufixo `.partial`; um `SHA256SUMS-*` acompanha o lote.
+
+Gere a chave uma vez e guarde-a fora do servidor, separada do backup e da `FILE_ENCRYPTION_KEY` (precisam ser diferentes):
+
+```bash
+python -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+```
+
+Sem `FILE_ENCRYPTION_KEY` e `BACKUP_ENCRYPTION_KEY` o backup não pode ser aberto nem os arquivos decifrados. Restauração em banco novo/vazio:
+
+```bash
+python manage.py backup_open < db-STAMP.dump.aegisbak | pg_restore --no-owner -d NOVO_BANCO
+python manage.py backup_open < files-STAMP.tar.aegisbak | tar -C /app -xf -
+```
+
+Ensaio executado em 26/10/2026 (PostgreSQL 18 descartável, dados sintéticos: 50 pacientes + 1 arquivo cifrado, backend `local`): backup 0,8 s, restauração 1,4 s; arquivo restaurado decifrou com hash conferido; nenhum texto claro nos `.aegisbak`; byte alterado → `backup_open` falha. Não mede volume real. Pendentes (G11): frequência, retenção, RPO/RTO, agendamento, cópia fora do host, alertas e ensaio com volume de produção. CIDs ainda na Pinata não entram no tar — migre com `migrate_file_storage` antes. Com bancos externos (`compose.no-postgres*.yml`) use o `pg_dump` do provedor e o mesmo `backup_seal`.
+
 ## Auditoria
 
 O projeto usa `django-auditlog` para alterações e eventos de acesso. Campos sensíveis, como hashes de tokens, segredo TOTP, chave protegida do arquivo e medidas clínicas explicitamente excluídas dos contratos de auditoria, não são copiados indiscriminadamente para o histórico.

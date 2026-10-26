@@ -15,17 +15,20 @@ class CryptoConfigurationError(ImproperlyConfigured):
     pass
 
 
-def _master_key() -> bytes:
-    raw = settings.FILE_ENCRYPTION_KEY
+def decode_key(raw: str, name: str) -> bytes:
     if not raw:
-        raise CryptoConfigurationError("FILE_ENCRYPTION_KEY nao configurada.")
+        raise CryptoConfigurationError(f"{name} nao configurada.")
     try:
         key = base64.urlsafe_b64decode(raw.encode())
     except Exception as exc:
-        raise CryptoConfigurationError("FILE_ENCRYPTION_KEY deve estar em base64 URL-safe.") from exc
+        raise CryptoConfigurationError(f"{name} deve estar em base64 URL-safe.") from exc
     if len(key) != KEY_SIZE:
-        raise CryptoConfigurationError("FILE_ENCRYPTION_KEY deve representar exatamente 32 bytes.")
+        raise CryptoConfigurationError(f"{name} deve representar exatamente 32 bytes.")
     return key
+
+
+def _master_key() -> bytes:
+    return decode_key(settings.FILE_ENCRYPTION_KEY, "FILE_ENCRYPTION_KEY")
 
 
 def sha256_hex(content: bytes) -> str:

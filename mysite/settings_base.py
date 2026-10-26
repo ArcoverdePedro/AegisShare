@@ -235,6 +235,9 @@ if len(_decoded_file_key) != 32:
     )
 del _decoded_file_key
 
+# Chave propria dos backups; guardar separada da FILE_ENCRYPTION_KEY e do proprio backup.
+BACKUP_ENCRYPTION_KEY = env.str("BACKUP_ENCRYPTION_KEY", default="")
+
 # "local" grava os arquivos cifrados em diretorio privado; "pinata" mantem o legado.
 FILE_STORAGE_BACKEND = env.str("FILE_STORAGE_BACKEND", default="pinata")
 if FILE_STORAGE_BACKEND not in {"local", "pinata"}:
