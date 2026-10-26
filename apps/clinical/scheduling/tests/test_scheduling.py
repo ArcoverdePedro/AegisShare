@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from aegis_share.tests.helpers import make_user
+from apps.admin.hr.models import Employee, EmployeeAbsence
 from apps.clinical.pep.models import Encounter, Patient, PatientAccessGrant
 from apps.clinical.pep.tests.test_views import TEST_STORAGES
 
@@ -182,3 +183,33 @@ class SchedulingTests(TestCase):
         detail = reverse("scheduling:appointment_detail", args=[appointment.pk])
         self.assertEqual(self.client.get(detail).status_code, 403)
         self.assertEqual(self.client.get(url).status_code, 403)
+
+
+@override_settings(STORAGES=TEST_STORAGES, SECURE_SSL_REDIRECT=False)
+class AbsenceIntegrationTests(TestCase):
+    setUpTestData = classmethod(SchedulingTests.setUpTestData.__func__)
+    slots = SchedulingTests.slots
+    book = SchedulingTests.book
+
+    def test_absence_blocks_new_slots_and_bookings(self):
+        slot = self.slots()[0]
+        employee = Employee.objects.create(
+            user=self.doctor, department="Ambulatório", job_title="Médica"
+        )
+        EmployeeAbsence.objects.create(
+            employee=employee, kind="VACATION", starts_on=self.tomorrow, ends_on=self.tomorrow
+        )
+
+        with self.assertRaises(SchedulingConflict):
+            self.book(slot)
+        with self.assertRaises(SchedulingConflict):
+            create_slots(
+                user=self.reception,
+                professional=self.doctor,
+                day=self.tomorrow,
+                start=time(10, 0),
+                end=time(11, 0),
+                minutes=30,
+                capacity=1,
+                location="C1",
+            )

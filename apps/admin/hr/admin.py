@@ -8,7 +8,7 @@ from django.views.decorators.debug import sensitive_post_parameters, sensitive_v
 from apps.clinical.pep.permissions import is_internal_professional
 
 from .forms import EmployeeAdminForm
-from .models import Employee
+from .models import Employee, EmployeeAbsence
 
 
 def _failed():
@@ -19,6 +19,12 @@ def _failed():
     )
 
 
+class EmployeeAbsenceInline(admin.TabularInline):
+    model = EmployeeAbsence
+    extra = 0
+    can_delete = False
+
+
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     form = EmployeeAdminForm
@@ -27,7 +33,15 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_per_page = 25
     list_select_related = ["user"]
     search_fields = ["user__username", "user__first_name", "user__last_name"]
-    fields = ["user", "department", "job_title", "active"]
+    inlines = [EmployeeAbsenceInline]
+    REGISTRATION = [
+        "council",
+        "registration_number",
+        "registration_state",
+        "registration_valid_until",
+        "specialty",
+    ]
+    fields = ["user", "department", "job_title", "active", *REGISTRATION]
 
     @admin.display(description="Usuário", ordering="user__username")
     def username(self, obj):
@@ -35,7 +49,7 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     def get_fields(self, request, obj=None):
         if obj:
-            return ["username", "department", "job_title", "active"]
+            return ["username", "department", "job_title", "active", *self.REGISTRATION]
         return self.fields
 
     def get_readonly_fields(self, request, obj=None):

@@ -11,7 +11,10 @@
 <p>Setor: {{ employee.department }}</p>
 <p>Função: {{ employee.job_title }}</p>
 <p>Cadastro: {% if employee.active %}ativo{% else %}inativo{% endif %}</p>
+{% if employee.registration_number %}<p>Registro: {{ employee.council }} {{ employee.registration_number }}/{{ employee.registration_state }}{% if employee.registration_valid_until %} · válido até {{ employee.registration_valid_until|date:'d/m/Y' }}{% if employee.registration_valid_until < today %} <span class="tag is-danger is-light">vencido</span>{% endif %}{% endif %}</p>{% endif %}
+{% if employee.specialty %}<p>Especialidade: {{ employee.specialty }}</p>{% endif %}
 </div>
+{% if absences %}<div class="box"><h2 class="title is-5">Ausências</h2>{% for a in absences %}<p>{{ a.get_kind_display }}: {{ a.starts_on|date:'d/m/Y' }} a {{ a.ends_on|date:'d/m/Y' }}</p>{% endfor %}<p class="is-size-7">Ausência impede abrir ou ocupar horários de agenda no período.</p></div>{% endif %}
 <a href="{% url 'hr:employee_list' %}">Cadastros funcionais</a>
 </div></section>
 {% endblock %}

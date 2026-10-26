@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db import DatabaseError, transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from apps.clinical.pep.permissions import is_internal_professional
@@ -53,7 +54,12 @@ def employee_detail(request, pk):
     _require_access(request.user)
     try:
         employee = get_object_or_404(Employee.objects.select_related("user"), pk=pk)
+        absences = list(employee.absences.all()[:20])
         _audit_read(request.user, [employee])
     except DatabaseError:
         return _failed()
-    return render(request, "admin/hr/employee_detail.html", {"employee": employee})
+    return render(
+        request,
+        "admin/hr/employee_detail.html",
+        {"employee": employee, "absences": absences, "today": timezone.localdate()},
+    )

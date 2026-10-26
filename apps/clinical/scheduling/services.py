@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
+from apps.admin.hr.models import absent_on
 from apps.clinical.pep.events import emit_clinical_event
 from apps.clinical.pep.models import Encounter
 from apps.clinical.pep.permissions import can_access_patient, require_module_permission
@@ -34,6 +35,8 @@ def create_slots(*, user, professional, day, start, end, minutes, capacity, loca
         cursor += step
     if not starts:
         raise SchedulingConflict("O intervalo não comporta nenhum horário.")
+    if absent_on(professional, day):
+        raise SchedulingConflict("Profissional com ausência registrada nesta data.")
     with transaction.atomic(), set_actor(user):
         existing = set(
             AgendaSlot.objects.filter(professional=professional, starts_at__in=starts).values_list(
@@ -94,6 +97,8 @@ def book_appointment(
                 raise SchedulingConflict("Horário bloqueado.")
             if slot.starts_at <= timezone.now():
                 raise SchedulingConflict("Horário já iniciado.")
+            if absent_on(slot.professional, timezone.localtime(slot.starts_at).date()):
+                raise SchedulingConflict("Profissional com ausência registrada nesta data.")
             taken = slot.appointments.filter(status__in=Appointment.ACTIVE).count()
             if taken >= slot.capacity and not overbook:
                 raise SchedulingConflict("Horário sem vaga; encaixe exige autorização.")
