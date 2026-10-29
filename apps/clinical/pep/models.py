@@ -6,12 +6,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
-from .validators import normalize_cpf, validate_cpf
+from .validators import normalize_cpf, validate_cns, validate_cpf
 
 
 class Patient(models.Model):
     class IdentifierType(models.TextChoices):
         CPF = "CPF", "CPF"
+        CNS = "CNS", "Cartão Nacional de Saúde"
         OTHER = "OTHER", "Outro identificador"
 
     class Sex(models.TextChoices):
@@ -29,10 +30,15 @@ class Patient(models.Model):
     )
     identifier = models.CharField(max_length=64)
     full_name = models.CharField(max_length=255)
+    social_name = models.CharField(max_length=255, blank=True)
     birth_date = models.DateField()
     sex = models.CharField(max_length=1, choices=Sex.choices, default=Sex.UNKNOWN)
     phone = models.CharField(max_length=32, blank=True)
     email = models.EmailField(blank=True)
+    postal_code = models.CharField(max_length=9, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=120, blank=True)
+    state = models.CharField(max_length=2, blank=True)
     active = models.BooleanField(default=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -61,9 +67,15 @@ class Patient(models.Model):
         self.identifier = (self.identifier or "").strip()
         self.full_name = " ".join((self.full_name or "").split())
 
+        self.social_name = " ".join((self.social_name or "").split())
+        self.state = (self.state or "").strip().upper()
+
         if self.identifier_type == self.IdentifierType.CPF:
             self.identifier = normalize_cpf(self.identifier)
             validate_cpf(self.identifier)
+        elif self.identifier_type == self.IdentifierType.CNS:
+            self.identifier = normalize_cpf(self.identifier)
+            validate_cns(self.identifier)
 
         if self.birth_date and self.birth_date > timezone.localdate():
             raise ValidationError({"birth_date": "A data de nascimento não pode estar no futuro."})
@@ -77,6 +89,17 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"Paciente {self.id}"
+
+    @property
+    def display_name(self):
+        """Nome social tem precedencia no atendimento (Decreto 8.727/2016)."""
+        return self.social_name or self.full_name
+
+    def possible_duplicates(self):
+        """Mesmo nome e nascimento; homonimos nunca sao unidos automaticamente."""
+        return Patient.objects.filter(
+            full_name__iexact=self.full_name, birth_date=self.birth_date
+        ).exclude(pk=self.pk)
 
 
 class PatientAccessGrant(models.Model):
@@ -196,13 +219,9 @@ class Encounter(models.Model):
         self.reason = " ".join((self.reason or "").split())
 
         if self.started_at and self.ended_at and self.ended_at < self.started_at:
-            raise ValidationError(
-                {"ended_at": "O encerramento não pode ser anterior ao início."}
-            )
+            raise ValidationError({"ended_at": "O encerramento não pode ser anterior ao início."})
         if self.status == self.Status.CLOSED and not self.ended_at:
-            raise ValidationError(
-                {"ended_at": "Informe o horário de encerramento do encontro."}
-            )
+            raise ValidationError({"ended_at": "Informe o horário de encerramento do encontro."})
         if self.status == self.Status.OPEN and self.ended_at:
             raise ValidationError(
                 {"ended_at": "Encontro aberto não pode possuir horário de encerramento."}
@@ -279,9 +298,7 @@ class ClinicalEvolution(models.Model):
                     }
                 )
             if not self.amendment_reason:
-                raise ValidationError(
-                    {"amendment_reason": "Informe o motivo do adendo."}
-                )
+                raise ValidationError({"amendment_reason": "Informe o motivo do adendo."})
         elif self.amendment_reason:
             raise ValidationError(
                 {
@@ -300,17 +317,74 @@ class ClinicalEvolution(models.Model):
         return super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        raise ValidationError(
-            "Evoluções clínicas são imutáveis e não podem ser excluídas."
-        )
+        raise ValidationError("Evoluções clínicas são imutáveis e não podem ser excluídas.")
 
     def __str__(self):
         return f"Evolução {self.id}"
 
 
+class ProblemListEntry(models.Model):
+    """Lista de problemas em texto livre; codigo so com sistema e versao informados (sem inferencia)."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "ACTIVE", "Ativo"
+        RESOLVED = "RESOLVED", "Resolvido"
+        ENTERED_IN_ERROR = "ERROR", "Registrado por engano"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="problems")
+    encounter = models.ForeignKey(
+        Encounter, null=True, blank=True, on_delete=models.PROTECT, related_name="problems"
+    )
+    description = models.CharField(max_length=255)
+    status = models.CharField(max_length=8, choices=Status.choices, default=Status.ACTIVE)
+    onset_date = models.DateField(null=True, blank=True)
+    code_system = models.CharField(max_length=40, blank=True)
+    code = models.CharField(max_length=20, blank=True)
+    code_version = models.CharField(max_length=20, blank=True)
+    supersedes = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="superseded_by"
+    )
+    reason = models.CharField(max_length=255, blank=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
+    recorded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-recorded_at", "-id"]
+
+    def __str__(self):
+        return f"Problema {self.pk}"
+
+    def clean(self):
+        super().clean()
+        self.description = " ".join((self.description or "").split())
+        self.reason = " ".join((self.reason or "").split())
+        if not self.description:
+            raise ValidationError({"description": "Descreva o problema."})
+        if self.code and not (self.code_system and self.code_version):
+            raise ValidationError({"code": "Código exige sistema e versão de origem."})
+        if self.supersedes_id:
+            if self.supersedes.patient_id != self.patient_id:
+                raise ValidationError({"supersedes": "Revisão deve ser do mesmo paciente."})
+            if not self.reason:
+                raise ValidationError({"reason": "Informe o motivo da revisão."})
+        if self.onset_date and self.onset_date > timezone.localdate():
+            raise ValidationError({"onset_date": "Início não pode estar no futuro."})
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Problemas são versionados: registre uma revisão.")
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Problemas não podem ser excluídos.")
+
+
 auditlog.register(
     Patient,
     exclude_fields=["identifier", "full_name", "birth_date", "phone", "email"],
+    mask_fields=["social_name", "postal_code", "address", "city", "state"],
 )
 auditlog.register(PatientAccessGrant, exclude_fields=["reason"])
 auditlog.register(Encounter, exclude_fields=["reason", "location"])
@@ -318,3 +392,4 @@ auditlog.register(
     ClinicalEvolution,
     exclude_fields=["content", "amendment_reason"],
 )
+auditlog.register(ProblemListEntry, exclude_fields=["description", "reason"])

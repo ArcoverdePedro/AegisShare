@@ -3,7 +3,7 @@
 {% block page_content %}
 <section class="section"><div class="container" style="max-width: 800px; overflow-wrap: anywhere;">
 <h1 class="title is-3">Registrar coleta</h1>
-<p>{{ item.encounter.patient.full_name }} · {{ item.test_name }}</p>
+<p>{{ item.encounter.patient.display_name }} · {{ item.test_name }}</p>
 <p class="mb-4">Material: {{ item.specimen_type }}</p>
 <p class="notification is-warning is-light">Confira a identificação física da amostra e o pedido. O registro não significa aceitação do material ou liberação de resultado. Exige conexão.</p>
 <form method="post" class="box">{% csrf_token %}

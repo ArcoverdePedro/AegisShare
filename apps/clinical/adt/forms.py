@@ -17,7 +17,7 @@ class EncounterChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, encounter):
         patient = encounter.patient
         return (
-            f"{patient.full_name} — {encounter.get_encounter_type_display()} — "
+            f"{patient.display_name} — {encounter.get_encounter_type_display()} — "
             f"{encounter.started_at:%d/%m/%Y %H:%M}"
         )
 
@@ -30,7 +30,7 @@ class BedChoiceField(forms.ModelChoiceField):
 class AdmissionChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, admission):
         patient = admission.encounter.patient
-        return f"{patient.full_name} — admissão {admission.admitted_at:%d/%m/%Y %H:%M}"
+        return f"{patient.display_name} — admissão {admission.admitted_at:%d/%m/%Y %H:%M}"
 
 
 class AdmissionForm(forms.Form):
@@ -185,3 +185,8 @@ class DischargeForm(forms.Form):
                 "A alta não pode anteceder a admissão ou a ocupação atual.",
             )
         return cleaned
+
+
+class BedStatusForm(forms.Form):
+    status = forms.ChoiceField(label="Novo estado", choices=Bed.OperationalStatus.choices)
+    reason = forms.CharField(label="Motivo", max_length=255)

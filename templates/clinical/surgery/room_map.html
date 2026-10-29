@@ -1,0 +1,12 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Mapa cirúrgico · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Mapa cirúrgico — {{ day|date:'d/m/Y' }}</h1>
+<form method="get" class="mb-4"><label class="label" for="dia">Data</label><div class="field has-addons"><div class="control"><input class="input" type="date" id="dia" name="dia" value="{{ day|date:'Y-m-d' }}"></div><div class="control"><button class="button" type="submit">Ver</button></div></div></form>
+{% for room in rooms %}<article class="box"><h2 class="title is-5">{{ room }}</h2>
+{% for sch in schedules %}{% if sch.room_id == room.pk %}<p>{{ sch.starts_at|time:'H:i' }}–{{ sch.ends_at|time:'H:i' }} · {{ sch.surgeon.get_full_name|default:sch.surgeon.username }} · {% if sch.case.encounter.patient_id in visible %}<a href="{% url 'surgery:case_detail' sch.case_id %}">{{ sch.case.procedure_name }}</a>{% else %}reservado{% endif %}</p>{% endif %}{% endfor %}
+</article>{% empty %}<p>Nenhuma sala ativa cadastrada.</p>{% endfor %}
+<a href="{% url 'surgery:case_list' %}">Solicitações de procedimentos</a>
+</div></section>
+{% endblock %}

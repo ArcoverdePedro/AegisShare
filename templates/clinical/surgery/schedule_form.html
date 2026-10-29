@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Agendar cirurgia · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">{% if previous %}Remarcar{% else %}Agendar{% endif %} — {{ item.procedure_code }} · {{ item.procedure_name }}</h1>
+<p class="mb-4">Reserva sala e cirurgião sem sobreposição. Não registra avaliação, consentimento ou autorização clínica.{% if previous %} O agendamento de {{ previous.starts_at|date:'d/m/Y H:i' }} ficará como remarcado.{% endif %}</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Confirmar</button></form>
+<a href="{% url 'surgery:case_detail' item.pk %}">Voltar à solicitação</a>
+</div></section>
+{% endblock %}

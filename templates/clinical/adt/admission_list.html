@@ -31,7 +31,7 @@
                     <tbody>
                     {% for admission in admissions %}
                         <tr>
-                            <td><a href="{% url 'pep:patient_detail' admission.encounter.patient.id %}">{{ admission.encounter.patient.full_name }}</a></td>
+                            <td><a href="{% url 'pep:patient_detail' admission.encounter.patient.id %}">{{ admission.encounter.patient.display_name }}</a></td>
                             <td>{{ admission.admitted_at|date:'d/m/Y H:i' }}</td>
                             <td class="mono is-size-7">{{ admission.encounter.id }}</td>
                             <td>{{ admission.admitted_by.username }}</td>

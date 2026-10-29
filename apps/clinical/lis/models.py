@@ -49,11 +49,22 @@ class ServiceRequest(models.Model):
             ("view_orders", "Pode consultar pedidos laboratoriais"),
             ("order_test", "Pode solicitar exame"),
             ("collect_specimen", "Pode registrar coleta"),
+            ("receive_specimen", "Pode receber ou rejeitar amostra no laboratório"),
+            ("cancel_order", "Pode cancelar pedido laboratorial"),
         ]
 
     @property
+    def specimen(self):
+        """Amostra vigente: a mais recente nao rejeitada (recoletas preservam as anteriores)."""
+        return next((s for s in self.specimens.all() if s.status != "REJECTED"), None)
+
+    @property
     def collected(self):
-        return hasattr(self, "specimen")
+        return self.specimen is not None
+
+    @property
+    def cancelled(self):
+        return hasattr(self, "cancellation")
 
     def __str__(self):
         return f"Pedido {self.pk}"
@@ -69,15 +80,32 @@ class ServiceRequest(models.Model):
 
 class Specimen(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    service_request = models.OneToOneField(ServiceRequest, on_delete=models.PROTECT)
+    service_request = models.ForeignKey(
+        ServiceRequest, on_delete=models.PROTECT, related_name="specimens"
+    )
+    replaces = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="replaced_by"
+    )
     accession_code = models.CharField(max_length=64, unique=True)
     collected_at = models.DateTimeField()
     collected_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     recorded_at = models.DateTimeField(auto_now_add=True)
     operation_key = models.UUIDField(unique=True)
 
+    class Meta:
+        ordering = ["-recorded_at", "-id"]
+
     def __str__(self):
         return f"Amostra {self.pk}"
+
+    @property
+    def status(self):
+        kinds = {event.kind for event in self.events.all()}
+        return next((k for k in ("REJECTED", "RECEIVED") if k in kinds), "COLLECTED")
+
+    @property
+    def rejection(self):
+        return next((e for e in self.events.all() if e.kind == "REJECTED"), None)
 
     def save(self, *args, **kwargs):
         if not self._state.adding:
@@ -88,6 +116,117 @@ class Specimen(models.Model):
         raise ValidationError("Coletas não podem ser excluídas.")
 
 
+class SpecimenEvent(models.Model):
+    class Kind(models.TextChoices):
+        RECEIVED = "RECEIVED", "Recebida no laboratório"
+        REJECTED = "REJECTED", "Rejeitada"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    specimen = models.ForeignKey(Specimen, on_delete=models.PROTECT, related_name="events")
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    reason = models.CharField(max_length=255, blank=True)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    recorded_at = models.DateTimeField(auto_now_add=True)
+    operation_key = models.UUIDField(unique=True)
+
+    class Meta:
+        ordering = ["recorded_at", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["specimen", "kind"], name="uniq_lis_specimen_event")
+        ]
+
+    def __str__(self):
+        return f"Evento de amostra {self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Eventos de amostra não podem ser alterados.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Eventos de amostra não podem ser excluídos.")
+
+
+class ServiceRequestCancellation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    service_request = models.OneToOneField(
+        ServiceRequest, on_delete=models.PROTECT, related_name="cancellation"
+    )
+    reason = models.CharField(max_length=255)
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    cancelled_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cancelamento {self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Cancelamentos não podem ser alterados.")
+        return super().save(*args, **kwargs)
+
+
+class LabResult(models.Model):
+    """Resultado digitado pelo laboratorio; referencia e texto informados, nunca calculados."""
+
+    class Status(models.TextChoices):
+        ENTERED = "ENTERED", "Registrado"
+        VALIDATED = "VALIDATED", "Validado"
+        RELEASED = "RELEASED", "Liberado"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    specimen = models.ForeignKey(Specimen, on_delete=models.PROTECT, related_name="results")
+    analyte = models.CharField("Analito", max_length=120)
+    value = models.CharField("Valor", max_length=120)
+    unit = models.CharField("Unidade", max_length=40, blank=True)
+    reference_range = models.CharField("Referência informada", max_length=120, blank=True)
+    method = models.CharField("Método", max_length=120, blank=True)
+    status = models.CharField(max_length=9, choices=Status.choices, default=Status.ENTERED)
+    supersedes = models.OneToOneField(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="superseded_by"
+    )
+    reason = models.CharField("Motivo da retificação", max_length=255, blank=True)
+    entered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+"
+    )
+    entered_at = models.DateTimeField(auto_now_add=True)
+    validated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    validated_at = models.DateTimeField(null=True, blank=True)
+    released_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    released_at = models.DateTimeField(null=True, blank=True)
+    operation_key = models.UUIDField(unique=True)
+
+    STATUS_FIELDS = {"status", "validated_by", "validated_at", "released_by", "released_at"}
+
+    class Meta:
+        ordering = ["analyte", "entered_at"]
+        permissions = [
+            ("enter_result", "Pode registrar e retificar resultado laboratorial"),
+            ("validate_result", "Pode validar e liberar resultado laboratorial"),
+        ]
+
+    def __str__(self):
+        return f"Resultado {self.pk}"
+
+    def save(self, *args, **kwargs):
+        # Conteudo e imutavel; so o andamento muda. Correcao = nova versao (supersedes).
+        if (
+            not self._state.adding
+            and not set(kwargs.get("update_fields") or ()) <= self.STATUS_FIELDS
+        ):
+            raise ValidationError("Resultados não podem ser editados; registre retificação.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Resultados não podem ser excluídos.")
+
+
 auditlog.register(LabTest, exclude_fields=["code", "name", "specimen_type"])
 auditlog.register(ServiceRequest, exclude_fields=["test_code", "test_name", "specimen_type"])
 auditlog.register(Specimen, exclude_fields=["accession_code"])
+auditlog.register(SpecimenEvent, exclude_fields=["reason"])
+auditlog.register(ServiceRequestCancellation, exclude_fields=["reason"])
+auditlog.register(LabResult, exclude_fields=["value", "reference_range", "reason"])

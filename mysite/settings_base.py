@@ -235,9 +235,22 @@ if len(_decoded_file_key) != 32:
     )
 del _decoded_file_key
 
+# Chave propria dos backups; guardar separada da FILE_ENCRYPTION_KEY e do proprio backup.
+BACKUP_ENCRYPTION_KEY = env.str("BACKUP_ENCRYPTION_KEY", default="")
+
+# "local" grava os arquivos cifrados em diretorio privado; "pinata" mantem o legado.
+FILE_STORAGE_BACKEND = env.str("FILE_STORAGE_BACKEND", default="pinata")
+if FILE_STORAGE_BACKEND not in {"local", "pinata"}:
+    raise ImproperlyConfigured("FILE_STORAGE_BACKEND deve ser 'local' ou 'pinata'.")
+FILE_STORAGE_ROOT = Path(env.str("FILE_STORAGE_ROOT", default=str(BASE_DIR / "private_files")))
+if FILE_STORAGE_ROOT.resolve().is_relative_to(STATIC_ROOT.resolve()):
+    raise ImproperlyConfigured("FILE_STORAGE_ROOT nao pode ficar dentro de STATIC_ROOT.")
+
 PINATA_JWT_TOKEN = env.str("PINATA_JWT_TOKEN", default="")
-if not PINATA_JWT_TOKEN and not DEBUG:
-    raise ImproperlyConfigured("PINATA_JWT_TOKEN e obrigatorio em producao.")
+if FILE_STORAGE_BACKEND == "pinata" and not PINATA_JWT_TOKEN and not DEBUG:
+    raise ImproperlyConfigured(
+        "PINATA_JWT_TOKEN e obrigatorio em producao com FILE_STORAGE_BACKEND=pinata."
+    )
 PINATA_GATEWAY_URL = env.str(
     "PINATA_GATEWAY_URL",
     default="https://gateway.pinata.cloud/ipfs/{cid}",

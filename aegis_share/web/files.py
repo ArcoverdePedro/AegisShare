@@ -44,7 +44,6 @@ from aegis_share.services.files import (
     revoke_access,
 )
 from aegis_share.services.notifications import notify, notify_document_request
-from aegis_share.services.pinata import PinataError
 from aegis_share.services.security import too_many_attempts
 from aegis_share.services.selectors import files_for_user, get_accessible_file
 from aegis_share.services.sharing import (
@@ -55,6 +54,7 @@ from aegis_share.services.sharing import (
     resolve_shared_link,
     revoke_shared_link,
 )
+from aegis_share.services.storage import StorageError
 
 # Erros esperados de upload, com mensagens seguras para o usuario.
 # Qualquer outro erro sobe para o Django, que registra no log e mostra a pagina 500.
@@ -62,7 +62,7 @@ UPLOAD_ERRORS = (
     FilePolicyError,
     MalwareDetected,
     AntivirusUnavailable,
-    PinataError,
+    StorageError,
     PermissionError,
 )
 FILES_PER_PAGE = 50

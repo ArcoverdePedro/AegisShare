@@ -7,7 +7,17 @@ from .models import Employee
 class EmployeeAdminForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ["user", "department", "job_title", "active"]
+        fields = [
+            "user",
+            "department",
+            "job_title",
+            "active",
+            "council",
+            "registration_number",
+            "registration_state",
+            "registration_valid_until",
+            "specialty",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,8 +1,10 @@
 import uuid
+from datetime import timedelta
 
 from django import forms
+from django.contrib.auth import get_user_model
 
-from .models import Procedure
+from .models import OperatingRoom, Procedure, SurgeryExecution
 
 
 class SurgicalCaseForm(forms.Form):
@@ -22,3 +24,57 @@ class SurgicalCaseForm(forms.Form):
         # O serviço valida catálogo ativo para solicitações novas. Retry pode usar procedimento desativado.
         if self.is_bound:
             self.fields["procedure"].queryset = Procedure.objects.all()
+
+
+class ScheduleForm(forms.Form):
+    room = forms.ModelChoiceField(label="Sala", queryset=OperatingRoom.objects.filter(active=True))
+    surgeon = forms.ModelChoiceField(
+        label="Cirurgião responsável",
+        queryset=get_user_model().objects.filter(
+            is_active=True, nivel_permissao__in=["FUNC", "ADM"]
+        ),
+    )
+    starts_at = forms.DateTimeField(
+        label="Início", widget=forms.DateTimeInput(attrs={"type": "datetime-local"})
+    )
+    minutes = forms.IntegerField(label="Duração prevista (min)", min_value=15, max_value=1440)
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["surgeon"].label_from_instance = lambda u: u.get_full_name() or u.username
+
+    def clean(self):
+        data = super().clean()
+        if data.get("starts_at") and data.get("minutes"):
+            data["ends_at"] = data["starts_at"] + timedelta(minutes=data.pop("minutes"))
+        return data
+
+
+class ExecutionForm(forms.ModelForm):
+    class Meta:
+        model = SurgeryExecution
+        fields = [
+            "room_in_at",
+            "started_at",
+            "ended_at",
+            "room_out_at",
+            "performed_procedure",
+            "surgeon",
+            "team",
+            "incidents",
+            "destination",
+            "reason",
+        ]
+        widgets = {
+            field: forms.DateTimeInput(attrs={"type": "datetime-local"})
+            for field in ("room_in_at", "started_at", "ended_at", "room_out_at")
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        staff = get_user_model().objects.filter(is_active=True, nivel_permissao__in=["FUNC", "ADM"])
+        self.fields["surgeon"].queryset = staff
+        self.fields["team"].queryset = staff
+        for field in ("surgeon", "team"):
+            self.fields[field].label_from_instance = lambda u: u.get_full_name() or u.username

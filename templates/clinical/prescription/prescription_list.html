@@ -30,7 +30,7 @@
                     <tbody>
                     {% for prescription in prescriptions %}
                         <tr>
-                            <td>{{ prescription.encounter.patient.full_name }}</td>
+                            <td>{{ prescription.encounter.patient.display_name }}</td>
                             <td class="mono">{{ prescription.encounter_id }}</td>
                             <td><span class="tag is-light">{{ prescription.get_status_display }}</span></td>
                             <td>{{ prescription.authored_by }}</td>

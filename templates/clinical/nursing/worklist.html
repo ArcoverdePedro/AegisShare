@@ -28,7 +28,7 @@
                     <tbody>
                     {% for encounter in encounters %}
                         <tr>
-                            <td>{{ encounter.patient.full_name }}</td>
+                            <td>{{ encounter.patient.display_name }}</td>
                             <td>{{ encounter.get_encounter_type_display }}</td>
                             <td><span class="tag is-light">{{ encounter.get_status_display }}</span></td>
                             <td>{{ encounter.started_at|date:'d/m/Y H:i' }}</td>

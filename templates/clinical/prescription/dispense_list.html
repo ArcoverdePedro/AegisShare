@@ -15,7 +15,7 @@
                     <tbody>
                     {% for dispense in dispenses %}
                     <tr>
-                        <td>{{ dispense.medication_request.encounter.patient.full_name }}</td>
+                        <td>{{ dispense.medication_request.encounter.patient.display_name }}</td>
                         <td>{{ dispense.dispensed_at|date:'d/m/Y H:i' }}</td>
                         <td>{{ dispense.dispensed_by }}</td>
                         <td class="mono">{{ dispense.operation_key }}</td>

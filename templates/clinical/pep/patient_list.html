@@ -62,7 +62,7 @@
                     <tbody>
                         {% for patient in patients %}
                         <tr>
-                            <td><strong>{{ patient.full_name }}</strong></td>
+                            <td><strong>{{ patient.display_name }}</strong>{% if patient.social_name %}<br><span class="is-size-7">Registro: {{ patient.full_name }}</span>{% endif %}</td>
                             <td>{{ patient.get_identifier_type_display }} · •••• {{ patient.identifier|slice:"-4:" }}</td>
                             <td>{{ patient.birth_date|date:"d/m/Y" }}</td>
                             <td>{{ patient.get_sex_display }}</td>

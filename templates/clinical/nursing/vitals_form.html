@@ -9,7 +9,7 @@
         <div class="mb-5">
             <p class="heading">Enfermagem</p>
             <h1 class="title is-3 mb-1">{% if is_correction %}Corrigir{% else %}Registrar{% endif %} sinais vitais</h1>
-            <p class="muted">{{ encounter.patient.full_name }} · encontro iniciado em {{ encounter.started_at|date:'d/m/Y H:i' }}</p>
+            <p class="muted">{{ encounter.patient.display_name }} · encontro iniciado em {{ encounter.started_at|date:'d/m/Y H:i' }}</p>
         </div>
 
         {% if is_correction %}

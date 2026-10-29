@@ -41,7 +41,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    volumes:
+      - aegis_files:/app/private_files
     stop_grace_period: 30s
 
 volumes:
   redis_data:
+  aegis_files:

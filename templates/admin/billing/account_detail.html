@@ -5,19 +5,35 @@
 <h1 class="title is-3">Conta em preparação</h1>
 {% include 'admin/billing/_notice.html' %}
 <div class="box">
-<p>Protocolo: {{ account.pk }}</p><p>Paciente: {{ account.encounter.patient.full_name }}</p>
+<p>Protocolo: {{ account.pk }}</p><p>Paciente: {{ account.encounter.patient.display_name }}</p>
 <p>Encontro: {{ account.encounter_id }}</p>
 <p>Aberta por {{ account.opened_by.username }} em {{ account.opened_at|date:'d/m/Y H:i:s' }}</p>
 <p class="has-text-weight-bold mt-3">Total em preparação (BRL): {{ total|floatformat:2 }}</p>
+{% for c in closures %}<p class="is-size-7">{{ c.get_action_display }} por {{ c.recorded_by.username }} em {{ c.recorded_at|date:'d/m/Y H:i' }} · total {{ c.total|floatformat:2 }}{% if c.reason %} — {{ c.reason }}{% endif %}</p>{% endfor %}
+{% if account.closed %}<p class="tag is-warning is-light mt-2">Conta fechada</p>
+{% if perms.billing.close_account %}<form method="post" action="{% url 'billing:account_close' account.pk %}" class="field has-addons mt-2">{% csrf_token %}<input type="hidden" name="action" value="reopen"><div class="control"><input class="input is-small" name="reason" aria-label="Motivo da reabertura" placeholder="Motivo da reabertura" maxlength="255" required></div><div class="control"><button class="button is-small" type="submit">Reabrir</button></div></form>{% endif %}
+{% else %}
 {% if perms.billing.add_item %}<a class="button is-link mt-3" href="{% url 'billing:item_create' account.pk %}">Adicionar item</a>{% endif %}
+{% if perms.billing.close_account %}<form method="post" action="{% url 'billing:account_close' account.pk %}" class="mt-3">{% csrf_token %}<button class="button" type="submit">Fechar conta</button><p class="is-size-7">Exige encontro encerrado, sem produção pendente nem divergência. Fechar não emite cobrança.</p></form>{% endif %}
+{% endif %}
 </div>
-<h2 class="title is-4">Itens manuais</h2>
+{% if pending %}<h2 class="title is-4">Produção sem lançamento</h2>
+<p class="mb-3">Dispensações confirmadas deste encontro ainda sem item vigente. Preço informado manualmente até haver tabela aprovada.</p>
+{% for d in pending %}<article class="box"><p><strong>{{ d.request_item.drug.code }} · {{ d.request_item.drug.name }}</strong> — {{ d.quantity|floatformat:-4 }} {{ d.request_item.drug.dispense_unit }} · dispensado em {{ d.dispense.dispensed_at|date:'d/m/Y H:i' }}</p>
+{% if perms.billing.add_item %}<form method="post" action="{% url 'billing:dispense_capture' account.pk d.pk %}" class="field has-addons mt-2">{% csrf_token %}{{ capture_form.operation_key }}<div class="control"><input class="input" name="unit_price" inputmode="decimal" aria-label="Valor unitário (BRL)" placeholder="Valor unitário (BRL)" required></div><div class="control"><button class="button is-link" type="submit">Lançar</button></div></form>{% endif %}</article>{% endfor %}{% endif %}
+{% if divergences %}<div class="notification is-danger is-light" role="alert"><p class="has-text-weight-semibold">Consumo estornado no estoque com item ainda vigente na conta:</p>{% for d in divergences %}<p>{{ d.description }} — estorne o item abaixo.</p>{% endfor %}</div>{% endif %}
+{% if pending_materials %}<h2 class="title is-4">Consumo de material sem lançamento</h2>
+{% for m in pending_materials %}<article class="box"><p><strong>{{ m.balance.item.code }} · {{ m.balance.item.name }}</strong> — {{ m.consumed }} {{ m.balance.item.unit }} · {{ m.created_at|date:'d/m/Y H:i' }}</p>
+{% if perms.billing.add_item %}<form method="post" action="{% url 'billing:material_capture' account.pk m.pk %}" class="field has-addons mt-2">{% csrf_token %}{{ capture_form.operation_key }}<div class="control"><input class="input" name="unit_price" inputmode="decimal" aria-label="Valor unitário (BRL)" placeholder="Valor unitário (BRL)" required></div><div class="control"><button class="button is-link" type="submit">Lançar</button></div></form>{% endif %}</article>{% endfor %}{% endif %}
+<h2 class="title is-4">Itens</h2>
 {% for item in page_obj %}
 <article class="box">
 <h3 class="title is-5">{{ item.description }}</h3>
-<p>Quantidade: {{ item.quantity }} · Valor unitário (BRL): {{ item.unit_price|floatformat:2 }}</p>
-<p>Subtotal (BRL): {{ item.subtotal|floatformat:2 }}</p>
+<p>{{ item.get_source_display }} · Quantidade: {{ item.quantity }} · Valor unitário (BRL): {{ item.unit_price|floatformat:2 }}</p>
+<p>Subtotal (BRL): {% if item.reverses_id %}-{% endif %}{{ item.subtotal|floatformat:2 }}</p>
+{% if item.justification %}<p>Justificativa: {{ item.justification }}</p>{% endif %}
 <p>Registrado por {{ item.recorded_by.username }} em {{ item.recorded_at|date:'d/m/Y H:i:s' }}</p>
+{% if item.reversed_by %}<p class="tag is-warning is-light">Estornado</p>{% elif not item.reverses_id and perms.billing.reverse_item %}<form method="post" action="{% url 'billing:item_reverse' account.pk item.pk %}" class="field has-addons mt-2">{% csrf_token %}{{ reverse_form.operation_key }}<div class="control"><input class="input is-small" name="justification" aria-label="Motivo do estorno" placeholder="Motivo do estorno" maxlength="255" required></div><div class="control"><button class="button is-small is-danger" type="submit">Estornar</button></div></form>{% endif %}
 </article>
 {% empty %}<p>Nenhum item registrado.</p>{% endfor %}
 {% include 'admin/billing/_pagination.html' %}

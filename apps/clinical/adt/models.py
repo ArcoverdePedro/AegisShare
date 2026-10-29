@@ -96,6 +96,7 @@ class UserLocationAccess(models.Model):
 class Bed(models.Model):
     class OperationalStatus(models.TextChoices):
         AVAILABLE = "AVAILABLE", "Disponível"
+        CLEANING = "CLEANING", "Higienização pendente"
         BLOCKED = "BLOCKED", "Bloqueado"
         OUT_OF_SERVICE = "OUT_OF_SERVICE", "Fora de serviço"
 
@@ -413,9 +414,38 @@ class Discharge(models.Model):
         return f"Alta {self.id}"
 
 
+class BedStatusChange(models.Model):
+    """Historico append-only do estado operacional (separado da ocupacao)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    bed = models.ForeignKey(Bed, on_delete=models.PROTECT, related_name="status_changes")
+    from_status = models.CharField(max_length=20, choices=Bed.OperationalStatus.choices)
+    to_status = models.CharField(max_length=20, choices=Bed.OperationalStatus.choices)
+    reason = models.CharField(max_length=255)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="adt_bed_status_changes"
+    )
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at", "-id"]
+
+    def __str__(self):
+        return f"Mudança de estado {self.pk}"
+
+    def save(self, *args, **kwargs):
+        if not self._state.adding:
+            raise ValidationError("Histórico de estado do leito é imutável.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValidationError("Histórico de estado do leito é imutável.")
+
+
 auditlog.register(Location)
 auditlog.register(UserLocationAccess)
 auditlog.register(Bed)
+auditlog.register(BedStatusChange, exclude_fields=["reason"])
 auditlog.register(Admission)
 auditlog.register(BedOccupancy)
 auditlog.register(Transfer, exclude_fields=["reason"])

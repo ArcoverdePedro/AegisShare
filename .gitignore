@@ -127,3 +127,4 @@ instance/
 
 .env
 .secrets.generated.env
+private_files/

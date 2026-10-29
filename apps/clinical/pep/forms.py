@@ -1,10 +1,39 @@
 from django import forms
 from django.utils import timezone
 
-from .models import ClinicalEvolution, Encounter, Patient
+from .models import ClinicalEvolution, Encounter, Patient, ProblemListEntry
+
+CONTACT_FIELDS = ["social_name", "phone", "email", "postal_code", "address", "city", "state"]
+CONTACT_WIDGETS = {
+    "social_name": forms.TextInput(attrs={"class": "input", "maxlength": "255"}),
+    "postal_code": forms.TextInput(
+        attrs={"class": "input", "autocomplete": "postal-code", "maxlength": "9"}
+    ),
+    "address": forms.TextInput(
+        attrs={"class": "input", "autocomplete": "street-address", "maxlength": "255"}
+    ),
+    "city": forms.TextInput(
+        attrs={"class": "input", "autocomplete": "address-level2", "maxlength": "120"}
+    ),
+    "state": forms.TextInput(
+        attrs={"class": "input", "autocomplete": "address-level1", "maxlength": "2"}
+    ),
+}
+CONTACT_LABELS = {
+    "social_name": "Nome social",
+    "postal_code": "CEP",
+    "address": "Endereço",
+    "city": "Município",
+    "state": "UF",
+}
 
 
 class PatientForm(forms.ModelForm):
+    confirm_new = forms.BooleanField(
+        label="Conferi os possíveis cadastros existentes e este é outro paciente",
+        required=False,
+    )
+
     class Meta:
         model = Patient
         fields = [
@@ -13,8 +42,7 @@ class PatientForm(forms.ModelForm):
             "full_name",
             "birth_date",
             "sex",
-            "phone",
-            "email",
+            *CONTACT_FIELDS,
         ]
         widgets = {
             "identifier_type": forms.Select(attrs={"class": "select"}),
@@ -30,16 +58,34 @@ class PatientForm(forms.ModelForm):
                 attrs={"class": "input", "autocomplete": "tel", "maxlength": "32"}
             ),
             "email": forms.EmailInput(attrs={"class": "input", "autocomplete": "email"}),
+            **CONTACT_WIDGETS,
         }
         labels = {
+            **CONTACT_LABELS,
             "identifier_type": "Tipo de identificador",
-            "identifier": "CPF ou identificador",
+            "identifier": "CPF, CNS ou identificador",
             "full_name": "Nome completo",
             "birth_date": "Data de nascimento",
             "sex": "Sexo",
             "phone": "Telefone",
             "email": "E-mail",
         }
+
+
+class PatientContactForm(forms.ModelForm):
+    """Atualizacao cadastral sem alterar identificacao canonica (regularizacao depende de G02)."""
+
+    class Meta:
+        model = Patient
+        fields = CONTACT_FIELDS
+        widgets = {
+            **CONTACT_WIDGETS,
+            "phone": forms.TextInput(
+                attrs={"class": "input", "autocomplete": "tel", "maxlength": "32"}
+            ),
+            "email": forms.EmailInput(attrs={"class": "input", "autocomplete": "email"}),
+        }
+        labels = {**CONTACT_LABELS, "phone": "Telefone", "email": "E-mail"}
 
 
 class EncounterForm(forms.ModelForm):
@@ -55,9 +101,7 @@ class EncounterForm(forms.ModelForm):
             "location": forms.TextInput(
                 attrs={"class": "input", "maxlength": "160", "autocomplete": "off"}
             ),
-            "reason": forms.Textarea(
-                attrs={"class": "textarea", "rows": "4", "maxlength": "2000"}
-            ),
+            "reason": forms.Textarea(attrs={"class": "textarea", "rows": "4", "maxlength": "2000"}),
         }
         labels = {
             "encounter_type": "Tipo de encontro",
@@ -106,9 +150,7 @@ class ClinicalEvolutionAmendmentForm(forms.Form):
     amendment_reason = forms.CharField(
         max_length=255,
         label="Motivo do adendo",
-        widget=forms.TextInput(
-            attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}
-        ),
+        widget=forms.TextInput(attrs={"class": "input", "maxlength": "255", "autocomplete": "off"}),
     )
     content = forms.CharField(
         label="Conteúdo do adendo",
@@ -133,3 +175,34 @@ class ClinicalEvolutionAmendmentForm(forms.Form):
         if not content:
             raise forms.ValidationError("Informe o conteúdo do adendo.")
         return content
+
+
+class ProblemForm(forms.ModelForm):
+    class Meta:
+        model = ProblemListEntry
+        fields = [
+            "description",
+            "status",
+            "onset_date",
+            "code_system",
+            "code",
+            "code_version",
+            "reason",
+        ]
+        widgets = {
+            "description": forms.TextInput(attrs={"class": "input", "maxlength": "255"}),
+            "onset_date": forms.DateInput(attrs={"class": "input", "type": "date"}),
+            "code_system": forms.TextInput(attrs={"class": "input", "placeholder": "ex.: CID-10"}),
+            "code": forms.TextInput(attrs={"class": "input"}),
+            "code_version": forms.TextInput(attrs={"class": "input"}),
+            "reason": forms.TextInput(attrs={"class": "input", "maxlength": "255"}),
+        }
+        labels = {
+            "description": "Problema (texto livre)",
+            "status": "Situação",
+            "onset_date": "Início (opcional)",
+            "code_system": "Sistema de código (opcional)",
+            "code": "Código (opcional)",
+            "code_version": "Versão do sistema de código",
+            "reason": "Motivo da revisão",
+        }

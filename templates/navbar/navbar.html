@@ -53,6 +53,8 @@
         html, body { min-height: 100%; background: var(--aegis-bg); }
         body { display: flex; flex-direction: column; min-height: 100vh; }
         .content-wrapper { flex: 1; padding-top: 5rem; padding-bottom: 3rem; }
+        /* Link em texto corrido precisa de distinção além da cor (axe link-in-text-block). */
+        .content-wrapper :is(p, li, .container) > a:not(.button):not(.tag) { text-decoration: underline; }
         .navbar { box-shadow: 0 2px 14px rgba(10, 10, 10, .08); }
         .navbar-item .icon { margin-right: .35rem; }
         .aegis-card {
@@ -131,6 +133,7 @@
                                 {% if perms.nursing.view_nursing %}
                                     <a class="navbar-item {% if request.resolver_match.namespace == 'nursing' %}is-active{% endif %}" href="{% url 'nursing:worklist' %}">{% icon 'activity' %} Enfermagem</a>
                                 {% endif %}
+                                {% if perms.scheduling.view_agenda %}<a class="navbar-item" href="{% url 'scheduling:agenda' %}">Agenda</a>{% endif %}
                                 {% if perms.surgery.view_cases %}<a class="navbar-item" href="{% url 'surgery:case_list' %}">Centro Cirúrgico</a>{% endif %}
                                 {% if perms.ris.view_orders %}<a class="navbar-item" href="{% url 'ris:order_list' %}">Imagem</a>{% endif %}
                                 {% if perms.lis.view_orders %}<a class="navbar-item" href="{% url 'lis:order_list' %}">Laboratório</a>{% endif %}

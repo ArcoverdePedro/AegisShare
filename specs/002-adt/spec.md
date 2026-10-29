@@ -147,3 +147,9 @@ Cenário: usuário sem escopo clínico consulta mapa
 | RF-ADT-07 | todas as rotas ADT | todas | security boundary tests |
 | RF-ADT-10 | serviços ADT | — | event contract tests |
 | RF-ADT-12 | rotas mutáveis ADT | — | PWA security/E2E |
+
+## Extensão operacional de leitos (H13, 26/10/2026)
+
+- Novo estado `CLEANING` (higienização pendente). Alta e transferência liberam o leito de origem para `CLEANING` quando ele estava `AVAILABLE`; só `AVAILABLE` recebe admissão/transferência, então leito sujo não aparece como livre.
+- `/leitos/<id>/estado/` (FBV, `adt.manage_bed_status` + acesso à unidade) muda o estado operacional com motivo obrigatório; leito ocupado é recusado. Cada mudança gera `BedStatusChange` append-only e evento `bed.status_changed` pós-commit (sem PHI).
+- Estado operacional segue separado da ocupação (`BedOccupancy`). Pendentes por G01/G02: solicitação/reserva de leito, isolamento como atributo assistencial, previsão de alta e integração com alta clínica/documentos (H04/H06/H08).

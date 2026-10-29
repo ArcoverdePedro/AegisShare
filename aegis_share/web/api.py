@@ -11,9 +11,9 @@ from aegis_share.file_policy import FilePolicyError
 from aegis_share.models import CustomUser
 from aegis_share.services.antivirus import AntivirusUnavailable, MalwareDetected
 from aegis_share.services.files import create_file_from_upload, get_version_content
-from aegis_share.services.pinata import PinataError
 from aegis_share.services.security import authenticate_api_token
 from aegis_share.services.selectors import files_for_user, get_accessible_file
+from aegis_share.services.storage import StorageError
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def files_api(request):
     except AntivirusUnavailable:
         logger.warning("api_upload_antivirus_unavailable", exc_info=True)
         return JsonResponse({"error": "antivirus_unavailable"}, status=503)
-    except PinataError:
+    except StorageError:
         logger.warning("api_upload_storage_unavailable", exc_info=True)
         return JsonResponse({"error": "storage_unavailable"}, status=503)
     except Exception:

@@ -21,7 +21,7 @@ async function login(page, credentials) {
 async function createPatient(page, { identifier, name }) {
   await page.goto('/pacientes/novo/');
   await page.getByLabel('Tipo de identificador').selectOption('OTHER');
-  await page.getByLabel('CPF ou identificador').fill(identifier);
+  await page.getByLabel('CPF, CNS ou identificador').fill(identifier);
   await page.getByLabel('Nome completo').fill(name);
   await page.getByLabel('Data de nascimento').fill('1990-01-15');
   await page.getByLabel('Sexo').selectOption('F');

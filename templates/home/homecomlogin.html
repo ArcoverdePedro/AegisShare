@@ -17,6 +17,7 @@
             <div class="buttons">
                 {% if user.is_admin %}
                 <a class="button" href="{% url 'audit_log' %}">{% icon 'activity' %}<span>Auditoria</span></a>
+                <a class="button" href="{% url 'indicators:panel' %}">{% icon 'bar-chart-2' %}<span>Indicadores</span></a>
                 {% endif %}
                 {% if not user.is_client %}
                 <a class="button is-link" href="{% url 'upload' %}">{% icon 'upload' %}<span>Enviar arquivo</span></a>

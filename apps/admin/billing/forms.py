@@ -27,7 +27,25 @@ class BillingItemForm(forms.Form):
         localize=False,
         help_text="Use ponto como separador decimal, por exemplo 12.50; sem símbolo ou separador de milhares.",
     )
+    justification = forms.CharField(
+        label="Justificativa do lançamento manual",
+        max_length=255,
+        help_text="Motivo administrativo, sem dado clínico.",
+    )
     operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     confirmed = forms.BooleanField(
         label="Confirme os dados manuais; este lançamento não emite cobrança"
     )
+
+
+PRICE_FIELD = BillingItemForm.base_fields["unit_price"]
+
+
+class CaptureForm(forms.Form):
+    unit_price = PRICE_FIELD
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+
+
+class ReverseItemForm(forms.Form):
+    justification = forms.CharField(label="Motivo do estorno", max_length=255)
+    operation_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)

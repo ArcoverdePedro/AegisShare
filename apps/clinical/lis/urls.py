@@ -12,4 +12,22 @@ urlpatterns = [
     ),
     path("laboratorio/pedidos/<uuid:pk>/", views.order_detail, name="order_detail"),
     path("laboratorio/pedidos/<uuid:pk>/coleta/", views.specimen_create, name="specimen_create"),
+    path("laboratorio/pedidos/<uuid:pk>/etiqueta/", views.specimen_label, name="specimen_label"),
+    path("laboratorio/pedidos/<uuid:pk>/cancelar/", views.order_cancel, name="order_cancel"),
+    path(
+        "laboratorio/pedidos/<uuid:pk>/amostras/<uuid:specimen_id>/rejeitar/",
+        views.specimen_reject,
+        name="specimen_reject",
+    ),
+    path(
+        "laboratorio/pedidos/<uuid:pk>/amostras/<uuid:specimen_id>/resultados/novo/",
+        views.result_create,
+        name="result_create",
+    ),
+    path(
+        "laboratorio/pedidos/<uuid:pk>/resultados/<uuid:result_id>/andamento/",
+        views.result_advance,
+        name="result_advance",
+    ),
+    path("laboratorio/recebimento/", views.specimen_receive, name="specimen_receive"),
 ]

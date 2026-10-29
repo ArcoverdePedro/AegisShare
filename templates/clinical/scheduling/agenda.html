@@ -1,0 +1,14 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Agenda ambulatorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Agenda de {{ day|date:'d/m/Y' }}</h1>
+<p class="notification is-info is-light">Agenda administrativa: não registra dados clínicos. Nomes aparecem só para quem já tem acesso ao paciente; demais veem a senha. Exige conexão.</p>
+<p class="mb-4"><a href="{% url 'scheduling:agenda' %}">Agenda do dia</a> · <a href="{% url 'scheduling:queue' %}">Fila de chegada</a>{% if perms.scheduling.manage_agenda %} · <a href="{% url 'scheduling:slot_create' %}">Abrir horários</a>{% endif %} · <a href="{% url 'pep:patient_list' %}">Buscar paciente para agendar</a></p>
+<form method="get" class="mb-4"><label class="label" for="dia">Data</label><div class="field has-addons"><div class="control"><input class="input" type="date" id="dia" name="dia" value="{{ day|date:'Y-m-d' }}"></div><div class="control"><button class="button" type="submit">Ver</button></div></div></form>
+{% for slot in slots %}<article class="box"><h2 class="title is-6">{{ slot.starts_at|time:'H:i' }}–{{ slot.ends_at|time:'H:i' }} · {{ slot.professional.get_full_name|default:slot.professional.username }} · {{ slot.location }} · {{ slot.taken }}/{{ slot.capacity }}</h2>
+{% if slot.blocked_reason %}<p class="tag is-warning is-light">Bloqueado: {{ slot.blocked_reason }}</p>{% elif perms.scheduling.manage_agenda %}<form method="post" action="{% url 'scheduling:slot_block' slot.pk %}" class="field has-addons">{% csrf_token %}<div class="control"><input class="input is-small" name="reason" aria-label="Motivo do bloqueio" placeholder="Motivo do bloqueio" maxlength="255" required></div><div class="control"><button class="button is-small" type="submit">Bloquear</button></div></form>{% endif %}
+{% for a in slot.appointments.all %}<p><a href="{% url 'scheduling:appointment_detail' a.pk %}">{% if a.patient_id in visible %}{{ a.patient.display_name }}{% else %}Senha {{ a.ticket }}{% endif %}</a> — {{ a.get_status_display }}{% if a.overbooked %} (encaixe){% endif %}</p>{% endfor %}
+</article>{% empty %}<p>Nenhum horário aberto nesta data.</p>{% endfor %}
+</div></section>
+{% endblock %}

@@ -156,3 +156,4 @@ instance/
 
 # pyenv
 .python-version
+private_files/

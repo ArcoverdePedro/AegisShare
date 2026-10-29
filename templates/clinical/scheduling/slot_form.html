@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Agenda ambulatorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Abrir horários</h1>
+<p class="notification is-info is-light">Agenda administrativa: não registra dados clínicos. Nomes aparecem só para quem já tem acesso ao paciente; demais veem a senha. Exige conexão.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Abrir horários</button></form>
+<p class="mb-4"><a href="{% url 'scheduling:agenda' %}">Agenda do dia</a> · <a href="{% url 'scheduling:queue' %}">Fila de chegada</a>{% if perms.scheduling.manage_agenda %} · <a href="{% url 'scheduling:slot_create' %}">Abrir horários</a>{% endif %} · <a href="{% url 'pep:patient_list' %}">Buscar paciente para agendar</a></p>
+</div></section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Laudo de imagem · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">{% if current %}Retificar{% else %}Registrar{% endif %} laudo — {{ item.exam_code }} · {{ item.exam_name }}</h1>
+<p class="mb-4">O laudo só aparece ao solicitante após liberação. Imagens/estudo DICOM não estão integrados (PACS pendente); não há assinatura digital válida (G05).{% if current %} A versão anterior é preservada.{% endif %}</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Salvar</button></form>
+<a href="{% url 'ris:order_detail' item.pk %}">Voltar ao pedido</a>
+</div></section>
+{% endblock %}

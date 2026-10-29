@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import InvalidPage, Paginator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -14,9 +14,11 @@ from .forms import (
     ClinicalEvolutionAmendmentForm,
     ClinicalEvolutionForm,
     EncounterForm,
+    PatientContactForm,
     PatientForm,
+    ProblemForm,
 )
-from .models import ClinicalEvolution, Encounter, PatientAccessGrant
+from .models import ClinicalEvolution, Encounter, PatientAccessGrant, ProblemListEntry
 from .permissions import (
     accessible_patients,
     can_create_encounter,
@@ -55,7 +57,11 @@ def patient_list(request):
     query = (request.GET.get("q") or "").strip()
     patients = accessible_patients(request.user)
     if query:
-        patients = patients.filter(Q(full_name__icontains=query) | Q(identifier__icontains=query))
+        patients = patients.filter(
+            Q(full_name__icontains=query)
+            | Q(social_name__icontains=query)
+            | Q(identifier__icontains=query)
+        )
     page = _page(request, patients.order_by("full_name", "birth_date"))
     return render(
         request,
@@ -77,6 +83,19 @@ def patient_create(request):
         raise PermissionDenied
     form = PatientForm(request.POST if request.method == "POST" else None)
     if request.method == "POST" and form.is_valid():
+        candidates = form.instance.possible_duplicates()
+        if not form.cleaned_data["confirm_new"] and candidates.exists():
+            # Fora do escopo do usuario so revela a contagem, nunca dados do outro cadastro.
+            duplicates = {
+                "count": candidates.count(),
+                "visible": list(candidates.filter(pk__in=accessible_patients(request.user))),
+            }
+            return render(
+                request,
+                "clinical/pep/patient_form.html",
+                {"form": form, "duplicates": duplicates},
+                status=409,
+            )
         with transaction.atomic():
             patient = form.save(commit=False)
             patient.created_by = request.user
@@ -92,6 +111,22 @@ def patient_create(request):
 
 
 @login_required
+@require_http_methods(["GET", "HEAD", "POST"])
+def patient_update(request, pk):
+    patient = get_object_or_404(accessible_patients(request.user), pk=pk)
+    if not can_create_patient(request.user):
+        raise PermissionDenied
+    form = PatientContactForm(request.POST or None, instance=patient)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Dados cadastrais atualizados.")
+        return redirect("pep:patient_detail", pk=patient.pk)
+    return render(
+        request, "clinical/pep/patient_contact_form.html", {"form": form, "patient": patient}
+    )
+
+
+@login_required
 @require_safe
 def patient_detail(request, pk):
     patient = get_object_or_404(accessible_patients(request.user), pk=pk)
@@ -103,6 +138,7 @@ def patient_detail(request, pk):
             "patient": patient,
             "recent_encounters": patient.encounters.select_related("responsible_professional")[:8],
             "can_create_encounter": can_create_encounter(request.user, patient),
+            "can_update_patient": can_create_patient(request.user),
         },
     )
 
@@ -255,5 +291,58 @@ def evolution_amendment_create(request, pk):
             "encounter": original.encounter,
             "patient": original.encounter.patient,
             "is_amendment": True,
+        },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "HEAD", "POST"])
+def problem_list(request, patient_id):
+    patient = get_object_or_404(accessible_patients(request.user), pk=patient_id)
+    current = patient.problems.filter(superseded_by__isnull=True)
+    revising = request.POST.get("revisar") or request.GET.get("revisar")
+    supersedes = get_object_or_404(current, pk=revising) if revising else None
+    form = ProblemForm(
+        request.POST if request.method == "POST" else None,
+        instance=ProblemListEntry(patient=patient, author=request.user, supersedes=supersedes),
+        initial={
+            field: getattr(supersedes, field)
+            for field in (
+                "description",
+                "status",
+                "onset_date",
+                "code_system",
+                "code",
+                "code_version",
+            )
+        }
+        if supersedes
+        else None,
+    )
+    if request.method == "POST":
+        if not is_internal_professional(request.user):
+            raise PermissionDenied
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    form.save()
+            except IntegrityError:
+                form.add_error(None, "Este problema já foi revisado por outra pessoa; recarregue.")
+            else:
+                messages.success(request, "Lista de problemas atualizada.")
+                return redirect("pep:problem_list", patient_id=patient.pk)
+    accessed.send(type(patient), instance=patient)
+    return render(
+        request,
+        "clinical/pep/problem_list.html",
+        {
+            "patient": patient,
+            "form": form,
+            "supersedes": supersedes,
+            "current": current.select_related("author"),
+            "history": patient.problems.filter(superseded_by__isnull=False).select_related(
+                "author", "superseded_by"
+            ),
+            "can_edit": is_internal_professional(request.user),
         },
     )

@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Resultado laboratorial · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:800px;overflow-wrap:anywhere;">
+<h1 class="title is-3">{% if supersedes %}Retificar{% else %}Registrar{% endif %} resultado — amostra {{ specimen.accession_code }}</h1>
+<p class="mb-4">{{ item.test_code }} · {{ item.test_name }}. Valor, unidade e referência são transcritos do laboratório; o sistema não interpreta nem sinaliza resultado crítico. O resultado só aparece ao solicitante após validação e liberação.{% if supersedes %} A versão liberada anterior é preservada.{% endif %}</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Salvar</button></form>
+<a href="{% url 'lis:order_detail' item.pk %}">Voltar ao pedido</a>
+</div></section>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Compras de materiais · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Pedidos de compra</h1>
+<p class="notification is-info is-light">Pedido de compra não soma estoque. Só o recebimento conferido gera entrada, uma única vez. Quem solicita não aprova. Sem envio ao fornecedor nem obrigação financeira automática.</p>
+<p class="mb-4"><a href="{% url 'inventory:purchase_list' %}">Pedidos de compra</a> · <a href="{% url 'inventory:balance_list' %}">Saldos</a></p>
+{% if perms.inventory.request_purchase %}<p class="mb-4"><a class="button is-link" href="{% url 'inventory:purchase_create' %}">Novo pedido</a></p>{% endif %}
+{% for o in page_obj %}<article class="box"><h2 class="title is-5">{{ o.supplier.name }} — {{ o.get_status_display }}</h2><p>{{ o.notes }}</p><p>Solicitado por {{ o.created_by.username }} em {{ o.created_at|date:'d/m/Y H:i' }}</p><a href="{% url 'inventory:purchase_detail' o.pk %}" aria-label="Abrir pedido {{ o.pk }}">Abrir pedido</a></article>
+{% empty %}<p>Nenhum pedido registrado.</p>{% endfor %}
+{% include 'admin/inventory/_pagination.html' %}
+</div></section>
+{% endblock %}

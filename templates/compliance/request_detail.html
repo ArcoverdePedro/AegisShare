@@ -7,7 +7,7 @@
         <p class="mb-4">Protocolo {{ item.pk }}</p>
         <div class="box aegis-card">
             <dl>
-                <dt class="has-text-weight-bold">Paciente</dt><dd>{{ item.patient.full_name }}</dd>
+                <dt class="has-text-weight-bold">Paciente</dt><dd>{{ item.patient.display_name }}</dd>
                 <dt class="has-text-weight-bold mt-3">Categoria</dt><dd>{{ item.get_category_display }}</dd>
                 <dt class="has-text-weight-bold mt-3">Estado</dt><dd>{{ item.get_status_display }}</dd>
                 <dt class="has-text-weight-bold mt-3">Registrada por</dt><dd>{{ item.created_by }} · {{ item.created_at|date:'d/m/Y H:i' }}</dd>

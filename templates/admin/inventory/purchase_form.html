@@ -1,0 +1,13 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Compras de materiais · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Novo pedido de compra</h1>
+<p class="notification is-info is-light">Pedido de compra não soma estoque. Só o recebimento conferido gera entrada, uma única vez. Quem solicita não aprova. Sem envio ao fornecedor nem obrigação financeira automática.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}
+{{ lines.management_form }}{% for error in lines.non_form_errors %}<p class="help is-danger">{{ error }}</p>{% endfor %}
+{% for line in lines %}<fieldset class="box"><legend class="has-text-weight-semibold">Item {{ forloop.counter }}</legend>{% with form=line %}{% include 'compliance/_partials/form_fields.html' %}{% endwith %}</fieldset>{% endfor %}
+<button type="submit" class="button is-link">Registrar pedido</button></form>
+<p class="mb-4"><a href="{% url 'inventory:purchase_list' %}">Pedidos de compra</a> · <a href="{% url 'inventory:balance_list' %}">Saldos</a></p>
+</div></section>
+{% endblock %}

@@ -156,7 +156,7 @@ O modo `--install-env` substitui somente `SECRET_KEY` e `FILE_ENCRYPTION_KEY` va
 Depois configure os demais campos do `.env`, principalmente:
 
 ```env
-PINATA_JWT_TOKEN=...
+FILE_STORAGE_BACKEND=local   # ou pinata + PINATA_JWT_TOKEN=...
 POSTGRES_PASSWORD=...
 ALLOWED_HOSTS=files.exemplo.com
 CSRF_TRUSTED_ORIGINS=https://files.exemplo.com
@@ -283,7 +283,9 @@ Em ambientes com várias réplicas, execute migrations em apenas uma delas e use
 | `EXTERNAL_REDIS_URL` | Redis externo nos composes sem Redis |
 | `DATABASE_URL` | conexão direta quando Django roda fora dos composes fornecidos |
 | `REDIS_URL` | Redis direto quando Django roda fora dos composes fornecidos |
-| `PINATA_JWT_TOKEN` | autenticação da Pinata |
+| `FILE_STORAGE_BACKEND` | `local` (diretório privado, sem conta externa) ou `pinata` (padrão legado) |
+| `FILE_STORAGE_ROOT` | diretório privado dos arquivos cifrados; nos composes, volume `aegis_files` em `/app/private_files` |
+| `PINATA_JWT_TOKEN` | autenticação da Pinata; obrigatório só com backend `pinata` ou para remover CIDs legados |
 | `PINATA_GATEWAY_URL` | URL de leitura dos CIDs |
 | `FILE_MAX_UPLOAD_MB` | limite de upload |
 | `FILE_RETENTION_DAYS` | retenção da lixeira |
@@ -305,14 +307,44 @@ arquivo original
    +--> ClamAV opcional
    +--> SHA-256
    +--> AES-256-GCM
-   +--> Pinata/IPFS
+   +--> FILE_STORAGE_BACKEND: local (FILE_STORAGE_ROOT) ou Pinata/IPFS
 ```
 
 Cada versão recebe uma chave AES aleatória. A chave de conteúdo é cifrada pela `FILE_ENCRYPTION_KEY` e apenas a chave protegida é armazenada no banco.
 
 A migration de upgrade preserva arquivos anteriores como `FileVersion v1` legada e não criptografada. Para obter a mesma confidencialidade dos novos uploads, envie uma nova versão do arquivo legado.
 
+### Migrar da Pinata para armazenamento local
+
+Com `FILE_STORAGE_BACKEND=local`, novas versões vão para `FILE_STORAGE_ROOT` (permissões `0700/0600`, nunca servido por URL). Referências `local:` são lidas do disco; CIDs antigos continuam lidos pelo gateway da Pinata até serem copiados:
+
+```bash
+python manage.py migrate_file_storage                      # copia versões cifradas, conferindo hash e decifragem
+python manage.py migrate_file_storage --encrypt-plaintext  # também cifra versões legadas não criptografadas
+```
+
+O comando não apaga a origem. Guarde as linhas `origem_cid/origem_id` impressas e só desative os objetos na Pinata depois de conferir backup e downloads. Versões com falha permanecem apontando para a origem e são listadas no erro.
+
 **Não perca `FILE_ENCRYPTION_KEY`.** Sem ela, versões cifradas não podem ser recuperadas.
+
+## Backup e restauração
+
+`scripts/backup.sh <destino>` gera, para a stack `compose.yml`/`compose.no-redis.yml`, dois arquivos cifrados com `BACKUP_ENCRYPTION_KEY` (AES-256-GCM em blocos; corrupção, troca de ordem ou truncamento falham na abertura): `db-*.dump.aegisbak` (`pg_dump -Fc`) e `files-*.tar.aegisbak` (`FILE_STORAGE_ROOT`). Cada arquivo é aberto e autenticado antes de perder o sufixo `.partial`; um `SHA256SUMS-*` acompanha o lote.
+
+Gere a chave uma vez e guarde-a fora do servidor, separada do backup e da `FILE_ENCRYPTION_KEY` (precisam ser diferentes):
+
+```bash
+python -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+```
+
+Sem `FILE_ENCRYPTION_KEY` e `BACKUP_ENCRYPTION_KEY` o backup não pode ser aberto nem os arquivos decifrados. Restauração em banco novo/vazio:
+
+```bash
+python manage.py backup_open < db-STAMP.dump.aegisbak | pg_restore --no-owner -d NOVO_BANCO
+python manage.py backup_open < files-STAMP.tar.aegisbak | tar -C /app -xf -
+```
+
+Ensaio executado em 26/10/2026 (PostgreSQL 18 descartável, dados sintéticos: 50 pacientes + 1 arquivo cifrado, backend `local`): backup 0,8 s, restauração 1,4 s; arquivo restaurado decifrou com hash conferido; nenhum texto claro nos `.aegisbak`; byte alterado → `backup_open` falha. Não mede volume real. Pendentes (G11): frequência, retenção, RPO/RTO, agendamento, cópia fora do host, alertas e ensaio com volume de produção. CIDs ainda na Pinata não entram no tar — migre com `migrate_file_storage` antes. Com bancos externos (`compose.no-postgres*.yml`) use o `pg_dump` do provedor e o mesmo `backup_seal`.
 
 ## Auditoria
 

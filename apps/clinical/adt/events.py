@@ -13,7 +13,7 @@ ADT_EVENT_TYPES = {
     "bed.status_changed",
 }
 BED_EVENT_TYPES = {"bed.occupied", "bed.released", "bed.status_changed"}
-BED_STATES = {"AVAILABLE", "OCCUPIED", "BLOCKED", "OUT_OF_SERVICE"}
+BED_STATES = {"AVAILABLE", "OCCUPIED", "CLEANING", "BLOCKED", "OUT_OF_SERVICE"}
 ADT_BED_MAP_GROUP = "clinical_adt_bed_map"
 
 

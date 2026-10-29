@@ -31,3 +31,7 @@ Fluxo exclusivamente online: páginas/forms/payloads RH não entram em Cache Sto
 Guarda de associação/exclusão vale para entradas contratadas da aplicação; SQL/ORM direto permanece fora dessa promessa. Sem Shift, TimeClock, Training, calendário, ponto, folha, documentos, biometria, geolocalização ou eventos. Esses fluxos exigem contratos institucionais próprios.
 
 [Spec e critérios](../specs/010-rh-escalas/spec.md) · [Evidências](../specs/010-rh-escalas/validation.md).
+
+## Registro profissional e ausências (H26)
+
+No Admin (`EmployeeAdmin`): conselho, número e UF do registro (exigidos juntos), validade e especialidade. Ausências (férias, licença/afastamento, outro) são lançadas inline com início e fim (constraint `fim >= início`); não registram motivo de saúde. Efeito atual: a agenda (H11) recusa abrir horários e agendar no período de ausência. Registro vencido aparece como "vencido" no detalhe, sem bloquear atos — o efeito sobre prescrição/assinatura depende de G01/G06. Escalas, trocas de plantão, ponto e folha não estão implementados (aguardam G01).

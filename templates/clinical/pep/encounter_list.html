@@ -1,7 +1,7 @@
 {% extends 'navbar/navbar.html' %}
 {% load icon %}
 
-{% block title %}Encontros · {{ patient.full_name }}{% endblock %}
+{% block title %}Encontros · {{ patient.display_name }}{% endblock %}
 
 {% block page_content %}
 <section class="section pt-3">
@@ -12,7 +12,7 @@
                     <a class="is-size-7" href="{% url 'pep:patient_detail' patient.id %}">← Voltar para o prontuário</a>
                     <p class="is-size-7 has-text-weight-semibold has-text-link mt-3 mb-2">PRONTUÁRIO ELETRÔNICO</p>
                     <h1 class="title is-3 mb-2">Encontros clínicos</h1>
-                    <p class="muted">Histórico assistencial de {{ patient.full_name }}.</p>
+                    <p class="muted">Histórico assistencial de {{ patient.display_name }}.</p>
                 </div>
             </div>
             {% if can_create_encounter %}

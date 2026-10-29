@@ -1,0 +1,10 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Recebimento de amostras · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width: 800px; overflow-wrap: anywhere;">
+<h1 class="title is-3">Recebimento de amostras</h1>
+<p class="mb-4">A leitura do código confirma somente a chegada da amostra ao laboratório. Amostra rejeitada, repetida ou de pedido cancelado é recusada.</p>
+<form method="post" class="box">{% csrf_token %}{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-link">Confirmar recebimento</button></form>
+<a href="{% url 'lis:order_list' %}">Pedidos laboratoriais</a>
+</div></section>
+{% endblock %}

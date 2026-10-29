@@ -4,7 +4,7 @@ from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-from aegis_share.services.pinata import PinataClient
+from aegis_share.services.storage import storage_client
 
 
 @require_GET
@@ -37,8 +37,9 @@ def services(request):
     checks = {
         "database": True,
         "redis_configured": bool(settings.REDIS_URL),
+        "storage_backend": settings.FILE_STORAGE_BACKEND,
         # Cache de 60s: chamadas publicas repetidas nao gastam a cota da Pinata.
-        "pinata": cache.get_or_set("health:pinata", PinataClient().ping, 60),
+        "storage": cache.get_or_set("health:storage", storage_client().ping, 60),
         "clamav_enabled": settings.CLAMAV_ENABLED,
     }
-    return JsonResponse({"status": "ok" if checks["pinata"] else "degraded", "checks": checks})
+    return JsonResponse({"status": "ok" if checks["storage"] else "degraded", "checks": checks})

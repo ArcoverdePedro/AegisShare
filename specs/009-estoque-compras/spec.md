@@ -31,7 +31,9 @@ O recorte autorizado adota consulta institucional de todos os registros deste m�
 
 ## Fora de escopo
 
-Medicamentos, saldos, lotes/validade, entradas/saídas, recebimento, reservas, transferências, atendimento/cancelamento/correção de requisições, setores/almoxarifados segregados, Supplier, PurchaseOrder, preços/orçamentos/pagamentos, ponto de pedido e reposição automática.
+> Extensão H19 (26/10/2026): saldos por local/lote/validade, entradas, saídas, devoluções, transferências, atendimento parcial de requisição, ajuste de inventário e estorno foram implementados — contrato em `docs/estoque-requisicoes.md#saldos-e-movimentos-extensão-h19`. Continuam fora: os itens abaixo não citados nesta nota.
+
+Medicamentos, recebimento de compras, reservas, cancelamento de requisições, Supplier, PurchaseOrder, preços/orçamentos/pagamentos, ponto de pedido e reposição automática.
 
 Movimentação exige contrato de unidade, lote/localização, saldo não negativo, concorrência, ajustes e rastreabilidade. Compras exigem fornecedor, autorização, recebimento parcial e efeitos financeiros. Integração farmacêutica exige uma fonte de verdade explícita, preservando StockItem/Lot/StockMovement existentes. Não criar eventos inventory.moved/purchase.created/purchase.received sem produtor real e consumidor contratado.
 

@@ -1,0 +1,19 @@
+{% extends 'navbar/navbar.html' %}
+{% block title %}Materiais e requisições · AegisShare{% endblock %}
+{% block page_content %}
+<section class="section"><div class="container" style="max-width:1000px;overflow-wrap:anywhere;">
+<h1 class="title is-3">Movimento de material</h1>
+{% include 'admin/inventory/_stock_notice.html' %}
+<div class="box"><p>Operação: {{ movement.operation_key }}</p>
+{% for leg in legs %}<p><strong>{{ leg.get_kind_display }}</strong>: {{ leg.quantity_delta }} {{ movement.balance.item.unit }} em {{ leg.balance.location }}{% if leg.balance.lot %} · lote {{ leg.balance.lot }}{% endif %}</p>{% endfor %}
+<p>Material: {{ movement.balance.item.code }} · {{ movement.balance.item.name }}</p>
+{% if movement.encounter_id %}<p>Consumo assistencial do <a href="{% url 'pep:encounter_detail' movement.encounter_id %}">encontro</a></p>{% endif %}
+{% if movement.requisition %}<p>Requisição: <a href="{% url 'inventory:requisition_detail' movement.requisition.pk %}">{{ movement.requisition.pk }}</a></p>{% endif %}
+{% if movement.reverses %}<p>Estorna: <a href="{% url 'inventory:movement_detail' movement.reverses.pk %}">{{ movement.reverses.get_kind_display }}</a></p>{% endif %}
+{% if movement.reason %}<p>Motivo: {{ movement.reason }}</p>{% endif %}
+<p>Registrado por {{ movement.actor.username }} em {{ movement.created_at|date:'d/m/Y H:i:s' }}</p></div>
+{% if reversed_by %}<p class="notification is-warning is-light">Estornado: <a href="{% url 'inventory:movement_detail' reversed_by.pk %}">ver estorno</a></p>
+{% elif movement.kind != 'REVERSAL' and perms.inventory.adjust_stock %}<form method="post" class="box">{% csrf_token %}<h2 class="title is-5">Estornar operação</h2>{% include 'compliance/_partials/form_fields.html' %}<button type="submit" class="button is-danger">Registrar estorno</button></form>{% endif %}
+<p class="mb-4"><a href="{% url 'inventory:balance_list' %}">Saldos</a> · <a href="{% url 'inventory:movement_list' %}">Movimentos</a> · <a href="{% url 'inventory:purchase_list' %}">Compras</a> · <a href="{% url 'inventory:requisition_list' %}">Requisições internas</a> · <a href="{% url 'inventory:item_list' %}">Catálogo de materiais</a></p>
+</div></section>
+{% endblock %}

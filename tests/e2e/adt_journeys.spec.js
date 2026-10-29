@@ -104,7 +104,7 @@ test('profissional autorizado admite, transfere e dá alta sem perder consistên
   await expect(page).toHaveURL(/\/leitos\/$/);
   await expect(page.getByText('Transferência registrada com sucesso.')).toBeVisible();
   await expect(
-    page.getByRole('article', { name: `Leito ${sourceLabel}: AVAILABLE` })
+    page.getByRole('article', { name: `Leito ${sourceLabel}: CLEANING` })
   ).toBeVisible();
   await expect(
     page.getByRole('article', { name: `Leito ${destinationLabel}: OCCUPIED` })
@@ -120,7 +120,7 @@ test('profissional autorizado admite, transfere e dá alta sem perder consistên
   await expect(page).toHaveURL(/\/leitos\/$/);
   await expect(page.getByText('Alta registrada com sucesso.')).toBeVisible();
   await expect(
-    page.getByRole('article', { name: `Leito ${destinationLabel}: AVAILABLE` })
+    page.getByRole('article', { name: `Leito ${destinationLabel}: CLEANING` })
   ).toBeVisible();
   await expect(page.getByText(patientName)).toHaveCount(0);
 });
