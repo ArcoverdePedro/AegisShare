@@ -152,8 +152,7 @@ def main() -> None:
         changed = _install_into_env(env_path)
         if changed:
             print(
-                f"Segredos instalados com seguranca em {env_path} (permissao 0600): "
-                + ", ".join(changed)
+                f"Segredos instalados com seguranca em {env_path} (permissao 0600)."
             )
         else:
             print(
